@@ -67,6 +67,137 @@
   color-scheme: dark;
 }
 
+/* color themes (settings → colors); "night" is the default above. Must stay after the base rules. */
+:root[data-palette="classic"] {
+  --c-primary-dark: #1976d2;
+  --c-primary: #2196f3;
+  --c-primary-light: #bbdefb;
+  --c-on-primary: #ffffff;
+  --c-accent: #7c4dff;
+  --c-accent-deep: #5b2fd6;
+  --c-glow: #7c4dff;
+  --c-primary-ink: #1976d2;
+  --c-tint: #e3f0fd;
+  --c-line: #d6e9fb;
+  --c-canvas: #f2f7fd;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="classic"]:not([data-theme="light"]) {
+    --c-primary-dark: #64b5f6;
+    --c-primary: #90caf9;
+    --c-primary-light: #1c3350;
+    --c-on-primary: #0d1b2a;
+    --c-accent: #4527a0;
+    --c-accent-deep: #311b92;
+    --c-glow: #b39ddb;
+    --c-primary-ink: #90caf9;
+    --c-tint: #1c3350;
+    --c-line: #27384f;
+    --c-canvas: #0f1722;
+    --c-surface: #182232;
+  }
+}
+:root[data-palette="classic"][data-theme="dark"] {
+  --c-primary-dark: #64b5f6;
+  --c-primary: #90caf9;
+  --c-primary-light: #1c3350;
+  --c-on-primary: #0d1b2a;
+  --c-accent: #4527a0;
+  --c-accent-deep: #311b92;
+  --c-glow: #b39ddb;
+  --c-primary-ink: #90caf9;
+  --c-tint: #1c3350;
+  --c-line: #27384f;
+  --c-canvas: #0f1722;
+  --c-surface: #182232;
+}
+:root[data-palette="forest"] {
+  --c-primary-dark: #1b4332;
+  --c-primary: #2d6a4f;
+  --c-primary-light: #b7e4c7;
+  --c-on-primary: #ffffff;
+  --c-accent: #1b4332;
+  --c-accent-deep: #081c15;
+  --c-glow: #52b788;
+  --c-primary-ink: #2d6a4f;
+  --c-tint: #e3f4ea;
+  --c-line: #cde8d6;
+  --c-canvas: #f1f8f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="forest"]:not([data-theme="light"]) {
+    --c-primary-dark: #52b788;
+    --c-primary: #74c69d;
+    --c-primary-light: #1b4332;
+    --c-on-primary: #081c15;
+    --c-accent: #1b4332;
+    --c-accent-deep: #081c15;
+    --c-glow: #95d5b2;
+    --c-primary-ink: #95d5b2;
+    --c-tint: #173b2c;
+    --c-line: #24473a;
+    --c-canvas: #0b1a14;
+    --c-surface: #13271f;
+  }
+}
+:root[data-palette="forest"][data-theme="dark"] {
+  --c-primary-dark: #52b788;
+  --c-primary: #74c69d;
+  --c-primary-light: #1b4332;
+  --c-on-primary: #081c15;
+  --c-accent: #1b4332;
+  --c-accent-deep: #081c15;
+  --c-glow: #95d5b2;
+  --c-primary-ink: #95d5b2;
+  --c-tint: #173b2c;
+  --c-line: #24473a;
+  --c-canvas: #0b1a14;
+  --c-surface: #13271f;
+}
+:root[data-palette="berry"] {
+  --c-primary-dark: #5a189a;
+  --c-primary: #7b2cbf;
+  --c-primary-light: #f7c6e0;
+  --c-on-primary: #ffffff;
+  --c-accent: #7b2cbf;
+  --c-accent-deep: #3c096c;
+  --c-glow: #e0569b;
+  --c-primary-ink: #7b2cbf;
+  --c-tint: #f6ecfb;
+  --c-line: #ead7f5;
+  --c-canvas: #fbf6fd;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="berry"]:not([data-theme="light"]) {
+    --c-primary-dark: #e0569b;
+    --c-primary: #f28dbe;
+    --c-primary-light: #3c096c;
+    --c-on-primary: #1a0529;
+    --c-accent: #5a189a;
+    --c-accent-deep: #240046;
+    --c-glow: #e0569b;
+    --c-primary-ink: #f5a3cb;
+    --c-tint: #331046;
+    --c-line: #43205a;
+    --c-canvas: #14061f;
+    --c-surface: #200a31;
+  }
+}
+:root[data-palette="berry"][data-theme="dark"] {
+  --c-primary-dark: #e0569b;
+  --c-primary: #f28dbe;
+  --c-primary-light: #3c096c;
+  --c-on-primary: #1a0529;
+  --c-accent: #5a189a;
+  --c-accent-deep: #240046;
+  --c-glow: #e0569b;
+  --c-primary-ink: #f5a3cb;
+  --c-tint: #331046;
+  --c-line: #43205a;
+  --c-canvas: #14061f;
+  --c-surface: #200a31;
+}
+
 @theme inline {
   --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.2);
   --color-primary-dark: var(--c-primary-dark);
@@ -196,6 +327,15 @@ input:checked + .switch::after { transform: translateX(1.25rem); }
 }
 .shake { animation: shake 0.45s ease-out 0.5s both; }
 
+/* settings bottom sheet (native <dialog>) */
+@keyframes sheet {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+dialog.sheet[open] { animation: sheet 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
+@keyframes fade-in { from { opacity: 0; } }
+
 /* chart bars growing from their baseline */
 @keyframes grow {
   from { transform: scaleX(0); }
@@ -204,7 +344,7 @@ input:checked + .switch::after { transform: translateX(1.25rem); }
 .grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .enter, .pop, .flip, .shake, .grow, .glow::before { animation: none; }
+  .enter, .pop, .flip, .shake, .grow, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }

@@ -3,11 +3,12 @@
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { LANGS, UI, type Lang } from "@/lib/i18n";
+import { UI, type Lang } from "@/lib/i18n";
+import { TopControls } from "@/components/TopControls";
 import type { Text } from "@/lib/game";
 import type { View } from "@/lib/room";
 import { api, loadIdentity, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
-import { btn, card, field, ghost, press, segmented } from "@/lib/ui";
+import { btn, card, field, ghost, press } from "@/lib/ui";
 
 const noop = () => () => {};
 const POLL_MS = 1500;
@@ -181,12 +182,7 @@ export default function Room() {
           <span className="text-2xl leading-none">×</span>
           <span className="font-mono font-bold tracking-widest text-ink">{code}</span>
         </button>
-        {segmented(
-          LANGS.map((l) => ({ id: l.id, label: l.id.toUpperCase(), title: l.label })),
-          lang,
-          setLang,
-          "sm",
-        )}
+        <TopControls lang={lang} setLang={setLang} />
       </header>
 
       {errMsg && (

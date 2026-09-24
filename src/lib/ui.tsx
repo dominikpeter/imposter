@@ -3,33 +3,45 @@ import { useSyncExternalStore } from "react";
 
 export type Theme = "auto" | "light" | "dark";
 export const THEMES: Theme[] = ["auto", "light", "dark"];
+export type Palette = "night" | "classic" | "forest" | "berry";
+// swatch = [button, accent, glow] preview for the settings sheet
+export const PALETTES: { id: Palette; swatch: [string, string, string] }[] = [
+  { id: "night", swatch: ["#1c2541", "#5bc0be", "#6fffe9"] },
+  { id: "classic", swatch: ["#1976d2", "#7c4dff", "#bbdefb"] },
+  { id: "forest", swatch: ["#1b4332", "#40916c", "#b7e4c7"] },
+  { id: "berry", swatch: ["#5a189a", "#e0569b", "#f7c6e0"] },
+];
 
-// "auto" follows the system; a saved choice is applied before paint by the script in layout.tsx
-const listeners = new Set<() => void>();
-export const themeStore = {
-  subscribe: (l: () => void) => {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
-  get: (): Theme => {
-    try {
-      const t = localStorage.getItem("theme");
-      return t === "light" || t === "dark" ? t : "auto";
-    } catch {
-      return "auto";
-    }
-  },
-  set: (next: Theme) => {
-    const root = document.documentElement;
-    if (next === "auto") delete root.dataset.theme;
-    else root.dataset.theme = next;
-    try {
-      if (next === "auto") localStorage.removeItem("theme");
-      else localStorage.setItem("theme", next);
-    } catch {}
-    listeners.forEach((l) => l());
-  },
-};
+// a preference kept in localStorage and mirrored to <html data-*>; applied before paint by the script in layout.tsx
+function pref<T extends string>(key: "theme" | "palette", fallback: T, allowed: readonly T[]) {
+  const listeners = new Set<() => void>();
+  return {
+    subscribe: (l: () => void) => {
+      listeners.add(l);
+      return () => listeners.delete(l);
+    },
+    get: (): T => {
+      try {
+        const v = localStorage.getItem(key) as T;
+        return allowed.includes(v) ? v : fallback;
+      } catch {
+        return fallback;
+      }
+    },
+    set: (next: T) => {
+      const root = document.documentElement;
+      if (next === fallback) delete root.dataset[key];
+      else root.dataset[key] = next;
+      try {
+        if (next === fallback) localStorage.removeItem(key);
+        else localStorage.setItem(key, next);
+      } catch {}
+      listeners.forEach((l) => l());
+    },
+  };
+}
+export const themeStore = pref<Theme>("theme", "auto", THEMES);
+export const paletteStore = pref<Palette>("palette", "night", PALETTES.map((p) => p.id));
 
 export const press = "transition duration-200 ease-spring active:scale-[0.97]";
 export const btn = `flex min-h-14 w-full items-center justify-center rounded-full bg-primary-dark px-6 text-lg font-semibold text-on-primary hover:bg-primary disabled:opacity-40 disabled:active:scale-100 ${press}`;
@@ -91,3 +103,4 @@ export const stepper = (value: number, set: (n: number) => void, min: number, ma
 );
 
 export const useTheme = () => useSyncExternalStore(themeStore.subscribe, themeStore.get, () => "auto" as Theme);
+export const usePalette = () => useSyncExternalStore(paletteStore.subscribe, paletteStore.get, () => "night" as Palette);

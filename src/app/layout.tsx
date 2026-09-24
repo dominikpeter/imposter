@@ -19,8 +19,8 @@ export const viewport: Viewport = {
   ],
 };
 
-// applies a saved light/dark choice before first paint; "auto" leaves it to the system
-const themeScript = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+// applies saved light/dark + color theme before first paint; "auto" leaves light/dark to the system
+const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("theme"),p=localStorage.getItem("palette");if(t==="light"||t==="dark")d.dataset.theme=t;if(p)d.dataset.palette=p}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

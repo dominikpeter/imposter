@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { CATEGORIES, LANGS, UI, type Lang } from "@/lib/i18n";
+import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
+import { TopControls } from "@/components/TopControls";
 import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "@/lib/game";
 import { tally } from "@/lib/vote";
 import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
-import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper, themeStore, THEMES, useTheme } from "@/lib/ui";
+import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper } from "@/lib/ui";
 
 type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "result";
 type Mode = "packs" | "custom";
@@ -171,7 +172,6 @@ export default function Home() {
     setPhase("setup");
   };
 
-  const theme = useTheme();
 
   const passScreen = (action: string) => (
     <>
@@ -225,12 +225,7 @@ export default function Home() {
             <span className="max-[359px]:hidden">{t("quit")}</span>
           </button>
         )}
-        {segmented(
-          LANGS.map((l) => ({ id: l.id, label: l.id.toUpperCase(), title: l.label })),
-          lang,
-          setLang,
-          "sm",
-        )}
+        <TopControls lang={lang} setLang={setLang} />
       </header>
 
       {phase === "setup" && (
@@ -381,18 +376,6 @@ export default function Home() {
               </div>
             )}
           </section>
-
-          <div className="flex items-center justify-between gap-3 px-1">
-            <span className="text-muted">{t("appearance")}</span>
-            <div className="w-52">
-              {segmented(
-                THEMES.map((id) => ({ id, label: t(id === "auto" ? "themeAuto" : id === "light" ? "themeLight" : "themeDark") })),
-                theme,
-                themeStore.set,
-                "sm",
-              )}
-            </div>
-          </div>
 
           <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {play === "pass" ? (

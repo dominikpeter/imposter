@@ -20,7 +20,8 @@ export function stats(history: RoundLog[]) {
   for (const r of history) {
     const decided = r.accused !== null;
     const caught = decided && r.imposters.includes(r.accused!);
-    if (decided) caught ? crewWins++ : imposterWins++;
+    if (decided && caught) crewWins++;
+    else if (decided) imposterWins++;
     r.names.forEach((name, i) => {
       const p = by.get(name) ?? { name, rounds: 0, imposter: 0, escaped: 0, correctVotes: 0, votesTaken: 0, points: 0 };
       p.rounds++;

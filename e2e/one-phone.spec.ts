@@ -16,6 +16,13 @@ async function revealAll(page: Page, n: number) {
   return seen;
 }
 
+// language lives in the settings sheet
+async function setLanguage(page: Page, label: string) {
+  await page.getByRole("button", { name: /^(Settings|Réglages|Einstellungen)$/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: label }).click();
+  await page.getByRole("button", { name: /^(Close|Fermer|Schliessen)$/ }).click();
+}
+
 async function voteAll(page: Page, targets: string[]) {
   await page.getByRole("button", { name: /Vote/ }).click();
   for (const target of targets) {
@@ -96,12 +103,25 @@ test("quit asks first, then returns to setup", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Start game" })).toBeVisible();
 });
 
+test("settings: color theme and dark mode stick after reload", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("button", { name: /Forest/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /Dark/ }).click();
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-palette", "forest");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "Light / dark" }).click(); // quick toggle in the header
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
 test("languages switch everywhere", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Deutsch" }).click();
+  await setLanguage(page, "Deutsch");
   await expect(page.getByRole("button", { name: "Spiel starten" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
-  await page.getByRole("button", { name: "Français" }).click();
+  await setLanguage(page, "Français");
   await expect(page.getByRole("button", { name: "Commencer" })).toBeVisible();
 });
 
@@ -109,7 +129,7 @@ test("no horizontal scrolling on a small phone", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto("/");
   for (const lang of ["English", "Français", "Deutsch"]) {
-    await page.getByRole("button", { name: lang }).click();
+    await setLanguage(page, lang);
     for (const mode of [/Our own words|Nos propres|Eigene/, /Word packs|Packs de mots|Wortpakete/]) {
       await page.getByRole("button", { name: mode }).click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
