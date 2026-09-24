@@ -15,6 +15,9 @@
 
 ## How to play
 
+**Full manual with a step-by-step playthrough: [docs/MANUAL.md](docs/MANUAL.md)**
+
+
 1. Everyone gets the same secret word, except the **imposter**, who only gets the topic (or nothing).
 2. Take turns saying one word about the secret. Don't make it too easy: the imposter is listening.
 3. Vote for who you think the imposter is. A tie means you discuss again.

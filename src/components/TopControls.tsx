@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
+import { BookOpen, Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
 import { useRef, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
@@ -114,6 +114,14 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
               ))}
             </div>
           </section>
+          <a
+            href="https://github.com/dominikpeter/imposter/blob/main/docs/MANUAL.md"
+            target="_blank"
+            rel="noreferrer"
+            className={`flex min-h-12 items-center justify-center gap-2 rounded-full border border-line font-semibold text-primary-ink ${press}`}
+          >
+            <BookOpen className="size-5" aria-hidden /> {t("howToPlay")}
+          </a>
         </div>
       </dialog>
     </div>

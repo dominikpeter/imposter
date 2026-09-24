@@ -160,6 +160,7 @@ export const UI = {
   explain: { en: "Explain with AI", fr: "Expliquer avec l'IA", de: "Mit KI erklären" },
   explaining: { en: "Thinking…", fr: "Réflexion…", de: "Überlege…" },
   explainFailed: { en: "AI isn't available right now.", fr: "L'IA n'est pas disponible pour le moment.", de: "KI ist gerade nicht verfügbar." },
+  howToPlay: { en: "How to play", fr: "Comment jouer", de: "So wird gespielt" },
   errOffline: { en: "Connection problem, retrying…", fr: "Problème de connexion, nouvel essai…", de: "Verbindungsproblem, versuche erneut…" },
   quit: { en: "Quit round", fr: "Quitter la manche", de: "Runde beenden" },
   quitConfirm: { en: "Quit this round?", fr: "Quitter cette manche ?", de: "Diese Runde beenden?" },
