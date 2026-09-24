@@ -43,3 +43,7 @@ next-env.d.ts
 # local tooling
 .serena
 .claude/worktrees
+
+# playwright
+/test-results/
+/playwright-report/

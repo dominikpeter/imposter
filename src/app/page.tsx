@@ -1,20 +1,24 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, LANGS, UI, type Lang } from "@/lib/i18n";
 import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "@/lib/game";
 import { tally } from "@/lib/vote";
+import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
+import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper, themeStore, THEMES, useTheme } from "@/lib/ui";
 
 type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "result";
 type Mode = "packs" | "custom";
+type Play = "pass" | "phones";
 
 // everything needed to resume after a reload / accidental back; read once on the client (server gets {})
 type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
-  accused: number | null;
+  accused: number | null; play: Play; myName: string;
 }>;
-const KEY = "imposter:v1";
+const KEY = SAVE_KEY;
 const saved: Saved = (() => {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {};
@@ -24,48 +28,6 @@ const saved: Saved = (() => {
 })();
 const blank = (n: number) => Array.from({ length: n }, () => ({ word: "", clue: "" }));
 const noop = () => () => {};
-
-type Theme = "auto" | "light" | "dark";
-const THEMES: Theme[] = ["auto", "light", "dark"];
-
-// "auto" follows the system; a saved choice is applied before paint by the script in layout.tsx
-const listeners = new Set<() => void>();
-const themeStore = {
-  subscribe: (l: () => void) => {
-    listeners.add(l);
-    return () => listeners.delete(l);
-  },
-  get: (): Theme => {
-    try {
-      const t = localStorage.getItem("theme");
-      return t === "light" || t === "dark" ? t : "auto";
-    } catch {
-      return "auto";
-    }
-  },
-  set: (next: Theme) => {
-    const root = document.documentElement;
-    if (next === "auto") delete root.dataset.theme;
-    else root.dataset.theme = next;
-    try {
-      if (next === "auto") localStorage.removeItem("theme");
-      else localStorage.setItem("theme", next);
-    } catch {}
-    listeners.forEach((l) => l());
-  },
-};
-
-const press = "transition duration-200 ease-spring active:scale-[0.97]";
-const btn = `flex min-h-14 w-full items-center justify-center rounded-full bg-primary-dark px-6 text-lg font-semibold text-white hover:bg-primary disabled:opacity-40 disabled:active:scale-100 ${press}`;
-const ghost = `min-h-11 rounded-full px-4 font-medium text-primary-ink hover:bg-tint ${press}`;
-const card = "rounded-3xl border border-line bg-surface p-5";
-const heading = "text-lg font-semibold";
-const chip = `min-h-11 rounded-full border px-4 font-medium ${press}`;
-const chipOn = "border-line bg-tint text-primary-ink";
-const chipOff = "border-divider/60 bg-surface text-muted hover:border-divider";
-const round_btn = `size-11 rounded-full border border-divider/70 bg-surface text-2xl leading-none text-ink hover:border-primary hover:text-primary-ink disabled:opacity-30 disabled:active:scale-100 disabled:hover:border-divider/70 disabled:hover:text-ink ${press}`;
-const field =
-  "w-full rounded-2xl border border-divider/60 bg-surface px-4 py-3 text-lg transition outline-none placeholder:text-divider focus:border-primary focus-visible:outline-none";
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>(saved.lang ?? "en");
@@ -87,16 +49,22 @@ export default function Home() {
   const [shown, setShown] = useState(false);
   const [votes, setVotes] = useState<number[]>(saved.votes ?? []);
   const [accused, setAccused] = useState<number | null>(saved.accused ?? null);
+  const [play, setPlay] = useState<Play>(saved.play ?? "pass");
+  const [myName, setMyName] = useState(saved.myName ?? "");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     document.documentElement.lang = lang;
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -104,7 +72,8 @@ export default function Home() {
   const t = (k: keyof typeof UI) => UI[k][lang];
   const tx = (v: Text) => (typeof v === "string" ? v : v[lang]);
   // ponytail: up to half the table can be imposters; raise if a "chaos" mode ever wants more
-  const maxImposters = Math.max(1, Math.floor(players.length / 2));
+  // online the player count is unknown until start; the server caps it at half the table
+  const maxImposters = play === "phones" ? 5 : Math.max(1, Math.floor(players.length / 2));
   const imposters = Math.min(imposterCount, maxImposters);
   const names = players.map((p, i) => p.trim() || `${t("playerName")} ${i + 1}`);
   const canStart = players.length >= 3 && (mode === "custom" || cats.length > 0);
@@ -130,6 +99,25 @@ export default function Home() {
     setPool(p.filter((_, j) => j !== i));
     begin(p[i]);
   };
+
+  const errText = (e: unknown) =>
+    t(({ started: "errStarted", not_found: "errNotFound", full: "errFull", no_storage: "errNoStorage" } as const)[(e as Error).message as "started"] ?? "errOffline");
+
+  const online = async (path: string, body: object) => {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await api<Identity & { code: string }>(path, body);
+      saveIdentity(r.code, { pid: r.pid, token: r.token });
+      router.push(`/r/${r.code}`);
+    } catch (e) {
+      setError(errText(e));
+      setBusy(false);
+    }
+  };
+  const createRoom = () =>
+    online("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint } });
+  const joinByCode = () => online(`/${code}`, { type: "join", name: myName });
 
   const start = () => {
     if (mode === "packs") {
@@ -183,40 +171,7 @@ export default function Home() {
     setPhase("setup");
   };
 
-  const theme = useSyncExternalStore(themeStore.subscribe, themeStore.get, () => "auto" as Theme);
-
-  // segmented control with a sliding indicator (transform only)
-  const segmented = <T extends string>(
-    options: { id: T; label: string; title?: string }[],
-    value: T,
-    onChange: (v: T) => void,
-    size: "sm" | "md" = "md",
-  ) => {
-    const i = Math.max(0, options.findIndex((o) => o.id === value));
-    return (
-      <div
-        className={`relative grid rounded-full border border-line bg-surface p-0.5 ${size === "sm" ? "text-sm font-semibold" : "font-medium"}`}
-        style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-      >
-        <span
-          aria-hidden
-          className="absolute top-0.5 bottom-0.5 left-0.5 rounded-full bg-primary-dark transition-transform duration-300 ease-spring"
-          style={{ width: `calc((100% - 0.25rem) / ${options.length})`, transform: `translateX(${i * 100}%)` }}
-        />
-        {options.map((o) => (
-          <button
-            key={o.id}
-            onClick={() => onChange(o.id)}
-            aria-label={o.title}
-            aria-pressed={o.id === value}
-            className={`relative z-10 min-h-10 rounded-full px-1 whitespace-nowrap transition-colors duration-300 ${o.id === value ? "text-white" : "text-muted hover:text-ink"}`}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    );
-  };
+  const theme = useTheme();
 
   const passScreen = (action: string) => (
     <>
@@ -235,20 +190,6 @@ export default function Home() {
         </span>
       </button>
     </>
-  );
-
-  const stepper = (value: number, set: (n: number) => void, min: number, max: number) => (
-    <div className="flex shrink-0 items-center gap-1">
-      <button onClick={() => set(value - 1)} disabled={value <= min} className={round_btn} aria-label="−">
-        −
-      </button>
-      <span key={value} className="pop inline-block w-8 text-center text-2xl font-semibold tabular-nums">
-        {value}
-      </span>
-      <button onClick={() => set(value + 1)} disabled={value >= max} className={round_btn} aria-label="+">
-        +
-      </button>
-    </div>
   );
 
   const progress = (
@@ -294,36 +235,78 @@ export default function Home() {
 
       {phase === "setup" && (
         <div key="setup" className="enter flex flex-1 flex-col gap-4">
-          <section className={card}>
-            <div className="mb-1 flex items-baseline justify-between">
-              <h2 className={heading}>{t("players")}</h2>
-              <span key={players.length} className="pop inline-block text-muted tabular-nums">
-                {players.length}
-              </span>
-            </div>
-            <ul className="flex flex-col">
-              {players.map((p, i) => (
-                <li key={i} className="enter flex items-center gap-3 border-b border-divider/30 last:border-0">
-                  <input
-                    value={p}
-                    placeholder={`${t("playerName")} ${i + 1}`}
-                    onChange={(e) => editPlayers(players.map((x, j) => (j === i ? e.target.value : x)))}
-                    className="min-w-0 flex-1 bg-transparent py-3 text-lg outline-none placeholder:text-divider focus-visible:outline-none"
-                  />
-                  <button
-                    onClick={() => editPlayers(players.filter((_, j) => j !== i))}
-                    aria-label="Remove"
-                    className={`size-11 rounded-full text-2xl leading-none text-divider hover:bg-canvas hover:text-ink ${press}`}
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <button onClick={() => editPlayers([...players, ""])} className={`${ghost} -ml-4 mt-1`}>
-              + {t("addPlayer")}
-            </button>
-          </section>
+          {segmented(
+            [
+              { id: "pass" as Play, label: `📱 ${t("onePhone")}` },
+              { id: "phones" as Play, label: `📱📱 ${t("everyPhone")}` },
+            ],
+            play,
+            setPlay,
+          )}
+
+          {play === "pass" ? (
+            <section className={card}>
+              <div className="mb-1 flex items-baseline justify-between">
+                <h2 className={heading}>{t("players")}</h2>
+                <span key={players.length} className="pop inline-block text-muted tabular-nums">
+                  {players.length}
+                </span>
+              </div>
+              <ul className="flex flex-col">
+                {players.map((p, i) => (
+                  <li key={i} className="enter flex items-center gap-3 border-b border-divider/30 last:border-0">
+                    <input
+                      value={p}
+                      placeholder={`${t("playerName")} ${i + 1}`}
+                      onChange={(e) => editPlayers(players.map((x, j) => (j === i ? e.target.value : x)))}
+                      className="min-w-0 flex-1 bg-transparent py-3 text-lg outline-none placeholder:text-divider focus-visible:outline-none"
+                    />
+                    <button
+                      onClick={() => editPlayers(players.filter((_, j) => j !== i))}
+                      aria-label="Remove"
+                      className={`size-11 rounded-full text-2xl leading-none text-divider hover:bg-canvas hover:text-ink ${press}`}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button onClick={() => editPlayers([...players, ""])} className={`${ghost} -ml-4 mt-1`}>
+                + {t("addPlayer")}
+              </button>
+            </section>
+          ) : (
+            <section key="phones" className={`${card} enter flex flex-col gap-3`}>
+              <p className="text-muted">{t("phonesHelp")}</p>
+              <input
+                value={myName}
+                maxLength={24}
+                autoComplete="nickname"
+                placeholder={t("yourName")}
+                onChange={(e) => setMyName(e.target.value)}
+                className={`${field} font-semibold`}
+              />
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  value={code}
+                  maxLength={4}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  placeholder={t("haveCode")}
+                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  className={`${field} min-w-0 flex-1 tracking-widest uppercase placeholder:tracking-normal placeholder:normal-case`}
+                />
+                <button
+                  onClick={joinByCode}
+                  disabled={busy || code.length !== 4 || !myName.trim()}
+                  className={`${ghost} shrink-0 border border-line disabled:opacity-40`}
+                >
+                  {t("join")}
+                </button>
+              </div>
+              {error && <p className="text-sm font-medium text-red-500" role="alert">{error}</p>}
+            </section>
+          )}
 
           <section className={`${card} flex flex-col gap-4`}>
             <div className="flex items-center justify-between gap-3">
@@ -361,7 +344,7 @@ export default function Home() {
                 <button
                   onClick={() => setCats(allCats ? [] : CATEGORIES.map((c) => c.id))}
                   aria-pressed={allCats}
-                  className={`${chip} ${allCats ? "border-primary-dark bg-primary-dark text-white" : chipOff}`}
+                  className={`${chip} ${allCats ? "border-primary-dark bg-primary-dark text-on-primary" : chipOff}`}
                 >
                   {t("allTopics")}
                 </button>
@@ -411,10 +394,20 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="sticky bottom-[max(1rem,env(safe-area-inset-bottom))] mt-auto pt-2">
-            <button onClick={start} disabled={!canStart} className={`${btn} shadow-lg shadow-primary-dark/25`}>
-              {canStart ? t("start") : players.length < 3 ? t("minPlayers") : t("pickTopic")}
-            </button>
+          <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            {play === "pass" ? (
+              <button onClick={start} disabled={!canStart} className={`${btn} shadow-lg shadow-primary-dark/25`}>
+                {canStart ? t("start") : players.length < 3 ? t("minPlayers") : t("pickTopic")}
+              </button>
+            ) : (
+              <button
+                onClick={createRoom}
+                disabled={busy || !myName.trim() || (mode === "packs" && !cats.length)}
+                className={`${btn} shadow-lg shadow-primary-dark/25`}
+              >
+                {!myName.trim() ? t("yourName") : mode === "packs" && !cats.length ? t("pickTopic") : `✨ ${t("createRoom")}`}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -485,7 +478,7 @@ export default function Home() {
               ) : (
                 <div className={`${card} flip w-full py-16`}>
                   <p className="text-lg text-muted">{tx(round.clue) || t("yourWord")}</p>
-                  <p className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tx(round.word)}</p>
+                  <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tx(round.word)}</p>
                 </div>
               )}
               <button onClick={next} className={`${btn} enter [animation-delay:250ms]`}>

@@ -2,46 +2,62 @@
 
 /* ---- palette (light) ---- */
 :root {
-  --c-primary-dark: #1976d2;
-  --c-primary: #2196f3;
-  --c-primary-light: #bbdefb;
-  --c-accent: #7c4dff;
-  --c-accent-deep: #6a3df2; /* accent, slightly deeper, for card depth */
-  --c-ink: #212121;
-  --c-muted: #757575;
-  --c-divider: #bdbdbd;
-  /* derived tints */
-  --c-canvas: #f2f7fd; /* primary-light over white */
+  /* palette: prussian blue #0b132b · space indigo #1c2541 · dusk blue #3a506b · tropical teal #5bc0be · neon ice #6fffe9 */
+  --c-primary-dark: #1c2541; /* buttons, active controls */
+  --c-primary: #3a506b; /* hover */
+  --c-primary-light: #bde5e5;
+  --c-on-primary: #ffffff; /* text on primary-dark */
+  --c-accent: #1e3475; /* imposter moments */
+  --c-accent-deep: #0b132b;
+  --c-glow: #5bc0be;
+  --c-ink: #0b132b;
+  --c-muted: #517197;
+  --c-divider: #a5b8ce;
+  --c-canvas: #eef8f8;
   --c-surface: #ffffff;
-  --c-line: #d6e9fb; /* primary-light at 60% on white */
-  --c-tint: #dceefd; /* primary-light at 50% on white: chips, pills */
-  --c-primary-ink: #1976d2; /* primary as text */
+  --c-line: #cfe9e9;
+  --c-tint: #def2f2; /* chips, pills */
+  --c-primary-ink: #2f7978; /* teal as text, 5:1 on white */
   color-scheme: light;
 }
 
-/* ---- palette (dark) ---- */
+/* dark values: system dark unless the user forced light, or forced dark */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --c-ink: #f2f5f9;
-    --c-muted: #9aa6b5;
-    --c-divider: #3b4757;
-    --c-canvas: #0f1722; /* blue-black */
-    --c-surface: #182232;
-    --c-line: #27384f;
-    --c-tint: #1c3350;
-    --c-primary-ink: #64b5f6; /* lighter primary tint for text on dark */
+    --c-primary-dark: #5bc0be;
+    --c-primary: #6fffe9;
+    --c-primary-light: #1f5150;
+    --c-on-primary: #0b132b;
+    --c-accent: #1e3475;
+    --c-accent-deep: #070c1b;
+    --c-glow: #6fffe9;
+    --c-ink: #e2fffb;
+    --c-muted: #a5b8ce;
+    --c-divider: #3a506b;
+    --c-canvas: #0b132b;
+    --c-surface: #1c2541;
+    --c-line: #2e3f55;
+    --c-tint: #17343d;
+    --c-primary-ink: #6fffe9;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --c-ink: #f2f5f9;
-  --c-muted: #9aa6b5;
-  --c-divider: #3b4757;
-  --c-canvas: #0f1722;
-  --c-surface: #182232;
-  --c-line: #27384f;
-  --c-tint: #1c3350;
-  --c-primary-ink: #64b5f6;
+  --c-primary-dark: #5bc0be;
+  --c-primary: #6fffe9;
+  --c-primary-light: #1f5150;
+  --c-on-primary: #0b132b;
+  --c-accent: #1e3475;
+  --c-accent-deep: #070c1b;
+  --c-glow: #6fffe9;
+  --c-ink: #e2fffb;
+  --c-muted: #a5b8ce;
+  --c-divider: #3a506b;
+  --c-canvas: #0b132b;
+  --c-surface: #1c2541;
+  --c-line: #2e3f55;
+  --c-tint: #17343d;
+  --c-primary-ink: #6fffe9;
   color-scheme: dark;
 }
 
@@ -50,6 +66,8 @@
   --color-primary-dark: var(--c-primary-dark);
   --color-primary: var(--c-primary);
   --color-primary-light: var(--c-primary-light);
+  --color-on-primary: var(--c-on-primary);
+  --color-glow: var(--c-glow);
   --color-accent: var(--c-accent);
   --color-accent-deep: var(--c-accent-deep);
   --color-ink: var(--c-ink);
@@ -93,7 +111,7 @@ button { user-select: none; }
 .imposter-back {
   background-color: var(--c-accent);
   background-image:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.6px),
+    radial-gradient(circle at center, rgba(111, 255, 233, 0.22) 1.2px, transparent 1.6px),
     linear-gradient(160deg, var(--c-accent) 0%, var(--c-accent-deep) 100%);
   background-size: 14px 14px, 100% 100%;
 }
@@ -119,6 +137,7 @@ button { user-select: none; }
   transition: transform 0.2s;
 }
 input:checked + .switch { background: var(--c-primary-dark); }
+input:checked + .switch::after { background: var(--c-on-primary); }
 input:checked + .switch::after { transform: translateX(1.25rem); }
 
 @keyframes enter {
@@ -148,7 +167,7 @@ input:checked + .switch::after { transform: translateX(1.25rem); }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  box-shadow: 0 0 48px 12px var(--c-accent);
+  box-shadow: 0 0 48px 12px var(--c-glow);
   opacity: 0;
   animation: glow 1.2s ease-out 0.35s both;
   pointer-events: none;
