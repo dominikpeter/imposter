@@ -66,6 +66,7 @@ export default function Home() {
   const [lost, setLost] = useState<number[]>(saved.lost ?? []); // players whose word was cancelled by a clash
   const [notes, setNotes] = useState<(Note | null)[]>([]);
   const [checking, setChecking] = useState(false);
+  const [confirmable, setConfirmable] = useState(""); // corrected draft shown to the player; sending it unchanged = accepted
   const ai = useAi();
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
@@ -167,7 +168,10 @@ export default function Home() {
     setChecking(true);
     const taken = writing.map((s) => s.word as string);
     const reviews: Review[] =
-      (await fetch("/api/words/check", { method: "POST", body: JSON.stringify({ words: draft, taken, lang, ai }) })
+      (await fetch("/api/words/check", {
+        method: "POST",
+        body: JSON.stringify({ words: draft, taken, lang, ai: ai && JSON.stringify(draft) !== confirmable }),
+      })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)) ?? exactReview(draft, taken); // offline → exact checks only
     setChecking(false);
@@ -182,9 +186,11 @@ export default function Home() {
       setQueue([...queue, ...owners.filter((a, i) => !queue.includes(a) && owners.indexOf(a) === i)]);
       setLost([...lost, ...owners]);
       setDraft(fixed);
+      setConfirmable(notes.every((n) => n === null || n === "corrected") ? JSON.stringify(fixed) : "");
       return setNotes(notes);
     }
     const next = mergeWritten(writing, fixed, turn);
+    setConfirmable("");
     const rest = queue.filter((p) => p !== turn);
     setLost(lost.filter((p) => p !== turn));
     setNotes([]);
@@ -223,6 +229,8 @@ export default function Home() {
 
   const quit = () => {
     if (!confirm(t("quitConfirm"))) return;
+    // a joker spent on a round that never finished goes back to its holder
+    if (round?.jokered?.length && phase !== "result") setJokers([...jokers, ...round.jokered.map((i) => names[i])]);
     setWriting([]);
     setPhase("setup");
   };

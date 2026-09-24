@@ -36,7 +36,7 @@ export function WordForm(p: {
       {p.draft.map((d, i) => {
         const note = p.notes[i];
         return (
-          <div key={i} className={`${card} flex flex-col gap-2 p-3 ${note && note !== "corrected" ? "border-red-400" : ""}`}>
+          <div key={i} className={`${card} flex flex-col gap-2 p-3 ${note && note !== "corrected" ? "ring-2 ring-red-400" : ""}`}>
             <input
               required
               autoFocus={i === 0}

@@ -43,6 +43,7 @@ export default function Room() {
   const [name, setName] = useState(() => (typeof window === "undefined" ? "" : (readSaved().myName ?? "")));
   const [draft, setDraft] = useState<Draft[]>([]);
   const [notes, setNotes] = useState<(Note | null)[]>([]);
+  const [confirmable, setConfirmable] = useState(""); // corrected draft shown; sending it unchanged = accepted
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
   const [qr, setQr] = useState("");
@@ -93,7 +94,9 @@ export default function Room() {
   if (phaseKey !== seenPhase) {
     setSeenPhase(phaseKey);
     setShown(false);
-    if (v?.phase === "write") setDraft(Array.from({ length: v.missing }, () => ({ word: "", clue: "" })));
+    // same round, one more word needed (clash) → keep what's already typed
+    const sameRound = v && seenPhase.startsWith(`${v.phase}-${v.roundNo}-`);
+    if (v?.phase === "write") setDraft(Array.from({ length: v.missing }, (_, i) => (sameRound && draft[i]) || { word: "", clue: "" }));
     setNotes([]);
   }
 
@@ -112,11 +115,13 @@ export default function Room() {
   const submitWords = async () => {
     setBusy(true);
     try {
-      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang });
+      const confirm = JSON.stringify(draft) === confirmable;
+      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang, confirm });
       if (r.reviews) {
         const { fixed, notes } = reviewNotes(draft, r.reviews);
         setDraft(fixed);
         setNotes(notes);
+        setConfirmable(notes.every((n) => n === null || n === "corrected") ? JSON.stringify(fixed) : "");
       }
       await refresh();
     } catch (e) {

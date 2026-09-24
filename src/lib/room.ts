@@ -139,7 +139,7 @@ function nextRound(room: Room, members: Member[]) {
 
 export type Action =
   | { type: "start" | "discuss" | "startVote" | "skipVote" }
-  | { type: "words"; words: Draft[]; lang?: string }
+  | { type: "words"; words: Draft[]; lang?: string; confirm?: boolean }
   | { type: "vote"; target: number };
 
 export async function act(db: Store, code: string, pid: unknown, token: unknown, a: Action) {
@@ -179,7 +179,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
     case "words": {
       need(room.phase === "write" && idx >= 0);
       const key = `room:${code}:words:${room.writeNo}`;
-      const all = await db.hgetall<Draft[]>(key);
+      const all = await db.hgetall<Draft[]>(key); // "<seat>" → accepted words, "lost:<seat>" → true after a clash
       const mine = all[idx] ?? [];
       const missing = room.settings.perPlayer - mine.length; // < perPlayer after someone clashed with one of mine
       const words = Array.isArray(a.words) ? a.words.slice(0, missing) : [];
@@ -189,29 +189,30 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
         throw new RoomError("bad_request");
 
       // autocorrect / too hard / duplicates against everyone's words so far
-      const written = Object.entries(all).flatMap(([p, ws]) => ws.map((w) => ({ p: Number(p), w })));
-      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai)).map((r) =>
+      const written = room.ids.flatMap((_, p) => (all[p] ?? []).map((w) => ({ p, w })));
+      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm)).map((r) =>
         r.problem === "taken" && written[r.taken].p === idx ? { ...r, problem: "twice" } : r,
       );
       const changed = reviews.some((r, i) => r.problem || r.word !== clean[i].word.trim() || r.clue !== clean[i].clue.trim());
       if (changed) {
         // a clash with another player's word: this player now knows it, so that word is cancelled and its writer writes a new one
-        // ponytail: read-modify-write of the other player's list; a submit racing this cancel can win, then both words stay (merged, both authors excluded)
+        // ponytail: read-modify-write of the other player's list; if they submit at the same moment their new word can be
+        // dropped by this write, and they're simply asked for it again (lost flag). Per-word hash fields would avoid it.
         const hit = new Set(reviews.filter((r) => r.problem === "taken").map((r) => written[r.taken]));
         const owners = [...new Set([...hit].map((x) => x.p))];
         await Promise.all([
           ...owners.map((p) => db.hset(key, String(p), all[p].filter((w) => !written.some((x) => x.p === p && x.w === w && hit.has(x))), TTL)),
-          ...owners.map((p) => db.hset(`${key}:lost`, String(p), true, TTL)), // tells them why they must write again
+          ...owners.map((p) => db.hset(key, `lost:${p}`, true, TTL)), // tells them why they must write again
         ]);
         return { reviews }; // not stored: the player checks the corrections / writes new words and sends again
       }
       await Promise.all([
         db.hset(key, String(idx), [...mine, ...clean.map((w) => ({ word: w.word.trim(), clue: w.clue.trim() }))], TTL),
-        db.hset(`${key}:lost`, String(idx), false, TTL),
+        db.hset(key, `lost:${idx}`, false, TTL),
       ]);
       const now = await db.hgetall<Draft[]>(key);
       if (room.ids.some((_, i) => (now[i]?.length ?? 0) < room.settings.perPlayer)) return; // others still writing
-      room.pool = Object.entries(now).reduce<Secret[]>((p, [i, w]) => mergeWritten(p, w, Number(i)), []);
+      room.pool = room.ids.reduce<Secret[]>((p, _, i) => mergeWritten(p, now[i] ?? [], i), []);
       nextRound(room, members);
       break;
     }
@@ -286,7 +287,7 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
       done = order.filter((_, i) => count(i) >= room.settings.perPlayer).length;
       missing = idx >= 0 ? room.settings.perPlayer - count(idx) : 0;
       iDone = idx >= 0 && missing === 0;
-      lostWord = idx >= 0 && (await db.hgetall<boolean>(`room:${code}:${tracked}:lost`))[idx] === true;
+      lostWord = idx >= 0 && h[`lost:${idx}`] === true;
     }
     if (room.phase !== "write" && room.phase !== "vote" && done) counts = tally(Object.values(h).map(Number), order.length).counts;
   }

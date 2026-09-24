@@ -27,6 +27,7 @@
   - **Every phone:** the host creates a room, and everyone else joins with a 4-letter code, a shared link or by **scanning the QR code** in the app. Each phone only ever receives its own card.
 - **1,040 words across 26 topics**, from Food and Animals to Switzerland, Space and Fantasy, all in EN/FR/DE with Swiss German wording (Velo, Glace, Gipfeli).
 - **Your own words:** each player secretly writes words and hints, then the game draws from them. Whoever wrote a word is never the imposter for it.
+- **AI help (on by default, optional):** words players write themselves are checked on submit. Typos are autocorrected, words that are too hard are rejected, and if someone writes a word another player already wrote (exactly or with the same meaning), both are cancelled and both players write a new one. A crew member who doesn't know their word can tap **Explain with AI**. Built with the [Vercel AI SDK](https://ai-sdk.dev) and OpenAI.
 - **Joker mode:** an imposter who survives a vote earns a joker. Next time they're the imposter, they get a hint for the word (`S _ _ _ _ _`, or the writer's hint).
 - **Multiple imposters**, an optional topic clue for the imposter, and topics you can pick or pick all.
 - **Stats after every round:** leaderboard, crew vs. imposter wins, awards (MVP, best liar, detective, most suspected) and charts.
@@ -41,6 +42,7 @@
 |---|---|
 | App | [Next.js 16](https://nextjs.org) (App Router) · React 19 · TypeScript · Tailwind CSS 4 |
 | Online rooms | Route handlers + [Upstash Redis](https://upstash.com). Roles are computed on the server, and phones check for updates every 1.5 s |
+| AI | [AI SDK](https://ai-sdk.dev) + OpenAI (`OPENAI_API_KEY`, model `OPENAI_MODEL`, default `gpt-6-luna`), called only from the server, rate-limited per client |
 | Icons / QR | [lucide-react](https://lucide.dev) · `qrcode` · `jsqr` (only loaded when you scan) |
 | Tests | `node:test` unit tests · [Playwright](https://playwright.dev) end-to-end tests on a phone viewport, including a fake camera for the QR scanner |
 | Hosting | [Vercel](https://vercel.com) |
@@ -79,4 +81,4 @@ BASE_URL=http://localhost:3100 npm run e2e
 
 ### Deploying
 
-Vercel with the Upstash for Redis integration, which sets `KV_REST_API_URL` / `KV_REST_API_TOKEN`. Without Redis, the one-phone game works and online rooms answer "not available yet".
+Vercel with the Upstash for Redis integration, which sets `KV_REST_API_URL` / `KV_REST_API_TOKEN`, plus `OPENAI_API_KEY` for AI help. Without Redis, the one-phone game works, online rooms answer "not available yet", and AI stays off: its rate limit needs shared storage. Without an OpenAI key, word checks fall back to exact duplicates only.
