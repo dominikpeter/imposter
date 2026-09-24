@@ -1,7 +1,7 @@
 "use client";
 
 import { CirclePlus, Eye, Sparkles, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
-import { TopicIcon } from "@/components/TopicIcon";
+import { TopicGrid } from "@/components/TopicGrid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
@@ -18,7 +18,7 @@ import { tally } from "@/lib/vote";
 import { stats, type RoundLog } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
 import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
-import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper, useAi } from "@/lib/ui";
+import { btn, card, field, ghost, heading, press, segmented, stepper, useAi } from "@/lib/ui";
 
 type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "guess" | "result";
 type Mode = "packs" | "custom";
@@ -105,7 +105,6 @@ export default function Home() {
   const imposters = Math.min(imposterCount, maxImposters);
   const names = players.map((p, i) => p.trim() || `${t("playerName")} ${i + 1}`);
   const canStart = players.length >= 3 && (mode === "custom" || cats.length > 0);
-  const allCats = cats.length === CATEGORIES.length;
 
   // authors are player indices, so adding/removing players invalidates written words
   const editPlayers = (next: string[]) => {
@@ -138,7 +137,7 @@ export default function Home() {
   };
 
   const errText = (e: unknown) =>
-    t(({ started: "errStarted", not_found: "errNotFound", full: "errFull", no_storage: "errNoStorage" } as const)[(e as Error).message as "started"] ?? "errOffline");
+    t(({ started: "errStarted", not_found: "errNotFound", full: "errFull", no_storage: "errNoStorage", rate_limited: "errTooMany" } as const)[(e as Error).message as "started"] ?? "errOffline");
 
   const goOnline = async (path: string, body: object) => {
     setBusy(true);
@@ -397,7 +396,7 @@ export default function Home() {
                 <div key="join" className="enter flex items-center gap-2">
                   <input
                     value={code}
-                    maxLength={4}
+                    maxLength={5}
                     autoCapitalize="characters"
                     autoComplete="off"
                     inputMode="text"
@@ -479,33 +478,14 @@ export default function Home() {
                 setMode,
               )}
               {mode === "packs" ? (
-                <div key="packs" className="enter flex flex-wrap gap-2">
-                  <div className="mb-1 flex w-full items-baseline justify-between">
+                <div key="packs" className="enter flex flex-col gap-2">
+                  <div className="flex w-full items-baseline justify-between">
                     <span>{t("topics")}</span>
                     <span key={cats.length} className="pop inline-block text-sm text-muted tabular-nums">
                       {cats.length} / {CATEGORIES.length}
                     </span>
                   </div>
-                  <button
-                    onClick={() => setCats(allCats ? [] : CATEGORIES.map((c) => c.id))}
-                    aria-pressed={allCats}
-                    className={`${chip} ${allCats ? "border-primary-dark bg-primary-dark text-on-primary" : chipOff}`}
-                  >
-                    {t("allTopics")}
-                  </button>
-                  {CATEGORIES.map((c) => {
-                    const on = cats.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => setCats(on ? cats.filter((x) => x !== c.id) : [...cats, c.id])}
-                        aria-pressed={on}
-                        className={`${chip} ${on ? chipOn : chipOff}`}
-                      >
-                        <TopicIcon name={c.icon} /> {c.name[lang]}
-                      </button>
-                    );
-                  })}
+                  <TopicGrid lang={lang} cats={cats} onChange={setCats} />
                 </div>
               ) : (
                 <div key="custom" className="enter flex flex-col gap-4">
@@ -537,7 +517,7 @@ export default function Home() {
             ) : joining ? (
               <button
                 onClick={() => joinByCode()}
-                disabled={busy || code.length !== 4 || !myName.trim()}
+                disabled={busy || code.length < 4 || !myName.trim()}
                 className={`${btn} shadow-lg shadow-primary-dark/25`}
               >
                 {!myName.trim() ? t("yourName") : <><LogIn className="size-5 shrink-0" aria-hidden />{t("join")}</>}

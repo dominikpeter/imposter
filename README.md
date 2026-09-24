@@ -27,7 +27,7 @@
 
 - **Two ways to play**
   - **One phone:** pass it around. Each player taps to see their card, then hides it for the next.
-  - **Every phone:** the host creates a room, and everyone else joins with a 4-letter code, a shared link or by **scanning the QR code** in the app. Each phone only ever receives its own card.
+  - **Every phone:** the host creates a room, and everyone else joins with a 5-character code, a shared link or by **scanning the QR code** in the app. Each phone only ever receives its own card.
 - **1,040 words across 26 topics**, from Food and Animals to Switzerland, Space and Fantasy, all in EN/FR/DE with Swiss German wording (Velo, Glace, Gipfeli).
 - **Your own words:** each player secretly writes words and hints, then the game draws from them. Whoever wrote a word is never the imposter for it.
 - **AI help (on by default, optional):** words players write themselves are checked on submit. Typos are autocorrected, words that are too hard are rejected, and if someone writes a word another player already wrote (exactly or with the same meaning), both are cancelled and both players write a new one. A crew member who doesn't know their word can tap **Explain with AI**. Built with the [Vercel AI SDK](https://ai-sdk.dev) and OpenAI.

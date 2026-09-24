@@ -1,7 +1,9 @@
-import { act, joinRoom, view } from "@/lib/room";
+import { act, joinRoom, RoomError, view } from "@/lib/room";
+import { allow, clientKey } from "@/lib/rateLimit";
 import { handle } from "../handle";
 
-const clean = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 4);
+// 5 characters; 4-character codes from before the switch keep working until those rooms expire
+const clean = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
 
 // GET (x-pid / x-token headers, kept out of URLs and logs) → this player's view, polled by every phone
 export async function GET(req: Request, { params }: { params: Promise<{ code: string }> }) {
@@ -14,6 +16,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ code: s
   const code = clean((await params).code);
   return handle(async (db) => {
     const { pid, token, ...a } = await req.json();
-    return a.type === "join" ? joinRoom(db, code, a.name) : act(db, code, pid, token, a);
+    if (a.type === "join") {
+      // join attempts per IP: stops scripts from trying codes until they hit someone's open lobby
+      if (!(await allow(`join:${clientKey(req)}`, 30))) throw new RoomError("rate_limited");
+      return joinRoom(db, code, a.name);
+    }
+    return act(db, code, pid, token, a);
   });
 }

@@ -164,7 +164,7 @@ export default function Room() {
   if (!hydrated) return <main className="flex-1" />;
 
   const errMsg =
-    err === "not_found" ? t("errNotFound") : err === "started" ? t("errStarted") : err === "full" ? t("errFull") : err === "no_storage" ? t("errNoStorage") : err ? t("errOffline") : "";
+    err === "not_found" ? t("errNotFound") : err === "started" ? t("errStarted") : err === "full" ? t("errFull") : err === "no_storage" ? t("errNoStorage") : err === "rate_limited" ? t("errTooMany") : err ? t("errOffline") : "";
   const joined = !!v && v.me >= 0;
   const names = v?.players ?? [];
   const hostName = v ? names[v.hostIndex] : "";

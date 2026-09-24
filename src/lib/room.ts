@@ -9,6 +9,7 @@ import { tally } from "./vote.ts";
 
 const TTL = 60 * 60 * 24; // rooms vanish a day after the last write
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I lookalikes
+export const CODE_LENGTH = 5; // 32^5 ≈ 33 million codes; with the join limit, guessing a live room is hopeless
 export const MAX_PLAYERS = 20;
 
 export type Settings = {
@@ -39,8 +40,8 @@ type Room = {
 
 export class RoomError extends Error {
   constructor(
-    public code: "not_found" | "forbidden" | "started" | "full" | "bad_request",
-    public status = code === "not_found" ? 404 : code === "forbidden" ? 403 : code === "bad_request" ? 400 : 409,
+    public code: "not_found" | "forbidden" | "started" | "full" | "bad_request" | "rate_limited",
+    public status = code === "not_found" ? 404 : code === "forbidden" ? 403 : code === "bad_request" ? 400 : code === "rate_limited" ? 429 : 409,
   ) {
     super(code);
   }
@@ -88,7 +89,7 @@ export async function createRoom(db: Store, hostName: unknown, settings: Partial
   const name = cleanName(hostName);
   if (!name) throw new RoomError("bad_request");
   for (let attempt = 0; attempt < 10; attempt++) {
-    const code = Array.from({ length: 4 }, () => CODE_CHARS[pick(CODE_CHARS.length)]).join("");
+    const code = Array.from({ length: CODE_LENGTH }, () => CODE_CHARS[pick(CODE_CHARS.length)]).join("");
     const room: Room = {
       code, hostId: "", settings: cleanSettings(settings), phase: "lobby", ids: [], round: null,
       pool: [], used: [], accused: null, writeNo: 0, voteNo: 0, roundNo: 0,

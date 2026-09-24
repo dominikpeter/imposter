@@ -62,7 +62,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
               <div className="bar-grow rounded-r-full bg-imp [animation-delay:120ms]" style={{ flexGrow: s.imposterWins }} title={`${t("imposters")}: ${s.imposterWins}`} />
             )}
           </div>
-          <div className="mt-2 flex justify-between text-sm">
+          <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-sm">
             <span className="flex items-center gap-1.5">
               <span className="size-2.5 rounded-full bg-crew" /> {t("crew")} · {Math.round((s.crewWins / decided) * 100)}%
             </span>
@@ -93,16 +93,18 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
         <p className="mb-3 text-sm text-muted">{t("pointsHelp")}</p>
         <ol className="flex flex-col gap-2">
           {s.players.map((p, i) => (
-            <li key={p.name} className="grid grid-cols-[1.75rem_minmax(0,5.5rem)_1fr_auto] items-center gap-2" title={`${p.name}: ${p.points} ${t("pts")}`}>
+            <li key={p.name} className="grid grid-cols-[1.75rem_1fr_auto] items-center gap-x-2" title={`${p.name}: ${p.points} ${t("pts")}`}>
               <span className="grid place-items-center">
                 {MEDALS[i] ? <Medal className={`size-5 ${MEDALS[i]}`} aria-label={`#${i + 1}`} /> : <span className="text-sm text-muted">{i + 1}</span>}
               </span>
-              <span className="truncate font-medium">{p.name}</span>
-              <span className="h-3 rounded-full bg-tint">
-                <span
-                  className="bar-grow block h-full rounded-full bg-crew"
-                  style={{ width: `${(p.points / maxPts) * 100}%`, animationDelay: `${700 + i * 70}ms` }}
-                />
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="truncate font-medium">{p.name}</span>
+                <span className="h-2.5 rounded-full bg-tint">
+                  <span
+                    className="bar-grow block h-full rounded-full bg-crew"
+                    style={{ width: `${(p.points / maxPts) * 100}%`, animationDelay: `${700 + i * 70}ms` }}
+                  />
+                </span>
               </span>
               <span className="w-12 text-right text-sm font-semibold tabular-nums">
                 {p.points} <span className="font-normal text-muted">{t(p.points === 1 ? "pt" : "pts")}</span>
@@ -124,13 +126,12 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
             {[...s.players]
               .sort((a, b) => b.imposter - a.imposter)
               .map((p, i) => (
-                <li key={p.name} className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-2" title={`${p.name}: ${p.imposter}`}>
-                  <span className="truncate font-medium">{p.name}</span>
-                  <span className="h-3 rounded-full bg-tint">
-                    <span
-                      className="bar-grow block h-full rounded-full bg-imp"
-                      style={{ width: `${(p.imposter / Math.max(1, ...s.players.map((x) => x.imposter))) * 100}%`, animationDelay: `${750 + i * 70}ms` }}
-                    />
+                <li key={p.name} className="grid grid-cols-[1fr_auto] items-end gap-x-2" title={`${p.name}: ${p.imposter}`}>
+                  <span className="flex min-w-0 flex-col gap-1">
+                    <span className="truncate font-medium">{p.name}</span>
+                    <span className="h-2.5 rounded-full bg-tint">
+                      <span className="bar-grow block h-full rounded-full bg-imp" style={{ width: `${(p.imposter / Math.max(1, ...s.players.map((x) => x.imposter))) * 100}%`, animationDelay: `${750 + i * 70}ms` }} />
+                    </span>
                   </span>
                   <span className="w-8 text-right text-sm font-semibold tabular-nums">{p.imposter}</span>
                 </li>
@@ -147,13 +148,12 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
           </h3>
           <ol className="flex flex-col gap-2">
             {suspects.map((p, i) => (
-              <li key={p.name} className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-2" title={`${p.name}: ${p.votesTaken} ${t("votes")}`}>
-                <span className="truncate font-medium">{p.name}</span>
-                <span className="h-3 rounded-full bg-tint">
-                  <span
-                    className="bar-grow block h-full rounded-full bg-imp"
-                    style={{ width: `${(p.votesTaken / maxVotes) * 100}%`, animationDelay: `${800 + i * 70}ms` }}
-                  />
+              <li key={p.name} className="grid grid-cols-[1fr_auto] items-end gap-x-2" title={`${p.name}: ${p.votesTaken} ${t("votes")}`}>
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="truncate font-medium">{p.name}</span>
+                  <span className="h-2.5 rounded-full bg-tint">
+                    <span className="bar-grow block h-full rounded-full bg-imp" style={{ width: `${(p.votesTaken / maxVotes) * 100}%`, animationDelay: `${800 + i * 70}ms` }} />
+                  </span>
                 </span>
                 <span className="w-8 text-right text-sm font-semibold tabular-nums">{p.votesTaken}</span>
               </li>
@@ -169,31 +169,31 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
           <table className="w-full text-sm tabular-nums">
             <thead className="text-muted">
               <tr>
-                <th className="p-2 text-left font-medium">{t("player")}</th>
-                <th className="p-2 text-right font-medium" title={t("asImposter")}>
+                <th className="px-1.5 py-2 text-left font-medium">{t("player")}</th>
+                <th className="px-1.5 py-2 text-right font-medium" title={t("asImposter")}>
                   <VenetianMask className="ml-auto size-4" aria-label={t("asImposter")} />
                 </th>
-                <th className="p-2 text-right font-medium" title={t("escapes")}>
+                <th className="px-1.5 py-2 text-right font-medium" title={t("escapes")}>
                   <Footprints className="ml-auto size-4" aria-label={t("escapes")} />
                 </th>
-                <th className="p-2 text-right font-medium" title={t("hits")}>
+                <th className="px-1.5 py-2 text-right font-medium" title={t("hits")}>
                   <CircleCheck className="ml-auto size-4" aria-label={t("hits")} />
                 </th>
-                <th className="p-2 text-right font-medium" title={t("votes")}>
+                <th className="px-1.5 py-2 text-right font-medium" title={t("votes")}>
                   <Siren className="ml-auto size-4" aria-label={t("votes")} />
                 </th>
-                <th className="p-2 text-right font-medium">{t("pts")}</th>
+                <th className="px-1.5 py-2 text-right font-medium">{t("pts")}</th>
               </tr>
             </thead>
             <tbody>
               {s.players.map((p) => (
                 <tr key={p.name} className="border-t border-line">
-                  <td className="max-w-28 truncate p-2">{p.name}</td>
-                  <td className="p-2 text-right">{p.imposter}</td>
-                  <td className="p-2 text-right">{p.escaped}</td>
-                  <td className="p-2 text-right">{p.correctVotes}</td>
-                  <td className="p-2 text-right">{p.votesTaken}</td>
-                  <td className="p-2 text-right font-semibold">{p.points}</td>
+                  <td className="max-w-24 truncate px-1.5 py-2">{p.name}</td>
+                  <td className="px-1.5 py-2 text-right">{p.imposter}</td>
+                  <td className="px-1.5 py-2 text-right">{p.escaped}</td>
+                  <td className="px-1.5 py-2 text-right">{p.correctVotes}</td>
+                  <td className="px-1.5 py-2 text-right">{p.votesTaken}</td>
+                  <td className="px-1.5 py-2 text-right font-semibold">{p.points}</td>
                 </tr>
               ))}
             </tbody>

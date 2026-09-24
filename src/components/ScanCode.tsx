@@ -4,9 +4,9 @@ import { ScanLine } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { press } from "@/lib/ui";
 
-/** Pulls a room code out of a scanned QR: our join link (…/r/AB3K) or a bare 4-char code. */
+/** Pulls a room code out of a scanned QR: our join link (…/r/AB3K7) or a bare code (5 chars; 4 for older rooms). */
 export function codeFromQr(text: string): string | null {
-  const m = text.match(/\/r\/([A-Za-z0-9]{4})\b/) ?? text.trim().match(/^([A-Za-z0-9]{4})$/);
+  const m = text.match(/\/r\/([A-Za-z0-9]{4,5})\b/) ?? text.trim().match(/^([A-Za-z0-9]{4,5})$/);
   return m ? m[1].toUpperCase() : null;
 }
 

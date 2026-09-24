@@ -190,7 +190,7 @@ Turn off **Imposter gets a clue**, then turn on **Joker mode**.
 ### Invite the others
 <img src="manual/16-lobby.png" width="240" align="right" alt="Lobby with QR" />
 
-The lobby shows a **4-letter code** and a **QR code**. Friends can:
+The lobby shows a **5-character code** and a **QR code**. Friends can:
 
 - scan the QR code with their phone camera, or
 - tap **Share link** and send it, or
@@ -258,6 +258,6 @@ Your choices are remembered on your phone.
 | Someone refreshed the page or pressed Back. | On one phone the game resumes where you left off. In a room, just open the link again. |
 | We tapped the logo or want to stop. | Use **× Quit round**. It asks first, and a joker spent on the unfinished round is given back. |
 | "Online rooms aren't available yet" | The server has no room storage configured. Play on one phone meanwhile. |
-| The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the 4-letter code. |
+| The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the 5-character code. |
 | The AI didn't correct anything | AI help may be switched off in Settings, or the AI limit (120 checks per minute, 1,000 per day) was reached. Exact duplicates are still caught. |
 | A word appeared that we already had | Pack words only repeat once every word in the chosen topics has been played. |

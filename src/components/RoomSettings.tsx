@@ -1,6 +1,6 @@
 import { Globe, Lightbulb, ListOrdered, PenLine, Sparkles, Users, VenetianMask, WandSparkles } from "lucide-react";
 import type { ReactNode } from "react";
-import { TopicIcon } from "@/components/TopicIcon";
+import { TopicGrid } from "@/components/TopicGrid";
 import { CATEGORIES, LANGS, UI, type Lang } from "@/lib/i18n";
 import type { Settings } from "@/lib/room";
 import { card } from "@/lib/ui";
@@ -38,13 +38,7 @@ export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: 
           <h3 className="mt-3 mb-2 font-semibold">
             {t("topics")} <span className="font-normal text-muted">{topics.length === CATEGORIES.length ? `· ${t("allTopics")}` : `· ${topics.length}`}</span>
           </h3>
-          <ul className="flex flex-wrap gap-1.5">
-            {topics.map((c) => (
-              <li key={c.id} className="flex items-center gap-1.5 rounded-full bg-tint px-3 py-1 text-sm font-medium text-primary-ink">
-                <TopicIcon name={c.icon} className="size-3.5" /> {c.name[lang]}
-              </li>
-            ))}
-          </ul>
+          <TopicGrid lang={lang} cats={s.cats} />
         </>
       )}
     </section>

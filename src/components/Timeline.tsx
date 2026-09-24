@@ -1,6 +1,6 @@
 import { UI, type Lang } from "@/lib/i18n";
 
-const W = 320, H = 170, PAD = { l: 26, r: 64, t: 10, b: 22 };
+const W = 300, H = 190, PAD = { l: 24, r: 70, t: 10, b: 22 };
 
 /** Cumulative points per round, one line per player (max 8, validated categorical colors), direct labels + legend. */
 export function Timeline({ timeline, names, lang }: { timeline: Record<string, number>[]; names: string[]; lang: Lang }) {
@@ -14,7 +14,7 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
   const ticks = [0, Math.round(max / 2), max].filter((v, i, a) => a.indexOf(v) === i);
   // end labels: nudge apart so equal scores don't overlap (≥ 12px)
   const ends = series.map((s, i) => ({ i, y: y(s[s.length - 1]) })).sort((a, b) => a.y - b.y);
-  for (let k = 1; k < ends.length; k++) ends[k].y = Math.max(ends[k].y, ends[k - 1].y + 12);
+  for (let k = 1; k < ends.length; k++) ends[k].y = Math.max(ends[k].y, ends[k - 1].y + 14);
   return (
     <div>
       <h3 className="mb-2 font-semibold">{t("pointsTimeline")}</h3>
@@ -22,7 +22,7 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
         {ticks.map((v) => (
           <g key={v}>
             <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="stroke-line" strokeWidth={1} />
-            <text x={PAD.l - 6} y={y(v) + 4} textAnchor="end" className="fill-muted text-[10px]">
+            <text x={PAD.l - 6} y={y(v) + 4} textAnchor="end" className="fill-muted text-[12px]">
               {v}
             </text>
           </g>
@@ -30,7 +30,7 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
         {Array.from({ length: rounds }, (_, r) => r + 1)
           .filter((r) => rounds <= 10 || r % Math.ceil(rounds / 10) === 0 || r === rounds)
           .map((r) => (
-            <text key={r} x={x(r)} y={H - 6} textAnchor="middle" className="fill-muted text-[10px]">
+            <text key={r} x={x(r)} y={H - 6} textAnchor="middle" className="fill-muted text-[12px]">
               {r}
             </text>
           ))}
@@ -52,8 +52,8 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
           </g>
         ))}
         {ends.map(({ i, y: ly }) => (
-          <text key={shown[i]} x={x(rounds) + 8} y={ly + 4} className="fill-ink text-[11px] font-semibold">
-            {shown[i].length > 9 ? `${shown[i].slice(0, 8)}…` : shown[i]} {series[i][rounds]}
+          <text key={shown[i]} x={x(rounds) + 8} y={ly + 4} className="fill-ink text-[12px] font-semibold">
+            {shown[i].length > 8 ? `${shown[i].slice(0, 7)}…` : shown[i]} {series[i][rounds]}
           </text>
         ))}
       </svg>

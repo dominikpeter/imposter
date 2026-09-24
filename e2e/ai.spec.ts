@@ -75,7 +75,7 @@ test("rooms: two phones write the same word → the first writer is asked for a 
   await host.getByRole("button", { name: "Our own words" }).click();
   await host.getByRole("button", { name: "−" }).last().click();
   await host.getByRole("button", { name: /Create room/ }).click();
-  await host.waitForURL(/\/r\/[A-Z0-9]{4}$/);
+  await host.waitForURL(/\/r\/[A-Z0-9]{5}$/);
   const code = host.url().split("/").pop()!;
   const [nora, tim] = [await phone(browser), await phone(browser)];
   for (const [p, n] of [[nora, "Nora"], [tim, "Tim"]] as const) {

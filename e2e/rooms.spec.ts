@@ -27,7 +27,7 @@ test("every phone: create, join by link, private cards, vote, result on all phon
   await host.getByRole("button", { name: /Every phone/ }).click();
   await host.getByPlaceholder("Your name").fill("Lisa");
   await host.getByRole("button", { name: /Create room/ }).click();
-  await host.waitForURL(/\/r\/[A-Z0-9]{4}$/);
+  await host.waitForURL(/\/r\/[A-Z0-9]{5}$/);
   const code = host.url().split("/").pop()!;
   await expect(host.getByAltText(`QR ${code}`)).toBeVisible();
   await expect(host.getByRole("button", { name: /at least 3 players/ })).toBeDisabled();

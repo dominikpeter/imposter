@@ -171,3 +171,8 @@ test("ready check, guided turns, imposter guess, rounds and new game", async () 
   assert.equal(n.phase, "reveal");
   assert.equal(n.history.length, 0);
 });
+
+test("room codes have 5 characters without lookalikes", async () => {
+  const db = store();
+  for (let i = 0; i < 20; i++) assert.match((await createRoom(db, "Lisa", {})).code, /^[A-HJ-NP-Z2-9]{5}$/);
+});
