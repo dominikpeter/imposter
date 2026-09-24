@@ -1,10 +1,12 @@
+import { MORE_TOPICS } from "./topics.ts";
+
 export type Lang = "en" | "fr" | "de";
 type T = Record<Lang, string>;
 
-export const LANGS: { id: Lang; flag: string; label: string }[] = [
-  { id: "en", flag: "🇬🇧", label: "English" },
-  { id: "fr", flag: "🇫🇷", label: "Français" },
-  { id: "de", flag: "🇩🇪", label: "Deutsch" },
+export const LANGS: { id: Lang; label: string }[] = [
+  { id: "en", label: "English" },
+  { id: "fr", label: "Français" },
+  { id: "de", label: "Deutsch" },
 ];
 
 export const UI = {
@@ -13,17 +15,16 @@ export const UI = {
   addPlayer: { en: "Add player", fr: "Ajouter", de: "Hinzufügen" },
   playerName: { en: "Name", fr: "Nom", de: "Name" },
   imposters: { en: "Imposters", fr: "Imposteurs", de: "Hochstapler" },
-  categories: { en: "Categories", fr: "Catégories", de: "Kategorien" },
   hint: { en: "Imposter gets a clue", fr: "L'imposteur reçoit un indice", de: "Hochstapler bekommt Hinweis" },
   start: { en: "Start game", fr: "Commencer", de: "Spiel starten" },
   minPlayers: { en: "At least 3 players", fr: "Au moins 3 joueurs", de: "Mindestens 3 Spieler" },
+  pickTopic: { en: "Pick a topic", fr: "Choisis un thème", de: "Wähle ein Thema" },
   passTo: { en: "Pass the phone to", fr: "Passe le téléphone à", de: "Gib das Handy an" },
   tapReveal: { en: "Tap to reveal", fr: "Touche pour révéler", de: "Tippen zum Aufdecken" },
   yourWord: { en: "Your word", fr: "Ton mot", de: "Dein Wort" },
   youAre: { en: "You are the", fr: "Tu es", de: "Du bist der" },
   imposter: { en: "IMPOSTER", fr: "L'IMPOSTEUR", de: "HOCHSTAPLER" },
   blend: { en: "Blend in. Don't get caught.", fr: "Fonds-toi dans la masse.", de: "Misch dich unter. Lass dich nicht erwischen." },
-  category: { en: "Category", fr: "Catégorie", de: "Kategorie" },
   hideNext: { en: "Hide & pass on", fr: "Cacher & passer", de: "Verdecken & weitergeben" },
   discuss: { en: "Discuss!", fr: "Discutez !", de: "Diskutiert!" },
   starts: { en: "starts", fr: "commence", de: "beginnt" },
@@ -34,7 +35,27 @@ export const UI = {
   },
   revealImposter: { en: "Reveal imposter", fr: "Révéler l'imposteur", de: "Hochstapler aufdecken" },
   theWord: { en: "The word was", fr: "Le mot était", de: "Das Wort war" },
-  imposterWas: { en: "Imposter", fr: "Imposteur", de: "Hochstapler" },
+  imposterWas: { en: "The imposter was", fr: "L'imposteur était", de: "Der Hochstapler war" },
+  impostersWere: { en: "The imposters were", fr: "Les imposteurs étaient", de: "Die Hochstapler waren" },
+  vote: { en: "Vote", fr: "Voter", de: "Abstimmen" },
+  skipVote: { en: "Reveal without voting", fr: "Révéler sans voter", de: "Ohne Abstimmung aufdecken" },
+  tapVote: { en: "Tap to vote", fr: "Touche pour voter", de: "Tippen zum Abstimmen" },
+  whoIs: { en: "Who is the imposter?", fr: "Qui est l'imposteur ?", de: "Wer ist der Hochstapler?" },
+  tie: { en: "It's a tie!", fr: "Égalité !", de: "Unentschieden!" },
+  tieHelp: {
+    en: "Nobody got the most votes. Discuss again, then vote again.",
+    fr: "Personne n'a la majorité. Discutez encore, puis revotez.",
+    de: "Niemand hat die meisten Stimmen. Diskutiert nochmal und stimmt neu ab.",
+  },
+  discussAgain: { en: "Discuss again", fr: "Rediscuter", de: "Nochmal diskutieren" },
+  caught: { en: "Caught!", fr: "Démasqué !", de: "Erwischt!" },
+  caughtHelp: { en: "was an imposter. The crew wins!", fr: "était un imposteur. L'équipe gagne !", de: "war ein Hochstapler. Die Crew gewinnt!" },
+  wrong: { en: "Wrong one!", fr: "Raté !", de: "Daneben!" },
+  wrongHelp: { en: "was innocent. The imposters win!", fr: "était innocent. Les imposteurs gagnent !", de: "war unschuldig. Die Hochstapler gewinnen!" },
+  votes: { en: "votes", fr: "votes", de: "Stimmen" },
+  voteOne: { en: "vote", fr: "vote", de: "Stimme" },
+  quit: { en: "Quit round", fr: "Quitter la manche", de: "Runde beenden" },
+  quitConfirm: { en: "Quit this round?", fr: "Quitter cette manche ?", de: "Diese Runde beenden?" },
   playAgain: { en: "Play again", fr: "Rejouer", de: "Nochmal" },
   newSetup: { en: "Change setup", fr: "Modifier", de: "Einstellungen" },
   words: { en: "Words", fr: "Mots", de: "Wörter" },
@@ -54,9 +75,15 @@ export const UI = {
   done: { en: "Done", fr: "Terminé", de: "Fertig" },
   left: { en: "left", fr: "restants", de: "übrig" },
   writeNew: { en: "Write new words", fr: "Écrire de nouveaux mots", de: "Neue Wörter schreiben" },
+  topics: { en: "Topics", fr: "Thèmes", de: "Themen" },
+  allTopics: { en: "All topics", fr: "Tous les thèmes", de: "Alle Themen" },
+  appearance: { en: "Appearance", fr: "Apparence", de: "Darstellung" },
+  themeAuto: { en: "Auto", fr: "Auto", de: "Auto" },
+  themeLight: { en: "Light", fr: "Clair", de: "Hell" },
+  themeDark: { en: "Dark", fr: "Sombre", de: "Dunkel" },
 } satisfies Record<string, T>;
 
-export const CATEGORIES: { id: string; emoji: string; name: T; words: T[] }[] = [
+const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
   {
     id: "food", emoji: "🍕",
     name: { en: "Food", fr: "Nourriture", de: "Essen" },
@@ -137,4 +164,54 @@ export const CATEGORIES: { id: string; emoji: string; name: T; words: T[] }[] = 
       { en: "Hairdresser", fr: "Coiffeur", de: "Coiffeur" },
     ],
   },
+  {
+    id: "sports", emoji: "⚽",
+    name: { en: "Sports", fr: "Sports", de: "Sport" },
+    words: [
+      { en: "Football", fr: "Football", de: "Fussball" },
+      { en: "Tennis", fr: "Tennis", de: "Tennis" },
+      { en: "Skiing", fr: "Ski", de: "Skifahren" },
+      { en: "Swimming", fr: "Natation", de: "Schwimmen" },
+      { en: "Cycling", fr: "Cyclisme", de: "Velofahren" },
+      { en: "Ice hockey", fr: "Hockey sur glace", de: "Eishockey" },
+      { en: "Climbing", fr: "Escalade", de: "Klettern" },
+      { en: "Yoga", fr: "Yoga", de: "Yoga" },
+      { en: "Golf", fr: "Golf", de: "Golf" },
+      { en: "Boxing", fr: "Boxe", de: "Boxen" },
+    ],
+  },
+  {
+    id: "movies", emoji: "🎬",
+    name: { en: "Movies & TV", fr: "Films & séries", de: "Filme & Serien" },
+    words: [
+      { en: "Harry Potter", fr: "Harry Potter", de: "Harry Potter" },
+      { en: "Star Wars", fr: "Star Wars", de: "Star Wars" },
+      { en: "The Lion King", fr: "Le Roi Lion", de: "Der König der Löwen" },
+      { en: "Frozen", fr: "La Reine des neiges", de: "Die Eiskönigin" },
+      { en: "Titanic", fr: "Titanic", de: "Titanic" },
+      { en: "Shrek", fr: "Shrek", de: "Shrek" },
+      { en: "Batman", fr: "Batman", de: "Batman" },
+      { en: "Jurassic Park", fr: "Jurassic Park", de: "Jurassic Park" },
+      { en: "The Simpsons", fr: "Les Simpson", de: "Die Simpsons" },
+      { en: "Toy Story", fr: "Toy Story", de: "Toy Story" },
+    ],
+  },
+  {
+    id: "travel", emoji: "✈️",
+    name: { en: "Travel", fr: "Voyages", de: "Reisen" },
+    words: [
+      { en: "Passport", fr: "Passeport", de: "Pass" },
+      { en: "Suitcase", fr: "Valise", de: "Koffer" },
+      { en: "Postcard", fr: "Carte postale", de: "Postkarte" },
+      { en: "Hotel", fr: "Hôtel", de: "Hotel" },
+      { en: "Campsite", fr: "Terrain de camping", de: "Campingplatz" },
+      { en: "Cruise", fr: "Croisière", de: "Kreuzfahrt" },
+      { en: "Road trip", fr: "Road trip", de: "Roadtrip" },
+      { en: "Train", fr: "Train", de: "Zug" },
+      { en: "Sunscreen", fr: "Crème solaire", de: "Sonnencreme" },
+      { en: "Souvenir", fr: "Souvenir", de: "Souvenir" },
+    ],
+  },
 ];
+
+export const CATEGORIES = [...BASE_TOPICS, ...MORE_TOPICS];

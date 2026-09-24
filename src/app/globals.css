@@ -1,16 +1,65 @@
 @import "tailwindcss";
 
-@theme {
-  --color-primary-dark: #1976d2;
-  --color-primary: #2196f3;
-  --color-primary-light: #bbdefb;
-  --color-accent: #7c4dff;
-  --color-ink: #212121;
-  --color-muted: #757575;
-  --color-divider: #bdbdbd;
-  /* tints derived from the palette */
-  --color-canvas: #f2f7fd; /* primary-light over white */
-  --color-accent-deep: #6a3df2; /* accent, slightly deeper, for pattern depth */
+/* ---- palette (light) ---- */
+:root {
+  --c-primary-dark: #1976d2;
+  --c-primary: #2196f3;
+  --c-primary-light: #bbdefb;
+  --c-accent: #7c4dff;
+  --c-accent-deep: #6a3df2; /* accent, slightly deeper, for card depth */
+  --c-ink: #212121;
+  --c-muted: #757575;
+  --c-divider: #bdbdbd;
+  /* derived tints */
+  --c-canvas: #f2f7fd; /* primary-light over white */
+  --c-surface: #ffffff;
+  --c-line: #d6e9fb; /* primary-light at 60% on white */
+  --c-tint: #dceefd; /* primary-light at 50% on white: chips, pills */
+  --c-primary-ink: #1976d2; /* primary as text */
+  color-scheme: light;
+}
+
+/* ---- palette (dark) ---- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-ink: #f2f5f9;
+    --c-muted: #9aa6b5;
+    --c-divider: #3b4757;
+    --c-canvas: #0f1722; /* blue-black */
+    --c-surface: #182232;
+    --c-line: #27384f;
+    --c-tint: #1c3350;
+    --c-primary-ink: #64b5f6; /* lighter primary tint for text on dark */
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --c-ink: #f2f5f9;
+  --c-muted: #9aa6b5;
+  --c-divider: #3b4757;
+  --c-canvas: #0f1722;
+  --c-surface: #182232;
+  --c-line: #27384f;
+  --c-tint: #1c3350;
+  --c-primary-ink: #64b5f6;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  --color-primary-dark: var(--c-primary-dark);
+  --color-primary: var(--c-primary);
+  --color-primary-light: var(--c-primary-light);
+  --color-accent: var(--c-accent);
+  --color-accent-deep: var(--c-accent-deep);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-divider: var(--c-divider);
+  --color-canvas: var(--c-canvas);
+  --color-surface: var(--c-surface);
+  --color-line: var(--c-line);
+  --color-tint: var(--c-tint);
+  --color-primary-ink: var(--c-primary-ink);
   --font-sans: var(--font-bricolage);
 }
 
@@ -19,36 +68,33 @@ html {
 }
 
 body {
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: var(--c-canvas);
+  color: var(--c-ink);
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }
 
-button { touch-action: manipulation; user-select: none; }
+button, input, label { touch-action: manipulation; }
+button { user-select: none; }
 
 :focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--c-primary);
   outline-offset: 2px;
 }
 
-/* face-down card: fine diagonal lines in primary-light */
+/* face-down card: fine diagonal lines */
 .card-back {
-  background-color: #fff;
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--color-primary-light) 0 1px,
-    transparent 1px 9px
-  );
+  background-color: var(--c-surface);
+  background-image: repeating-linear-gradient(-45deg, var(--c-line) 0 1px, transparent 1px 9px);
 }
 
-/* imposter surface: accent with a faint radial dot grid */
+/* imposter surface: accent with a faint dot grid */
 .imposter-back {
-  background-color: var(--color-accent);
+  background-color: var(--c-accent);
   background-image:
     radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.6px),
-    linear-gradient(160deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
+    linear-gradient(160deg, var(--c-accent) 0%, var(--c-accent-deep) 100%);
   background-size: 14px 14px, 100% 100%;
 }
 
@@ -57,7 +103,7 @@ button { touch-action: manipulation; user-select: none; }
   width: 3rem;
   height: 1.75rem;
   border-radius: 999px;
-  background: var(--color-divider);
+  background: var(--c-divider);
   position: relative;
   transition: background 0.2s;
 }
@@ -72,22 +118,59 @@ button { touch-action: manipulation; user-select: none; }
   background: #fff;
   transition: transform 0.2s;
 }
-input:checked + .switch { background: var(--color-primary-dark); }
+input:checked + .switch { background: var(--c-primary-dark); }
 input:checked + .switch::after { transform: translateX(1.25rem); }
 
-@keyframes fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.fade { animation: fade 0.2s ease-out both; }
-
-@keyframes reveal {
-  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+@keyframes enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
-.reveal { animation: reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.enter { animation: enter 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes pop {
+  from { opacity: 0; transform: scale(0.5); }
+  60% { transform: scale(1.15); }
+  to { opacity: 1; transform: none; }
+}
+.pop { animation: pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+/* card turning face-up */
+@keyframes flip {
+  from { opacity: 0; transform: perspective(900px) rotateY(-90deg) scale(0.96); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: perspective(900px) none; }
+}
+.flip { animation: flip 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* one-shot accent glow behind the imposter card (opacity only) */
+.glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 48px 12px var(--c-accent);
+  opacity: 0;
+  animation: glow 1.2s ease-out 0.35s both;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes glow {
+  0% { opacity: 0; }
+  30% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-4px) rotate(-0.5deg); }
+  40% { transform: translateX(4px) rotate(0.5deg); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+.shake { animation: shake 0.45s ease-out 0.5s both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .fade, .reveal { animation: none; }
-  .switch, .switch::after, * { transition-duration: 0.01ms !important; }
+  .enter, .pop, .flip, .shake, .glow::before { animation: none; }
+  .glow::before { display: none; }
+  * { transition-duration: 0.01ms !important; }
 }
