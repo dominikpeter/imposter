@@ -6,11 +6,13 @@ import { db as envStore, memoryStore, persistent } from "./store.ts";
 // in-memory by default; set UPSTASH_REDIS_REST_URL/TOKEN (e.g. scripts/upstash-local.mjs) to run against Redis
 const store = () => (persistent ? envStore : memoryStore());
 
-async function setup(mode: "packs" | "custom") {
+async function setup(mode: "packs" | "custom", joker = false) {
   const db = store();
-  const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1 });
+  const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1, joker, hint: !joker });
   const others = await Promise.all(["Nora", "Tim", "Beni"].map((n) => joinRoom(db, host.code, n)));
-  const all = [host, ...others];
+  // index i = the player's seat in the room (simultaneous joins may be ordered differently than listed)
+  const seats = await Promise.all([host, ...others].map(async (p) => ({ p, me: (await view(db, host.code, p.pid, p.token)).me })));
+  const all = seats.sort((a, b) => a.me - b.me).map((x) => x.p);
   const as = (i: number, a: Parameters<typeof act>[4]) => act(db, host.code, all[i].pid, all[i].token, a);
   const see = (i: number) => view(db, host.code, all[i].pid, all[i].token);
   return { db, host, all, as, see };
@@ -72,4 +74,52 @@ test("wrong token is rejected", async () => {
   const v = await view(db, host.code, host.pid, "nope");
   assert.equal(v.me, -1);
   assert.equal(v.card, null);
+});
+
+test("joker: a surviving imposter earns a joker and gets the word hint next time", async () => {
+  const { as, see } = await setup("packs", true);
+  await as(0, { type: "start" });
+  const cards = await Promise.all([0, 1, 2, 3].map(see));
+  const imp = cards.findIndex((v) => v.card?.imposter);
+  assert.equal(cards[imp].card?.imposter && cards[imp].card.jokerHint, null); // nobody has a joker yet
+  // everyone accuses an innocent player, so the imposter survives
+  const innocent = (imp + 1) % 4;
+  await as(0, { type: "discuss" });
+  await as(0, { type: "startVote" });
+  for (const i of [0, 1, 2, 3]) await as(i, { type: "vote", target: i === innocent ? (innocent + 1) % 4 : innocent });
+  assert.equal((await see(0)).result?.accused, innocent);
+
+  // play (skipping votes, so no new jokers) until the joker holder is imposter again
+  for (let round = 0; round < 60; round++) {
+    await as(0, { type: "start" });
+    const vs = await Promise.all([0, 1, 2, 3].map(see));
+    const now = vs.findIndex((v) => v.card?.imposter);
+    const card = vs[now].card as { jokerHint: unknown };
+    if (now === imp) {
+      assert.match(JSON.stringify(card.jokerHint), /_/); // "S _ _ _" style hint
+      await as(0, { type: "discuss" });
+      await as(0, { type: "skipVote" });
+      await as(0, { type: "start" }); // joker was spent: next imposter round without a hint
+      const after = (await Promise.all([0, 1, 2, 3].map(see))).find((v) => v.card?.imposter)!.card as { jokerHint: unknown };
+      assert.equal(after.jokerHint, null);
+      return;
+    }
+    assert.equal(card.jokerHint, null); // someone else is imposter: no hint for them
+    await as(0, { type: "discuss" });
+    await as(0, { type: "skipVote" });
+  }
+  assert.fail("joker holder never became imposter");
+});
+
+test("joker + own words: the hint is required", async () => {
+  const { as } = await setup("custom", true);
+  await as(0, { type: "start" });
+  await assert.rejects(as(0, { type: "words", words: [{ word: "Pizza", clue: "" }] }), RoomError);
+  await as(0, { type: "words", words: [{ word: "Pizza", clue: "food" }] });
+});
+
+test("joker needs the imposter clue off", async () => {
+  const db = store();
+  const { code, pid, token } = await createRoom(db, "Lisa", { joker: true, hint: true });
+  assert.equal((await view(db, code, pid, token)).settings.joker, false);
 });

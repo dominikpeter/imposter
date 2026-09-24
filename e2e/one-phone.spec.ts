@@ -144,3 +144,40 @@ test("no horizontal scrolling on a small phone", async ({ page }) => {
     }
   }
 });
+
+test("joker mode: a surviving imposter earns a joker and later sees the word hint", async ({ page }) => {
+  await page.goto("/");
+  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+  const three = PLAYERS.slice(0, 3);
+  await expect(page.getByRole("checkbox", { name: /Joker mode/ })).toBeDisabled(); // clue is on by default
+  await page.getByText("Imposter gets a clue").click();
+  await page.getByText("Joker mode").click();
+  await page.getByRole("button", { name: "Start game" }).click();
+
+  const seen = await revealAll(page, 3);
+  const imp = seen.indexOf(null);
+  const innocent = (imp + 1) % 3;
+  // everyone blames an innocent player → the imposter survives
+  await voteAll(page, three.map((_, i) => three[i === innocent ? (innocent + 1) % 3 : innocent]));
+  await expect(page.getByText("earned a joker!")).toBeVisible();
+  await expect(page.getByText(`${three[imp]} earned a joker!`)).toBeVisible();
+
+  // skip votes (no new jokers) until the joker holder is the imposter again
+  for (let round = 0; round < 40; round++) {
+    await page.getByRole("button", { name: "Play again" }).click();
+    for (let i = 0; i < 3; i++) {
+      await page.getByRole("button", { name: "Tap to reveal" }).click();
+      const imposterCard = page.getByText("IMPOSTER", { exact: true });
+      await expect(imposterCard.or(page.getByTestId("word"))).toBeVisible();
+      if (i === imp && (await imposterCard.isVisible())) {
+        await expect(page.getByText("Joker hint")).toBeVisible();
+        await expect(page.getByText(/^[A-ZÄÖÜ](\s[_\s-]*)+$/)).toBeVisible(); // "S _ _ _ _"
+        return;
+      }
+      await expect(page.getByText("Joker hint")).toHaveCount(0);
+      await page.getByRole("button", { name: /Hide & pass on/ }).click();
+    }
+    await page.getByRole("button", { name: "Reveal without voting" }).click();
+  }
+  throw new Error("joker holder never became imposter");
+});

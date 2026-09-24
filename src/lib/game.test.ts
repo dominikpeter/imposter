@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mergeWritten, newRound, packSecret } from "./game.ts";
+import { earnJokers, mergeWritten, newRound, packSecret, spendJokers, wordHint } from "./game.ts";
 import { CATEGORIES } from "./i18n.ts";
 
 test("pack words never repeat until the topic is exhausted", () => {
@@ -25,4 +25,23 @@ test("duplicate written words merge and exclude every author", () => {
     assert.ok(r.imposters.every((p) => p !== 1 && p !== 2));
     assert.equal(r.imposters.length, 2);
   }
+});
+
+test("joker hint: first letter + blanks for packs, the writer's hint for own words", () => {
+  assert.deepEqual(wordHint({ word: { en: "Ice cream", fr: "Glace", de: "Glace" }, clue: "" }), {
+    en: "I _ _   _ _ _ _ _",
+    fr: "G _ _ _ _",
+    de: "G _ _ _ _",
+  });
+  assert.equal(wordHint({ word: "Pizza", clue: "food" }), "food");
+});
+
+test("jokers: survivors earn one, the next imposter round spends it", () => {
+  const ids = ["a", "b", "c", "d"];
+  assert.deepEqual(earnJokers([1], 2, ids, []), ["b"]); // b escaped
+  assert.deepEqual(earnJokers([1], 1, ids, []), []); // b caught
+  assert.deepEqual(earnJokers([1], null, ids, []), []); // vote skipped
+  assert.deepEqual(earnJokers([1, 3], 3, ids, ["b"]), ["b"]); // no double jokers
+  assert.deepEqual(spendJokers([1], ids, ["b", "c"]), { jokered: [1], holders: ["c"] });
+  assert.deepEqual(spendJokers([0], ids, ["b"]), { jokered: [], holders: ["b"] });
 });

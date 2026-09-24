@@ -1,13 +1,14 @@
 "use client";
 
-import { CirclePlus, Eye, LogIn, MessagesSquare, PartyPopper, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { CirclePlus, Eye, Sparkles, LogIn, MessagesSquare, PartyPopper, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
 import { TopicIcon } from "@/components/TopicIcon";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { TopControls } from "@/components/TopControls";
-import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "@/lib/game";
+import { earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "@/lib/game";
+import { JokerEarned, JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
 import type { RoundLog } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
@@ -22,7 +23,7 @@ type Play = "pass" | "phones";
 type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
-  accused: number | null; play: Play; myName: string; history: RoundLog[];
+  accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[];
 }>;
 const KEY = SAVE_KEY;
 const saved: Saved = (() => {
@@ -57,6 +58,8 @@ export default function Home() {
   const [accused, setAccused] = useState<number | null>(saved.accused ?? null);
   const [play, setPlay] = useState<Play>(saved.play ?? "pass");
   const [history, setHistory] = useState<RoundLog[]>(saved.history ?? []);
+  const [joker, setJoker] = useState(saved.joker ?? false);
+  const [jokers, setJokers] = useState<string[]>(saved.jokers ?? []); // names holding a joker
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState<"create" | "join">("create");
@@ -69,10 +72,10 @@ export default function Home() {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -94,7 +97,13 @@ export default function Home() {
   };
 
   const begin = (secret: Secret) => {
-    setRound(newRound(players.length, imposters, secret));
+    const r: Round = newRound(players.length, imposters, secret);
+    if (joker) {
+      const spent = spendJokers(r.imposters, names, jokers);
+      r.jokered = spent.jokered;
+      setJokers(spent.holders);
+    }
+    setRound(r);
     setVotes([]);
     setAccused(null);
     setTurn(0);
@@ -124,7 +133,7 @@ export default function Home() {
     }
   };
   const createRoom = () =>
-    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint } });
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker } });
   const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
   const joining = play === "phones" && online === "join";
 
@@ -171,6 +180,7 @@ export default function Home() {
     const { accused } = tally(v, players.length);
     if (accused === null) return setPhase("tie");
     setAccused(accused);
+    if (joker) setJokers(earnJokers(round!.imposters, accused, names, jokers));
     setHistory([...history, { names, imposters: round!.imposters, accused, votes: v, word: round!.word }]);
     setPhase("result");
   };
@@ -343,7 +353,25 @@ export default function Home() {
               </div>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
                 <span>{t("hint")}</span>
-                <input type="checkbox" checked={hint} onChange={(e) => setHint(e.target.checked)} className="peer sr-only" />
+                <input
+                  type="checkbox"
+                  checked={hint}
+                  onChange={(e) => {
+                    setHint(e.target.checked);
+                    if (e.target.checked) setJoker(false); // jokers only make sense when imposters get no clue
+                  }}
+                  className="peer sr-only"
+                />
+                <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+              </label>
+              <label className={`flex min-h-11 items-center justify-between gap-3 ${hint ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
+                <span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("joker")}
+                  </span>
+                  <span className="block text-sm text-muted">{t(hint ? "jokerNeedsNoHint" : "jokerHelp")}</span>
+                </span>
+                <input type="checkbox" checked={joker} disabled={hint} onChange={(e) => setJoker(e.target.checked)} className="peer sr-only" />
                 <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
               </label>
             </section>
@@ -466,13 +494,14 @@ export default function Home() {
                   <input
                     autoComplete="off"
                     value={d.clue}
-                    placeholder={t("clue")}
+                    required={joker}
+                    placeholder={t(joker ? "clueRequired" : "clue")}
                     onChange={(e) => setDraft(draft.map((x, j) => (j === i ? { ...x, clue: e.target.value } : x)))}
                     className={`${field} border-divider/30 text-base`}
                   />
                 </div>
               ))}
-              <button disabled={draft.some((d) => !d.word.trim())} className={btn}>
+              <button disabled={draft.some((d) => !d.word.trim() || (joker && !d.clue.trim()))} className={btn}>
                 {t("done")}
               </button>
             </form>
@@ -496,6 +525,7 @@ export default function Home() {
                       {t("clueLabel")}: {tx(round.clue)}
                     </p>
                   )}
+                  {round.jokered?.includes(turn) && <JokerHint label={t("jokerHint")} hint={tx(wordHint(round))} />}
                   <p className="mt-4 text-white/80">{t("blend")}</p>
                 </div>
               ) : (
@@ -605,6 +635,13 @@ export default function Home() {
                 {t(round.imposters.includes(accused) ? "caughtHelp" : "wrongHelp")}
               </p>
             </div>
+          )}
+          {joker && accused !== null && (
+            <JokerEarned
+              lang={lang}
+              names={round.imposters.filter((i) => i !== accused).map((i) => names[i])}
+              text={t(round.imposters.filter((i) => i !== accused).length > 1 ? "jokersEarned" : "jokerEarned")}
+            />
           )}
           <div className="flip imposter-back glow relative rounded-3xl px-6 py-10 text-white">
             <p className="text-lg text-white/80">{t(round.imposters.length > 1 ? "impostersWere" : "imposterWas")}</p>

@@ -9,6 +9,7 @@ import { TopControls } from "@/components/TopControls";
 import type { Text } from "@/lib/game";
 import type { View } from "@/lib/room";
 import { Stats } from "@/components/Stats";
+import { JokerEarned, JokerHint } from "@/components/Joker";
 import { api, loadIdentity, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, press } from "@/lib/ui";
 
@@ -164,6 +165,7 @@ export default function Room() {
             {t("clueLabel")}: {tx(v.card.clue)}
           </p>
         )}
+        {v.card.jokerHint && <JokerHint label={t("jokerHint")} hint={tx(v.card.jokerHint)} />}
         <p className="mt-4 text-white/80">{t("blend")}</p>
       </button>
     ) : (
@@ -314,13 +316,14 @@ export default function Room() {
                     autoComplete="off"
                     maxLength={40}
                     value={d.clue}
-                    placeholder={t("clue")}
+                    required={v.settings.joker}
+                    placeholder={t(v.settings.joker ? "clueRequired" : "clue")}
                     onChange={(e) => setDraft(draft.map((x, j) => (j === i ? { ...x, clue: e.target.value } : x)))}
                     className={`${field} border-divider/30 text-base`}
                   />
                 </div>
               ))}
-              <button disabled={busy || draft.some((d) => !d.word.trim())} className={btn}>
+              <button disabled={busy || draft.some((d) => !d.word.trim() || (v.settings.joker && !d.clue.trim()))} className={btn}>
                 {t("done")}
               </button>
               <p className="text-center text-sm text-muted">
@@ -450,6 +453,13 @@ export default function Room() {
                 {t(v.result.imposters.includes(v.result.accused) ? "caughtHelp" : "wrongHelp")}
               </p>
             </div>
+          )}
+          {v.settings.joker && v.result.accused !== null && (
+            <JokerEarned
+              lang={lang}
+              names={v.result.imposters.filter((i) => i !== v.result!.accused).map((i) => names[i])}
+              text={t(v.result.imposters.filter((i) => i !== v.result!.accused).length > 1 ? "jokersEarned" : "jokerEarned")}
+            />
           )}
           <div className="flip imposter-back glow relative rounded-3xl px-6 py-10 text-white">
             <p className="text-lg text-white/80">{t(v.result.imposters.length > 1 ? "impostersWere" : "imposterWas")}</p>

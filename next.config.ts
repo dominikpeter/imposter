@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+// no dev-mode badge: it overlaps the bottom buttons on a phone
+const nextConfig: NextConfig = { devIndicators: false };
 
 export default nextConfig;

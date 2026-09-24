@@ -1,48 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
 
-## Getting Started
+# Imposter
 
-First, run the development server:
+**One of you is lying.** A party game for your phone, in English, French and German.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+[**Play now → imposter-orcin-five.vercel.app**](https://imposter-orcin-five.vercel.app)
+
+<img src="docs/setup.png" width="200" alt="Setup screen" />&nbsp;
+<img src="docs/imposter.png" width="200" alt="Imposter card" />&nbsp;
+<img src="docs/lobby.png" width="200" alt="Online room with QR code" />&nbsp;
+<img src="docs/result.png" width="200" alt="Result screen" />
+
+</div>
+
+## How to play
+
+1. Everyone gets the same secret word, except the **imposter**, who only gets the topic (or nothing).
+2. Take turns saying one word about the secret. Don't make it too easy: the imposter is listening.
+3. Vote for who you think the imposter is. A tie means you discuss again.
+4. Caught? The crew wins. Wrong person? The imposters win.
+
+## Features
+
+- **Two ways to play**
+  - **One phone:** pass it around. Each player taps to see their card, then hides it for the next.
+  - **Every phone:** the host creates a room, and everyone else joins with a 4-letter code, a shared link or by **scanning the QR code** in the app. Each phone only ever receives its own card.
+- **1,040 words across 26 topics**, from Food and Animals to Switzerland, Space and Fantasy, all in EN/FR/DE with Swiss German wording (Velo, Glace, Gipfeli).
+- **Your own words:** each player secretly writes words and hints, then the game draws from them. Whoever wrote a word is never the imposter for it.
+- **Joker mode:** an imposter who survives a vote earns a joker. Next time they're the imposter, they get a hint for the word (`S _ _ _ _ _`, or the writer's hint).
+- **Multiple imposters**, an optional topic clue for the imposter, and topics you can pick or pick all.
+- **Stats after every round:** leaderboard, crew vs. imposter wins, awards (MVP, best liar, detective, most suspected) and charts.
+- **Settings:** light / dark / auto, four color themes (Night, Classic, Forest, Berry) and three languages.
+- **Built for phones:** big tap targets, safe areas, reduced-motion support, and you can add it to your home screen. A reload or accidental Back resumes the game where you left off.
+
+<p align="center"><img src="docs/stats.png" width="320" alt="Game stats" /></p>
+
+## Tech
+
+| | |
+|---|---|
+| App | [Next.js 16](https://nextjs.org) (App Router) · React 19 · TypeScript · Tailwind CSS 4 |
+| Online rooms | Route handlers + [Upstash Redis](https://upstash.com). Roles are computed on the server, and phones check for updates every 1.5 s |
+| Icons / QR | [lucide-react](https://lucide.dev) · `qrcode` · `jsqr` (only loaded when you scan) |
+| Tests | `node:test` unit tests · [Playwright](https://playwright.dev) end-to-end tests on a phone viewport, including a fake camera for the QR scanner |
+| Hosting | [Vercel](https://vercel.com) |
+
+```
+src/
+  app/page.tsx            one-phone game + setup
+  app/r/[code]/page.tsx   online room (one per phone)
+  app/api/rooms/          create / join / act / view
+  components/             settings sheet, scanner, stats, joker, icons
+  lib/game.ts             rounds, word picking, jokers
+  lib/room.ts             room state machine (server)
+  lib/i18n.ts, topics.ts, vocab.ts   texts + word lists
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev          # http://localhost:3000, online rooms use an in-memory store
+npm test             # unit tests
+npm run e2e          # Playwright end-to-end tests (starts the dev server)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Online rooms with real Redis locally (like on Vercel)
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Online rooms locally (like Vercel + Upstash)
+`scripts/upstash-local.mjs` serves Upstash's REST API from a local Redis:
 
 ```bash
 redis-server --port 6380 --daemonize yes
-npm run redis:local            # Upstash-compatible REST API on :8079 (token "local")
-UPSTASH_REDIS_REST_URL=http://localhost:8079 UPSTASH_REDIS_REST_TOKEN=local npm run build
-UPSTASH_REDIS_REST_URL=http://localhost:8079 UPSTASH_REDIS_REST_TOKEN=local npx next start -p 3100
+npm run redis:local
+export UPSTASH_REDIS_REST_URL=http://localhost:8079 UPSTASH_REDIS_REST_TOKEN=local
+npm run build && npx next start -p 3100
 BASE_URL=http://localhost:3100 npm run e2e
 ```
 
-Without those env vars `next dev` uses an in-memory store (one process only).
+### Deploying
+
+Vercel with the Upstash for Redis integration, which sets `KV_REST_API_URL` / `KV_REST_API_TOKEN`. Without Redis, the one-phone game works and online rooms answer "not available yet".

@@ -1,4 +1,4 @@
-import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "./game.ts";
+import { earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import type { RoundLog } from "./stats.ts";
@@ -8,7 +8,7 @@ const TTL = 60 * 60 * 24; // rooms vanish a day after the last write
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I lookalikes
 export const MAX_PLAYERS = 20;
 
-export type Settings = { imposterCount: number; mode: "packs" | "custom"; cats: string[]; perPlayer: number; hint: boolean };
+export type Settings = { imposterCount: number; mode: "packs" | "custom"; cats: string[]; perPlayer: number; hint: boolean; joker: boolean };
 export type RoomPhase = "lobby" | "write" | "reveal" | "discuss" | "vote" | "tie" | "result";
 type Member = { id: string; name: string; token: string; at: number };
 type Room = {
@@ -25,6 +25,7 @@ type Room = {
   voteNo: number;
   roundNo: number;
   history?: RoundLog[]; // finished rounds, for the stats screen (optional: rooms created before stats)
+  jokers?: string[]; // member ids holding a joker
 };
 
 export class RoomError extends Error {
@@ -47,13 +48,18 @@ function cleanSettings(s: Partial<Settings>): Settings {
     cats: cats.length ? cats : CATEGORIES.map((c) => c.id),
     perPlayer: Math.max(1, Math.min(5, Math.round(Number(s.perPlayer) || 2))),
     hint: s.hint !== false,
+    joker: s.joker === true && s.hint === false, // jokers only when imposters get no clue
   };
 }
 
 async function load(db: Store, code: string) {
   const room = await db.get<Room>(k(code).room);
   if (!room) throw new RoomError("not_found");
-  const members = Object.values(await db.hgetall<Member>(k(code).members)).sort((a, b) => a.at - b.at);
+  // host first, then join order; same-millisecond joins broken by id so every read agrees
+  const first = (m: Member) => (m.id === room.hostId ? 0 : 1);
+  const members = Object.values(await db.hgetall<Member>(k(code).members)).sort(
+    (a, b) => first(a) - first(b) || a.at - b.at || a.id.localeCompare(b.id),
+  );
   return { room, members };
 }
 
@@ -121,6 +127,11 @@ function nextRound(room: Room, members: Member[]) {
     room.round = null;
     room.phase = "write";
   }
+  if (room.round && room.settings.joker) {
+    const spent = spendJokers(room.round.imposters, room.ids, room.jokers ?? []);
+    room.round.jokered = spent.jokered;
+    room.jokers = spent.holders;
+  }
 }
 
 export type Action =
@@ -166,7 +177,9 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       need(room.phase === "write" && idx >= 0);
       const words = Array.isArray(a.words) ? a.words.slice(0, room.settings.perPlayer) : [];
       const clean = words.map((w) => ({ word: String(w?.word ?? "").slice(0, 40), clue: String(w?.clue ?? "").slice(0, 40) }));
-      if (clean.length !== room.settings.perPlayer || clean.some((w) => !w.word.trim())) throw new RoomError("bad_request");
+      // in joker mode the writer's hint is the joker's reward, so it's required
+      if (clean.length !== room.settings.perPlayer || clean.some((w) => !w.word.trim() || (room.settings.joker && !w.clue.trim())))
+        throw new RoomError("bad_request");
       const key = `room:${code}:words:${room.writeNo}`;
       await db.hset(key, String(idx), clean, TTL);
       const all = await db.hgetall<{ word: string; clue: string }[]>(key);
@@ -188,6 +201,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       else {
         room.accused = accused;
         room.phase = "result";
+        if (room.settings.joker) room.jokers = earnJokers(room.round!.imposters, accused, room.ids, room.jokers ?? []);
         log(Object.entries(all).sort(([a], [b]) => Number(a) - Number(b)).map(([, t]) => Number(t)));
       }
       break;
@@ -206,7 +220,7 @@ export type View = {
   me: number; // index in players, -1 when not joined
   hostIndex: number;
   isHost: boolean;
-  card: null | { imposter: true; clue: Text | null } | { imposter: false; word: Text; clue: Text };
+  card: null | { imposter: true; clue: Text | null; jokerHint: Text | null } | { imposter: false; word: Text; clue: Text };
   starter: number | null;
   done: number; // players who wrote/voted this phase
   iDone: boolean;
@@ -250,7 +264,11 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
     card: !inRound
       ? null
       : r.imposters.includes(idx)
-        ? { imposter: true, clue: room.settings.hint && r.clue ? r.clue : null }
+        ? {
+            imposter: true,
+            clue: room.settings.hint && r.clue ? r.clue : null,
+            jokerHint: r.jokered?.includes(idx) ? wordHint(r) : null,
+          }
         : { imposter: false, word: r.word, clue: r.clue },
     starter: inRound ? r.starter : null,
     done,
