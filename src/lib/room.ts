@@ -2,6 +2,7 @@ import { earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, word
 import { CATEGORIES } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import { reviewWords } from "./ai.ts";
+import { allowAi } from "./rateLimit.ts";
 import type { Draft, Review } from "./game.ts";
 import type { RoundLog } from "./stats.ts";
 import { tally } from "./vote.ts";
@@ -190,7 +191,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
 
       // autocorrect / too hard / duplicates against everyone's words so far
       const written = room.ids.flatMap((_, p) => (all[p] ?? []).map((w) => ({ p, w })));
-      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm)).map((r) =>
+      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm && (await allowAi(`room:${code}`)))).map((r) =>
         r.problem === "taken" && written[r.taken].p === idx ? { ...r, problem: "twice" } : r,
       );
       const changed = reviews.some((r, i) => r.problem || r.word !== clean[i].word.trim() || r.clue !== clean[i].clue.trim());

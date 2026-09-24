@@ -1,13 +1,21 @@
 import { db, persistent } from "./store.ts";
 
-/** Counts a call for this client in the current hour; false once `perHour` is used up. Guards the OpenAI budget. */
-export async function allow(req: Request, name: string, perHour: number) {
+const PER_MINUTE = 120; // per client (a whole party behind one Wi-Fi shares an IP)
+const PER_DAY = 1000; // all AI calls together: this is what caps the OpenAI bill
+
+export const clientKey = (req: Request) =>
+  req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "local";
+
+/** Counts one AI call for `key` (an IP or a room); false once the minute or the day budget is used up. */
+export async function allowAi(key: string, perMinute = PER_MINUTE, perDay = PER_DAY) {
   // serverless instances don't share memory: without Redis a limit can't hold on Vercel, so no AI there
   if (!persistent && process.env.VERCEL) return false;
-  // ponytail: read-then-write counter, a burst of parallel requests can slip a few past the limit
-  const ip = req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "local";
-  const bucket = `rl:${name}:${ip}:${Math.floor(Date.now() / 3_600_000)}`;
-  const used = (await db.get<number>(bucket)) ?? 0;
-  await db.set(bucket, used + 1, { ex: 3600 });
-  return used < perHour;
+  const now = Date.now();
+  const minute = `rl:${key}:${Math.floor(now / 60_000)}`;
+  const day = `rl:day:${Math.floor(now / 86_400_000)}`;
+  // ponytail: read-then-write counters, a burst of parallel requests can slip a few past the limit
+  const [m = 0, d = 0] = (await Promise.all([db.get<number>(minute), db.get<number>(day)])).map((x) => x ?? 0);
+  if (m >= perMinute || d >= perDay) return false;
+  await Promise.all([db.set(minute, m + 1, { ex: 60 }), db.set(day, d + 1, { ex: 2 * 86_400 })]);
+  return true;
 }
