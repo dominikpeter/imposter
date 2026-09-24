@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { earnJokers, mergeWritten, newRound, packSecret, spendJokers, wordHint } from "./game.ts";
+import { earnJokers, exactReview, mergeWritten, reviewNotes, newRound, packSecret, spendJokers, wordHint } from "./game.ts";
 import { CATEGORIES } from "./i18n.ts";
 
 test("pack words never repeat until the topic is exhausted", () => {
@@ -44,4 +44,37 @@ test("jokers: survivors earn one, the next imposter round spends it", () => {
   assert.deepEqual(earnJokers([1, 3], 3, ids, ["b"]), ["b"]); // no double jokers
   assert.deepEqual(spendJokers([1], ids, ["b", "c"]), { jokered: [1], holders: ["c"] });
   assert.deepEqual(spendJokers([0], ids, ["b"]), { jokered: [], holders: ["b"] });
+});
+
+test("exact review: another player's word and repeats in one draft", () => {
+  const r = exactReview([{ word: " pizza ", clue: "" }, { word: "Moon", clue: "" }, { word: "moon", clue: "x" }], ["Sun", "Pizza"]);
+  assert.deepEqual(r.map((x) => [x.problem, x.taken]), [["taken", 1], [null, -1], ["twice", -1]]);
+  assert.equal(r[0].word, "pizza");
+});
+
+test("review notes: corrections shown, rejected words cleared, clean drafts accepted", () => {
+  const draft = [{ word: "Bananna", clue: "" }, { word: "Pizza", clue: "" }, { word: "Moon", clue: "" }];
+  const r = reviewNotes(draft, [
+    { word: "Banana", clue: "", problem: null, taken: -1 },
+    { word: "Pizza", clue: "", problem: "taken", taken: 0 },
+    { word: "Moon", clue: "", problem: null, taken: -1 },
+  ]);
+  assert.deepEqual(r.notes, ["corrected", "taken", null]);
+  assert.deepEqual(r.fixed.map((f) => f.word), ["Banana", "", "Moon"]);
+  assert.equal(r.ok, false);
+  assert.equal(reviewNotes([{ word: "Moon", clue: "" }], [{ word: "Moon", clue: "", problem: null, taken: -1 }]).ok, true);
+});
+
+test("the draw is fair: every player is imposter and starter about equally often", () => {
+  const n = 5, rounds = 20_000;
+  const imp = Array(n).fill(0), start = Array(n).fill(0);
+  const secret = { word: "x", clue: "", authors: [], key: "x" };
+  for (let r = 0; r < rounds; r++) {
+    const round = newRound(n, 1, secret);
+    imp[round.imposters[0]]++;
+    start[round.starter]++;
+  }
+  for (const c of [...imp, ...start]) assert.ok(Math.abs(c / rounds - 1 / n) < 0.02, `share ${c / rounds}`);
+  // two imposters are always two different players
+  for (let r = 0; r < 1000; r++) assert.equal(new Set(newRound(n, 2, secret).imposters).size, 2);
 });

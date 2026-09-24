@@ -6,7 +6,9 @@ import QRCode from "qrcode";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { TopControls } from "@/components/TopControls";
-import type { Text } from "@/lib/game";
+import { reviewNotes, type Draft, type Note, type Review, type Text } from "@/lib/game";
+import { WordForm } from "@/components/WordForm";
+import { ExplainWord } from "@/components/ExplainWord";
 import type { View } from "@/lib/room";
 import { Stats } from "@/components/Stats";
 import { JokerEarned, JokerHint } from "@/components/Joker";
@@ -39,7 +41,8 @@ export default function Room() {
   const [v, setV] = useState<View | null>(null);
   const [err, setErr] = useState("");
   const [name, setName] = useState(() => (typeof window === "undefined" ? "" : (readSaved().myName ?? "")));
-  const [draft, setDraft] = useState<{ word: string; clue: string }[]>([]);
+  const [draft, setDraft] = useState<Draft[]>([]);
+  const [notes, setNotes] = useState<(Note | null)[]>([]);
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
   const [qr, setQr] = useState("");
@@ -85,18 +88,36 @@ export default function Room() {
   }, [url]);
 
   // new phase or round → hide the card again, fresh word fields
-  const phaseKey = v ? `${v.phase}-${v.roundNo}` : "";
+  const phaseKey = v ? `${v.phase}-${v.roundNo}-${v.missing}` : ""; // missing changes when someone clashes with my word
   const [seenPhase, setSeenPhase] = useState("");
   if (phaseKey !== seenPhase) {
     setSeenPhase(phaseKey);
     setShown(false);
-    if (v?.phase === "write") setDraft(Array.from({ length: v.settings.perPlayer }, () => ({ word: "", clue: "" })));
+    if (v?.phase === "write") setDraft(Array.from({ length: v.missing }, () => ({ word: "", clue: "" })));
+    setNotes([]);
   }
 
   const send = async (body: object) => {
     setBusy(true);
     try {
       await api(`/${code}`, { ...id, ...body });
+      await refresh();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitWords = async () => {
+    setBusy(true);
+    try {
+      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang });
+      if (r.reviews) {
+        const { fixed, notes } = reviewNotes(draft, r.reviews);
+        setDraft(fixed);
+        setNotes(notes);
+      }
       await refresh();
     } catch (e) {
       setErr((e as Error).message);
@@ -289,47 +310,16 @@ export default function Room() {
               {waiting(progressText)}
             </div>
           ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                send({ type: "words", words: draft });
-              }}
-              className="enter flex flex-col gap-4"
-            >
-              <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight">{t("writeTitle")}</h2>
-                <p className="mt-2 text-muted">{t("writeHelp")}</p>
-              </div>
-              {draft.map((d, i) => (
-                <div key={i} className={`${card} flex flex-col gap-2 p-3`}>
-                  <input
-                    required
-                    autoFocus={i === 0}
-                    autoComplete="off"
-                    maxLength={40}
-                    value={d.word}
-                    placeholder={`${t("word")} ${draft.length > 1 ? i + 1 : ""}`}
-                    onChange={(e) => setDraft(draft.map((x, j) => (j === i ? { ...x, word: e.target.value } : x)))}
-                    className={`${field} font-semibold`}
-                  />
-                  <input
-                    autoComplete="off"
-                    maxLength={40}
-                    value={d.clue}
-                    required={v.settings.joker}
-                    placeholder={t(v.settings.joker ? "clueRequired" : "clue")}
-                    onChange={(e) => setDraft(draft.map((x, j) => (j === i ? { ...x, clue: e.target.value } : x)))}
-                    className={`${field} border-divider/30 text-base`}
-                  />
-                </div>
-              ))}
-              <button disabled={busy || draft.some((d) => !d.word.trim() || (v.settings.joker && !d.clue.trim()))} className={btn}>
-                {t("done")}
-              </button>
-              <p className="text-center text-sm text-muted">
-                {v.done}/{names.length}
-              </p>
-            </form>
+            <WordForm
+              draft={draft}
+              setDraft={setDraft}
+              notes={notes}
+              joker={v.settings.joker}
+              busy={busy}
+              lang={lang}
+              banner={v.lostWord ? t("replaceWord") : undefined}
+              onSubmit={submitWords}
+            />
           )}
         </div>
       )}
@@ -338,6 +328,7 @@ export default function Room() {
         <div key="reveal" className="flex flex-1 flex-col justify-center gap-6 text-center">
           <p className="enter text-lg text-muted">{t("keepSecret")}</p>
           {theCard()}
+          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={lang} />}
           {v.isHost ? (
             <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${btn} enter [animation-delay:200ms]`}>
               <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("startDiscussion")}
@@ -362,6 +353,7 @@ export default function Room() {
             <span className="flex items-center gap-2"><Eye className="size-5 shrink-0" aria-hidden /> {t("myCard")}</span>
           </button>
           {shown && theCard()}
+          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={lang} />}
           <div className="enter mt-4 flex w-full flex-col gap-2 [animation-delay:240ms]">
             {v.isHost ? (
               <>

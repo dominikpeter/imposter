@@ -30,13 +30,42 @@ export function packSecret(cats: string[], used: Set<string>): Secret {
   return pool[pick(pool.length)];
 }
 
+export type Draft = { word: string; clue: string };
+// problem: "taken" = another player's word (index into `taken`), "twice" = repeated in the same draft, "too_hard" = AI verdict
+export type Review = Draft & { problem: null | "taken" | "twice" | "too_hard"; taken: number };
+
+export const wordKey = (w: string) => w.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+
+/** The checks that need no AI: exact duplicates of taken words, or the same word twice in one draft. */
+export function exactReview(draft: Draft[], taken: string[]): Review[] {
+  const keys = taken.map(wordKey);
+  return draft.map((d, i) => {
+    const k = wordKey(d.word);
+    const t = keys.indexOf(k);
+    const twice = draft.slice(0, i).some((x) => wordKey(x.word) === k);
+    return { word: d.word.trim(), clue: d.clue.trim(), problem: t >= 0 ? "taken" : twice ? "twice" : null, taken: t };
+  });
+}
+
+export type Note = Review["problem"] | "corrected";
+
+/** Turns reviews into what the form shows: corrected text, a note per field, and whether the draft can be accepted as is. */
+export function reviewNotes(draft: Draft[], reviews: Review[]) {
+  const notes: (Note | null)[] = reviews.map(
+    (r, i) => r.problem ?? (r.word !== draft[i].word.trim() || r.clue !== draft[i].clue.trim() ? "corrected" : null),
+  );
+  // a rejected word is cleared so the player has to write a new one; corrections stay for a quick look
+  const fixed = reviews.map((r) => ({ word: r.problem ? "" : r.word, clue: r.clue }));
+  return { fixed, notes, ok: notes.every((n) => n === null) };
+}
+
 /** Merge players' written words; the same word (case/space-insensitive) becomes one secret with all its authors. */
 export function mergeWritten(pool: Secret[], words: { word: string; clue: string }[], author: number): Secret[] {
   const next = [...pool];
   for (const { word, clue } of words) {
     const w = word.trim();
     if (!w) continue;
-    const key = w.toLocaleLowerCase().replace(/\s+/g, " ");
+    const key = wordKey(w);
     const i = next.findIndex((s) => s.key === key);
     if (i >= 0) next[i] = { ...next[i], authors: [...next[i].authors, author], clue: next[i].clue || clue.trim() };
     else next.push({ word: w, clue: clue.trim(), authors: [author], key });

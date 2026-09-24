@@ -13,7 +13,7 @@ export const PALETTES: { id: Palette; swatch: [string, string, string] }[] = [
 ];
 
 // a preference kept in localStorage and mirrored to <html data-*>; applied before paint by the script in layout.tsx
-function pref<T extends string>(key: "theme" | "palette", fallback: T, allowed: readonly T[]) {
+function pref<T extends string>(key: "theme" | "palette" | "ai", fallback: T, allowed: readonly T[]) {
   const listeners = new Set<() => void>();
   return {
     subscribe: (l: () => void) => {
@@ -42,6 +42,7 @@ function pref<T extends string>(key: "theme" | "palette", fallback: T, allowed: 
 }
 export const themeStore = pref<Theme>("theme", "auto", THEMES);
 export const paletteStore = pref<Palette>("palette", "night", PALETTES.map((p) => p.id));
+export const aiStore = pref<"on" | "off">("ai", "on", ["on", "off"]); // AI word check + explain button
 
 export const press = "transition duration-200 ease-spring active:scale-[0.97]";
 export const btn = `flex min-h-14 w-full items-center justify-center rounded-full bg-primary-dark px-6 text-lg font-semibold text-on-primary hover:bg-primary disabled:opacity-40 disabled:active:scale-100 ${press}`;
@@ -103,4 +104,5 @@ export const stepper = (value: number, set: (n: number) => void, min: number, ma
 );
 
 export const useTheme = () => useSyncExternalStore(themeStore.subscribe, themeStore.get, () => "auto" as Theme);
+export const useAi = () => useSyncExternalStore(aiStore.subscribe, aiStore.get, () => "on" as const) === "on";
 export const usePalette = () => useSyncExternalStore(paletteStore.subscribe, paletteStore.get, () => "night" as Palette);

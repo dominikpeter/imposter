@@ -1,9 +1,9 @@
 "use client";
 
-import { Moon, Settings, Sun, SunMoon, X } from "lucide-react";
+import { Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
 import { useRef, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
-import { paletteStore, PALETTES, press, segmented, themeStore, THEMES, usePalette, useTheme } from "@/lib/ui";
+import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
 const dark = "(prefers-color-scheme: dark)";
 const onSystemChange = (cb: () => void) => {
@@ -13,6 +13,8 @@ const onSystemChange = (cb: () => void) => {
 };
 
 const round = `grid size-11 place-items-center rounded-full border border-line bg-surface text-xl ${press}`;
+// header pair: one soft pill holding both icon buttons
+const pillBtn = `grid size-10 place-items-center rounded-full text-ink/80 hover:bg-tint hover:text-ink ${press}`;
 
 /** Header right side: quick light/dark toggle + settings sheet (language, appearance, colors). */
 export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
@@ -22,15 +24,17 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
   const systemDark = useSyncExternalStore(onSystemChange, () => matchMedia(dark).matches, () => false);
   const isDark = theme === "dark" || (theme === "auto" && systemDark);
   const sheet = useRef<HTMLDialogElement>(null);
+  const ai = useAi();
 
   return (
-    <div className="flex items-center gap-2">
-      <button onClick={() => themeStore.set(isDark ? "light" : "dark")} aria-label={t("toggleTheme")} className={round}>
+    <div className="flex items-center gap-0.5 rounded-full border border-line/70 bg-surface/60 p-0.5 shadow-sm backdrop-blur">
+      <button onClick={() => themeStore.set(isDark ? "light" : "dark")} aria-label={t("toggleTheme")} className={pillBtn}>
         <span key={String(isDark)} className="pop">
           {isDark ? <Moon className="size-5" aria-hidden /> : <Sun className="size-5" aria-hidden />}
         </span>
       </button>
-      <button onClick={() => sheet.current?.showModal()} aria-label={t("settings")} className={round}>
+      <span className="h-5 w-px bg-line" aria-hidden />
+      <button onClick={() => sheet.current?.showModal()} aria-label={t("settings")} className={pillBtn}>
         <Settings className="size-5" aria-hidden />
       </button>
 
@@ -76,6 +80,17 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
               "sm",
             )}
           </section>
+
+          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
+            <span>
+              <span className="flex items-center gap-1.5 font-semibold">
+                <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("aiHelp")}
+              </span>
+              <span className="block text-sm text-muted">{t("aiHelpDesc")}</span>
+            </span>
+            <input type="checkbox" checked={ai} onChange={(e) => aiStore.set(e.target.checked ? "on" : "off")} className="peer sr-only" />
+            <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+          </label>
 
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">{t("colors")}</h3>

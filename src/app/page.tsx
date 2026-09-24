@@ -7,13 +7,15 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { TopControls } from "@/components/TopControls";
-import { earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "@/lib/game";
+import { earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
+import { WordForm } from "@/components/WordForm";
+import { ExplainWord } from "@/components/ExplainWord";
 import { JokerEarned, JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
 import type { RoundLog } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
 import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
-import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper } from "@/lib/ui";
+import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper, useAi } from "@/lib/ui";
 
 type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "result";
 type Mode = "packs" | "custom";
@@ -23,7 +25,7 @@ type Play = "pass" | "phones";
 type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
-  accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[];
+  accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[]; queue: number[]; lost: number[];
 }>;
 const KEY = SAVE_KEY;
 const saved: Saved = (() => {
@@ -60,6 +62,11 @@ export default function Home() {
   const [history, setHistory] = useState<RoundLog[]>(saved.history ?? []);
   const [joker, setJoker] = useState(saved.joker ?? false);
   const [jokers, setJokers] = useState<string[]>(saved.jokers ?? []); // names holding a joker
+  const [queue, setQueue] = useState<number[]>(saved.queue ?? []); // players still to write (incl. replacements)
+  const [lost, setLost] = useState<number[]>(saved.lost ?? []); // players whose word was cancelled by a clash
+  const [notes, setNotes] = useState<(Note | null)[]>([]);
+  const [checking, setChecking] = useState(false);
+  const ai = useAi();
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState<"create" | "join">("create");
@@ -72,10 +79,10 @@ export default function Home() {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -133,7 +140,7 @@ export default function Home() {
     }
   };
   const createRoom = () =>
-    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker } });
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai } });
   const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
   const joining = play === "phones" && online === "join";
 
@@ -145,6 +152,9 @@ export default function Home() {
     }
     if (pool.length) return beginFromPool(pool);
     setWriting([]);
+    setQueue(players.map((_, i) => i));
+    setLost([]);
+    setNotes([]);
     setDraft(blank(perPlayer));
     setTurn(0);
     setShown(false);
@@ -152,15 +162,41 @@ export default function Home() {
   };
 
   // words stay in `writing` until everyone is done, so quitting halfway never leaves a partial pool
-  const submitWords = () => {
-    const next = mergeWritten(writing, draft, turn);
-    setDraft(blank(perPlayer));
+  const written = (w: Secret[], p: number) => w.filter((s) => s.authors.includes(p)).length;
+  const submitWords = async () => {
+    setChecking(true);
+    const taken = writing.map((s) => s.word as string);
+    const reviews: Review[] =
+      (await fetch("/api/words/check", { method: "POST", body: JSON.stringify({ words: draft, taken, lang, ai }) })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)) ?? exactReview(draft, taken); // offline → exact checks only
+    setChecking(false);
+    // same as one of my own earlier words is "twice", not a clash with someone else
+    const mine = reviews.map((r) => (r.problem === "taken" && writing[r.taken].authors.includes(turn) ? { ...r, problem: "twice" as const } : r));
+    const { fixed, notes, ok } = reviewNotes(draft, mine);
+    if (!ok) {
+      // clash with another player's word: this player now knows it, so theirs is cancelled too and they write a new one
+      const clashes = mine.filter((r) => r.problem === "taken").map((r) => writing[r.taken]);
+      setWriting(writing.filter((s) => !clashes.includes(s)));
+      const owners = clashes.flatMap((s) => s.authors);
+      setQueue([...queue, ...owners.filter((a, i) => !queue.includes(a) && owners.indexOf(a) === i)]);
+      setLost([...lost, ...owners]);
+      setDraft(fixed);
+      return setNotes(notes);
+    }
+    const next = mergeWritten(writing, fixed, turn);
+    const rest = queue.filter((p) => p !== turn);
+    setLost(lost.filter((p) => p !== turn));
+    setNotes([]);
     setShown(false);
-    if (turn + 1 < players.length) {
+    if (rest.length) {
       setWriting(next);
-      setTurn(turn + 1);
+      setQueue(rest);
+      setTurn(rest[0]);
+      setDraft(blank(perPlayer - written(next, rest[0])));
     } else {
       setWriting([]);
+      setQueue([]);
       beginFromPool(next);
     }
   };
@@ -469,42 +505,16 @@ export default function Home() {
           {!shown ? (
             passScreen(t("tapWrite"))
           ) : (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitWords();
-              }}
-              className="enter flex w-full flex-col gap-5 text-left"
-            >
-              <div className="text-center">
-                <h2 className="text-3xl font-bold tracking-tight">{t("writeTitle")}</h2>
-                <p className="mt-2 text-muted">{t("writeHelp")}</p>
-              </div>
-              {draft.map((d, i) => (
-                <div key={i} className={`${card} flex flex-col gap-2 p-3`}>
-                  <input
-                    required
-                    autoFocus={i === 0}
-                    autoComplete="off"
-                    value={d.word}
-                    placeholder={`${t("word")} ${perPlayer > 1 ? i + 1 : ""}`}
-                    onChange={(e) => setDraft(draft.map((x, j) => (j === i ? { ...x, word: e.target.value } : x)))}
-                    className={`${field} font-semibold`}
-                  />
-                  <input
-                    autoComplete="off"
-                    value={d.clue}
-                    required={joker}
-                    placeholder={t(joker ? "clueRequired" : "clue")}
-                    onChange={(e) => setDraft(draft.map((x, j) => (j === i ? { ...x, clue: e.target.value } : x)))}
-                    className={`${field} border-divider/30 text-base`}
-                  />
-                </div>
-              ))}
-              <button disabled={draft.some((d) => !d.word.trim() || (joker && !d.clue.trim()))} className={btn}>
-                {t("done")}
-              </button>
-            </form>
+            <WordForm
+              draft={draft}
+              setDraft={setDraft}
+              notes={notes}
+              joker={joker}
+              busy={checking}
+              lang={lang}
+              banner={lost.includes(turn) ? t("replaceWord") : undefined}
+              onSubmit={submitWords}
+            />
           )}
         </div>
       )}
@@ -534,6 +544,7 @@ export default function Home() {
                   <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tx(round.word)}</p>
                 </div>
               )}
+              {!round.imposters.includes(turn) && <ExplainWord word={tx(round.word)} lang={lang} />}
               <button onClick={next} className={`${btn} enter [animation-delay:250ms]`}>
                 {t("hideNext")}
               </button>
