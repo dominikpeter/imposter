@@ -1,4 +1,5 @@
 import { MORE_TOPICS } from "./topics.ts";
+import { EXTRA_WORDS, NEW_TOPICS } from "./vocab.ts";
 
 export type Lang = "en" | "fr" | "de";
 type T = Record<Lang, string>;
@@ -286,4 +287,8 @@ const BASE_TOPICS: { id: string; icon: string; name: T; words: T[] }[] = [
   },
 ];
 
-export const CATEGORIES = [...BASE_TOPICS, ...MORE_TOPICS];
+// extra words are appended, so existing "topic:index" keys (used-word tracking) stay stable
+export const CATEGORIES = [
+  ...[...BASE_TOPICS, ...MORE_TOPICS].map((c) => ({ ...c, words: [...c.words, ...(EXTRA_WORDS[c.id] ?? [])] })),
+  ...NEW_TOPICS,
+];
