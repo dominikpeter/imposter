@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
+import { ScanCode } from "@/components/ScanCode";
 import { TopControls } from "@/components/TopControls";
 import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "@/lib/game";
 import { tally } from "@/lib/vote";
@@ -53,6 +54,7 @@ export default function Home() {
   const [play, setPlay] = useState<Play>(saved.play ?? "pass");
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
+  const [online, setOnline] = useState<"create" | "join">("create");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -104,7 +106,7 @@ export default function Home() {
   const errText = (e: unknown) =>
     t(({ started: "errStarted", not_found: "errNotFound", full: "errFull", no_storage: "errNoStorage" } as const)[(e as Error).message as "started"] ?? "errOffline");
 
-  const online = async (path: string, body: object) => {
+  const goOnline = async (path: string, body: object) => {
     setBusy(true);
     setError("");
     try {
@@ -117,8 +119,9 @@ export default function Home() {
     }
   };
   const createRoom = () =>
-    online("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint } });
-  const joinByCode = () => online(`/${code}`, { type: "join", name: myName });
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint } });
+  const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
+  const joining = play === "phones" && online === "join";
 
   const start = () => {
     if (mode === "packs") {
@@ -271,8 +274,7 @@ export default function Home() {
               </button>
             </section>
           ) : (
-            <section key="phones" className={`${card} enter flex flex-col gap-3`}>
-              <p className="text-muted">{t("phonesHelp")}</p>
+            <section key="phones" className={`${card} enter flex flex-col gap-4`}>
               <input
                 value={myName}
                 maxLength={24}
@@ -281,106 +283,138 @@ export default function Home() {
                 onChange={(e) => setMyName(e.target.value)}
                 className={`${field} font-semibold`}
               />
-              <div className="mt-1 flex items-center gap-2">
-                <input
-                  value={code}
-                  maxLength={4}
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  placeholder={t("haveCode")}
-                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                  className={`${field} min-w-0 flex-1 tracking-widest uppercase placeholder:tracking-normal placeholder:normal-case`}
-                />
-                <button
-                  onClick={joinByCode}
-                  disabled={busy || code.length !== 4 || !myName.trim()}
-                  className={`${ghost} shrink-0 border border-line disabled:opacity-40`}
-                >
-                  {t("join")}
-                </button>
+              <div className="grid grid-cols-2 gap-2">
+                {(["create", "join"] as const).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => setOnline(o)}
+                    aria-pressed={online === o}
+                    className={`flex flex-col items-start gap-1 rounded-2xl border-2 p-3 text-left ${press} ${
+                      online === o ? "border-primary-dark bg-tint" : "border-line"
+                    }`}
+                  >
+                    <span className="text-2xl">{o === "create" ? "✨" : "🔑"}</span>
+                    <span className="leading-tight font-semibold hyphens-auto">{t(o === "create" ? "createNew" : "joinExisting")}</span>
+                    <span className="text-sm leading-snug text-muted">{t(o === "create" ? "createHelp" : "joinHelp")}</span>
+                  </button>
+                ))}
               </div>
+              {online === "join" && (
+                <div key="join" className="enter flex items-center gap-2">
+                  <input
+                    value={code}
+                    maxLength={4}
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    inputMode="text"
+                    aria-label={t("roomCode")}
+                    placeholder={t("roomCode")}
+                    onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                    className={`${field} min-w-0 flex-1 text-center font-mono text-2xl font-bold tracking-[0.4em] uppercase placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:normal-case`}
+                  />
+                  <ScanCode
+                    labels={{ scan: t("scan"), pointCamera: t("pointCamera"), noCamera: t("noCamera"), close: t("close") }}
+                    onCode={(c) => {
+                      setCode(c);
+                      if (myName.trim()) joinByCode(c);
+                    }}
+                  />
+                </div>
+              )}
               {error && <p className="text-sm font-medium text-red-500" role="alert">{error}</p>}
             </section>
           )}
 
-          <section className={`${card} flex flex-col gap-4`}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="min-w-0 hyphens-auto">
-                <h2 className={heading}>{t("imposters")}</h2>
-                <p className="text-sm text-muted">1–{maxImposters}</p>
+          {!joining && (
+            <>
+            <section className={`${card} flex flex-col gap-4`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 hyphens-auto">
+                  <h2 className={heading}>{t("imposters")}</h2>
+                  <p className="text-sm text-muted">1–{maxImposters}</p>
+                </div>
+                {stepper(imposters, setImposterCount, 1, maxImposters)}
               </div>
-              {stepper(imposters, setImposterCount, 1, maxImposters)}
-            </div>
-            <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
-              <span>{t("hint")}</span>
-              <input type="checkbox" checked={hint} onChange={(e) => setHint(e.target.checked)} className="peer sr-only" />
-              <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
-            </label>
-          </section>
+              <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
+                <span>{t("hint")}</span>
+                <input type="checkbox" checked={hint} onChange={(e) => setHint(e.target.checked)} className="peer sr-only" />
+                <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+              </label>
+            </section>
 
-          <section className={`${card} flex flex-col gap-4`}>
-            <h2 className={heading}>{t("words")}</h2>
-            {segmented(
-              [
-                { id: "packs" as Mode, label: t("builtIn") },
-                { id: "custom" as Mode, label: t("ourWords") },
-              ],
-              mode,
-              setMode,
-            )}
-            {mode === "packs" ? (
-              <div key="packs" className="enter flex flex-wrap gap-2">
-                <div className="mb-1 flex w-full items-baseline justify-between">
-                  <span>{t("topics")}</span>
-                  <span key={cats.length} className="pop inline-block text-sm text-muted tabular-nums">
-                    {cats.length} / {CATEGORIES.length}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setCats(allCats ? [] : CATEGORIES.map((c) => c.id))}
-                  aria-pressed={allCats}
-                  className={`${chip} ${allCats ? "border-primary-dark bg-primary-dark text-on-primary" : chipOff}`}
-                >
-                  {t("allTopics")}
-                </button>
-                {CATEGORIES.map((c) => {
-                  const on = cats.includes(c.id);
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setCats(on ? cats.filter((x) => x !== c.id) : [...cats, c.id])}
-                      aria-pressed={on}
-                      className={`${chip} ${on ? chipOn : chipOff}`}
-                    >
-                      {c.emoji} {c.name[lang]}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div key="custom" className="enter flex flex-col gap-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 hyphens-auto">{t("perPlayer")}</span>
-                  {stepper(perPlayer, setPerPlayer, 1, 5)}
-                </div>
-                {pool.length > 0 && (
-                  <div className="flex items-center justify-between gap-3 rounded-2xl bg-canvas px-4 py-2">
-                    <span className="text-muted">
-                      {pool.length} {t("left")}
+            <section className={`${card} flex flex-col gap-4`}>
+              <h2 className={heading}>{t("words")}</h2>
+              {segmented(
+                [
+                  { id: "packs" as Mode, label: t("builtIn") },
+                  { id: "custom" as Mode, label: t("ourWords") },
+                ],
+                mode,
+                setMode,
+              )}
+              {mode === "packs" ? (
+                <div key="packs" className="enter flex flex-wrap gap-2">
+                  <div className="mb-1 flex w-full items-baseline justify-between">
+                    <span>{t("topics")}</span>
+                    <span key={cats.length} className="pop inline-block text-sm text-muted tabular-nums">
+                      {cats.length} / {CATEGORIES.length}
                     </span>
-                    <button onClick={() => setPool([])} className={`${ghost} -mr-3`}>
-                      {t("writeNew")}
-                    </button>
                   </div>
-                )}
-              </div>
-            )}
-          </section>
+                  <button
+                    onClick={() => setCats(allCats ? [] : CATEGORIES.map((c) => c.id))}
+                    aria-pressed={allCats}
+                    className={`${chip} ${allCats ? "border-primary-dark bg-primary-dark text-on-primary" : chipOff}`}
+                  >
+                    {t("allTopics")}
+                  </button>
+                  {CATEGORIES.map((c) => {
+                    const on = cats.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => setCats(on ? cats.filter((x) => x !== c.id) : [...cats, c.id])}
+                        aria-pressed={on}
+                        className={`${chip} ${on ? chipOn : chipOff}`}
+                      >
+                        {c.emoji} {c.name[lang]}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div key="custom" className="enter flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 hyphens-auto">{t("perPlayer")}</span>
+                    {stepper(perPlayer, setPerPlayer, 1, 5)}
+                  </div>
+                  {pool.length > 0 && (
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-canvas px-4 py-2">
+                      <span className="text-muted">
+                        {pool.length} {t("left")}
+                      </span>
+                      <button onClick={() => setPool([])} className={`${ghost} -mr-3`}>
+                        {t("writeNew")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+            </>
+          )}
 
           <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {play === "pass" ? (
               <button onClick={start} disabled={!canStart} className={`${btn} shadow-lg shadow-primary-dark/25`}>
                 {canStart ? t("start") : players.length < 3 ? t("minPlayers") : t("pickTopic")}
+              </button>
+            ) : joining ? (
+              <button
+                onClick={() => joinByCode()}
+                disabled={busy || code.length !== 4 || !myName.trim()}
+                className={`${btn} shadow-lg shadow-primary-dark/25`}
+              >
+                {!myName.trim() ? t("yourName") : `🔑 ${t("join")}`}
               </button>
             ) : (
               <button
