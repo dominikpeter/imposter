@@ -341,10 +341,10 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
   from { transform: scaleX(0); }
   to { transform: none; }
 }
-.grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.bar-grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .enter, .pop, .flip, .shake, .grow, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  .enter, .pop, .flip, .shake, .bar-grow, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }

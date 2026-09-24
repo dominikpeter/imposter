@@ -41,6 +41,6 @@ test("join a room by scanning the host's QR code", async ({ page }) => {
   // no name yet → the scanned code is filled in, ready to join
   await expect(page.getByLabel("Room code")).toHaveValue("TEST", { timeout: 15_000 });
   await page.getByPlaceholder("Your name").fill("Beni");
-  await page.getByRole("button", { name: "🔑 Join", exact: true }).click();
+  await page.getByRole("button", { name: "Join", exact: true }).click();
   await expect(page.getByText("Room not found. Check the code.")).toBeVisible(); // TEST isn't a live room
 });

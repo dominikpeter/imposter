@@ -1,5 +1,6 @@
 "use client";
 
+import { ScanLine } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { press } from "@/lib/ui";
 
@@ -11,7 +12,7 @@ export function codeFromQr(text: string): string | null {
 
 type Labels = { scan: string; pointCamera: string; noCamera: string; close: string };
 
-/** 📷 button → full-screen camera that reads the room QR and hands back the code. */
+/** Camera button → full-screen camera that reads the room QR and hands back the code. */
 export function ScanCode({ onCode, labels }: { onCode: (code: string) => void; labels: Labels }) {
   const sheet = useRef<HTMLDialogElement>(null);
   const video = useRef<HTMLVideoElement>(null);
@@ -81,7 +82,7 @@ export function ScanCode({ onCode, labels }: { onCode: (code: string) => void; l
         aria-label={labels.scan}
         className={`grid size-12 shrink-0 place-items-center rounded-2xl border border-line bg-surface text-2xl ${press}`}
       >
-        📷
+        <ScanLine className="size-6" aria-hidden />
       </button>
       <dialog
         ref={sheet}

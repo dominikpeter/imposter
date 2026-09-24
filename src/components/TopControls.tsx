@@ -1,5 +1,6 @@
 "use client";
 
+import { Moon, Settings, Sun, SunMoon, X } from "lucide-react";
 import { useRef, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { paletteStore, PALETTES, press, segmented, themeStore, THEMES, usePalette, useTheme } from "@/lib/ui";
@@ -26,11 +27,11 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
     <div className="flex items-center gap-2">
       <button onClick={() => themeStore.set(isDark ? "light" : "dark")} aria-label={t("toggleTheme")} className={round}>
         <span key={String(isDark)} className="pop">
-          {isDark ? "🌙" : "☀️"}
+          {isDark ? <Moon className="size-5" aria-hidden /> : <Sun className="size-5" aria-hidden />}
         </span>
       </button>
       <button onClick={() => sheet.current?.showModal()} aria-label={t("settings")} className={round}>
-        ⚙️
+        <Settings className="size-5" aria-hidden />
       </button>
 
       <dialog
@@ -40,9 +41,11 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
       >
         <div className="flex flex-col gap-5 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold tracking-tight">⚙️ {t("settings")}</h2>
+            <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+              <Settings className="size-6" aria-hidden /> {t("settings")}
+            </h2>
             <button onClick={() => sheet.current?.close()} aria-label={t("close")} className={`${round} text-2xl`}>
-              ×
+              <X className="size-5" aria-hidden />
             </button>
           </div>
 
@@ -61,7 +64,12 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
             {segmented(
               THEMES.map((id) => ({
                 id,
-                label: `${id === "auto" ? "✨" : id === "light" ? "☀️" : "🌙"} ${t(id === "auto" ? "themeAuto" : id === "light" ? "themeLight" : "themeDark")}`,
+                label: (
+                  <>
+                    {id === "auto" ? <SunMoon className="size-4" aria-hidden /> : id === "light" ? <Sun className="size-4" aria-hidden /> : <Moon className="size-4" aria-hidden />}
+                    {t(id === "auto" ? "themeAuto" : id === "light" ? "themeLight" : "themeDark")}
+                  </>
+                ),
               })),
               theme,
               themeStore.set,

@@ -1,0 +1,187 @@
+"use client";
+
+import { ChartColumn, ChevronDown, CircleCheck, Footprints, Medal, RotateCcw, Search, Siren, Trophy, VenetianMask, type LucideIcon } from "lucide-react";
+import { UI, type Lang } from "@/lib/i18n";
+import { stats, type PlayerStats, type RoundLog } from "@/lib/stats";
+import { card, ghost } from "@/lib/ui";
+
+const MEDALS = ["text-[#d4a017]", "text-[#9aa4b2]", "text-[#b87333]"]; // gold, silver, bronze
+
+/** End-of-round session stats: tiles, crew-vs-imposter split, awards, two bar charts, table view. */
+export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: Lang; onReset?: () => void }) {
+  if (!history.length) return null;
+  const t = (k: keyof typeof UI) => UI[k][lang];
+  const s = stats(history);
+  const decided = s.crewWins + s.imposterWins;
+  const top = (f: (p: PlayerStats) => number) => {
+    const best = [...s.players].sort((a, b) => f(b) - f(a))[0];
+    return best && f(best) > 0 ? best : null;
+  };
+  const awards = [
+    { Icon: Trophy as LucideIcon, label: t("mvp"), p: top((p) => p.points), value: (p: PlayerStats) => `${p.points} ${t(p.points === 1 ? "pt" : "pts")}` },
+    { Icon: VenetianMask, label: t("bestLiar"), p: top((p) => p.escaped), value: (p: PlayerStats) => `${p.escaped}× ${t("escapes")}` },
+    { Icon: Search, label: t("detective"), p: top((p) => p.correctVotes), value: (p: PlayerStats) => `${p.correctVotes} ${t("hits")}` },
+    { Icon: Siren, label: t("suspected"), p: top((p) => p.votesTaken), value: (p: PlayerStats) => `${p.votesTaken} ${t("votes")}` },
+  ].filter((a) => a.p);
+  const maxPts = Math.max(1, ...s.players.map((p) => p.points));
+  const suspects = [...s.players].filter((p) => p.votesTaken > 0).sort((a, b) => b.votesTaken - a.votesTaken);
+  const maxVotes = Math.max(1, ...suspects.map((p) => p.votesTaken));
+
+  return (
+    <section aria-label={t("stats")} className={`${card} enter mt-4 flex flex-col gap-6 text-left [animation-delay:450ms]`}>
+      <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+        <ChartColumn className="size-6 text-primary-ink" aria-hidden /> {t("stats")}
+      </h2>
+
+      {/* hero tiles */}
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { n: s.rounds, label: t("rounds"), dot: null },
+          { n: s.crewWins, label: t("crewWins"), dot: "bg-crew" },
+          { n: s.imposterWins, label: t("imposterWins"), dot: "bg-imp" },
+        ].map((tile, i) => (
+          <div key={i} className="flex flex-col items-center rounded-2xl bg-tint px-2 py-3 text-center">
+            <span key={tile.n} className="pop text-4xl font-bold tabular-nums" style={{ animationDelay: `${500 + i * 90}ms` }}>
+              {tile.n}
+            </span>
+            <span className="mt-1 flex items-center gap-1.5 text-sm leading-tight text-muted">
+              {tile.dot && <span className={`size-2.5 shrink-0 rounded-full ${tile.dot}`} />}
+              {tile.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* crew vs imposters: one split bar, legend + direct labels */}
+      {decided > 0 && (
+        <div>
+          <div className="flex h-4 gap-[2px] overflow-hidden rounded-full" role="img" aria-label={`${t("crew")} ${s.crewWins} · ${t("imposters")} ${s.imposterWins}`}>
+            {s.crewWins > 0 && <div className="bar-grow rounded-l-full bg-crew" style={{ flexGrow: s.crewWins }} title={`${t("crew")}: ${s.crewWins}`} />}
+            {s.imposterWins > 0 && (
+              <div className="bar-grow rounded-r-full bg-imp [animation-delay:120ms]" style={{ flexGrow: s.imposterWins }} title={`${t("imposters")}: ${s.imposterWins}`} />
+            )}
+          </div>
+          <div className="mt-2 flex justify-between text-sm">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-full bg-crew" /> {t("crew")} · {Math.round((s.crewWins / decided) * 100)}%
+            </span>
+            <span className="flex items-center gap-1.5">
+              {t("imposters")} · {Math.round((s.imposterWins / decided) * 100)}% <span className="size-2.5 rounded-full bg-imp" />
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* awards */}
+      {awards.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {awards.map((a, i) => (
+            <div key={a.label} className="pop flex flex-col rounded-2xl border border-line p-3" style={{ animationDelay: `${600 + i * 100}ms` }}>
+              <a.Icon className="size-7 text-primary-ink" strokeWidth={1.75} aria-hidden />
+              <span className="mt-1 text-sm text-muted">{a.label}</span>
+              <span className="truncate text-lg font-bold">{a.p!.name}</span>
+              <span className="text-sm text-muted">{a.value(a.p!)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* leaderboard: one series, value labels at the bar end */}
+      <div>
+        <h3 className="font-semibold">{t("leaderboard")}</h3>
+        <p className="mb-3 text-sm text-muted">{t("pointsHelp")}</p>
+        <ol className="flex flex-col gap-2">
+          {s.players.map((p, i) => (
+            <li key={p.name} className="grid grid-cols-[1.75rem_minmax(0,5.5rem)_1fr_auto] items-center gap-2" title={`${p.name}: ${p.points} ${t("pts")}`}>
+              <span className="grid place-items-center">
+                {MEDALS[i] ? <Medal className={`size-5 ${MEDALS[i]}`} aria-label={`#${i + 1}`} /> : <span className="text-sm text-muted">{i + 1}</span>}
+              </span>
+              <span className="truncate font-medium">{p.name}</span>
+              <span className="h-3 rounded-full bg-tint">
+                <span
+                  className="bar-grow block h-full rounded-full bg-crew"
+                  style={{ width: `${(p.points / maxPts) * 100}%`, animationDelay: `${700 + i * 70}ms` }}
+                />
+              </span>
+              <span className="w-12 text-right text-sm font-semibold tabular-nums">
+                {p.points} <span className="font-normal text-muted">{t(p.points === 1 ? "pt" : "pts")}</span>
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* most suspected */}
+      {suspects.length > 0 && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-2 font-semibold">
+            <Siren className="size-4 text-imp" aria-hidden /> {t("suspected")}
+          </h3>
+          <ol className="flex flex-col gap-2">
+            {suspects.map((p, i) => (
+              <li key={p.name} className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-2" title={`${p.name}: ${p.votesTaken} ${t("votes")}`}>
+                <span className="truncate font-medium">{p.name}</span>
+                <span className="h-3 rounded-full bg-tint">
+                  <span
+                    className="bar-grow block h-full rounded-full bg-imp"
+                    style={{ width: `${(p.votesTaken / maxVotes) * 100}%`, animationDelay: `${800 + i * 70}ms` }}
+                  />
+                </span>
+                <span className="w-8 text-right text-sm font-semibold tabular-nums">{p.votesTaken}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {/* table view: every number, for screen readers and the curious */}
+      <details className="group rounded-2xl border border-line">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 font-medium">
+          {t("details")} <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="overflow-x-auto px-2 pb-3">
+          <table className="w-full text-sm tabular-nums">
+            <thead className="text-muted">
+              <tr>
+                <th className="p-2 text-left font-medium">{t("player")}</th>
+                <th className="p-2 text-right font-medium" title={t("asImposter")}>
+                  <VenetianMask className="ml-auto size-4" aria-label={t("asImposter")} />
+                </th>
+                <th className="p-2 text-right font-medium" title={t("escapes")}>
+                  <Footprints className="ml-auto size-4" aria-label={t("escapes")} />
+                </th>
+                <th className="p-2 text-right font-medium" title={t("hits")}>
+                  <CircleCheck className="ml-auto size-4" aria-label={t("hits")} />
+                </th>
+                <th className="p-2 text-right font-medium" title={t("votes")}>
+                  <Siren className="ml-auto size-4" aria-label={t("votes")} />
+                </th>
+                <th className="p-2 text-right font-medium">{t("pts")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.players.map((p) => (
+                <tr key={p.name} className="border-t border-line">
+                  <td className="max-w-28 truncate p-2">{p.name}</td>
+                  <td className="p-2 text-right">{p.imposter}</td>
+                  <td className="p-2 text-right">{p.escaped}</td>
+                  <td className="p-2 text-right">{p.correctVotes}</td>
+                  <td className="p-2 text-right">{p.votesTaken}</td>
+                  <td className="p-2 text-right font-semibold">{p.points}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
+
+      {onReset && (
+        <button onClick={onReset} className={`${ghost} self-center text-muted`}>
+          <span className="flex items-center gap-2">
+            <RotateCcw className="size-4" aria-hidden /> {t("resetStats")}
+          </span>
+        </button>
+      )}
+    </section>
+  );
+}

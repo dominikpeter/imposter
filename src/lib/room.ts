@@ -1,6 +1,7 @@
 import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES } from "./i18n.ts";
 import type { Store } from "./store.ts";
+import type { RoundLog } from "./stats.ts";
 import { tally } from "./vote.ts";
 
 const TTL = 60 * 60 * 24; // rooms vanish a day after the last write
@@ -23,6 +24,7 @@ type Room = {
   writeNo: number;
   voteNo: number;
   roundNo: number;
+  history?: RoundLog[]; // finished rounds, for the stats screen (optional: rooms created before stats)
 };
 
 export class RoomError extends Error {
@@ -131,6 +133,10 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
   const me = auth(members, pid, token);
   const host = me.id === room.hostId;
   const idx = room.ids.indexOf(me.id);
+  const log = (votes: number[] | null) => {
+    const names = room.ids.map((id) => members.find((m) => m.id === id)?.name ?? "?");
+    room.history = [...(room.history ?? []), { names, imposters: room.round!.imposters, accused: room.accused, votes, word: room.round!.word }];
+  };
   const need = (ok: boolean) => {
     if (!ok) throw new RoomError("forbidden");
   };
@@ -154,6 +160,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       room.voteNo++; // fresh, empty ballot so no stale counts show on the result
       room.accused = null;
       room.phase = "result";
+      log(null);
       break;
     case "words": {
       need(room.phase === "write" && idx >= 0);
@@ -181,6 +188,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       else {
         room.accused = accused;
         room.phase = "result";
+        log(Object.entries(all).sort(([a], [b]) => Number(a) - Number(b)).map(([, t]) => Number(t)));
       }
       break;
     }
@@ -206,6 +214,7 @@ export type View = {
   result: null | { imposters: number[]; word: Text; accused: number | null };
   poolLeft: number;
   roundNo: number; // changes every round, even when the phase name stays the same
+  history: RoundLog[]; // only finished rounds, so nothing secret
 };
 
 /** What one player may see: their own card only, never someone else's role. */
@@ -250,5 +259,6 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
     result: room.phase === "result" && r ? { imposters: r.imposters, word: r.word, accused: room.accused } : null,
     poolLeft: room.pool.length,
     roundNo: room.roundNo,
+    history: room.history ?? [],
   };
 }

@@ -1,5 +1,5 @@
 // shared look & feel for the one-phone game and online rooms
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
 export type Theme = "auto" | "light" | "dark";
 export const THEMES: Theme[] = ["auto", "light", "dark"];
@@ -57,7 +57,7 @@ export const field =
 
 // segmented control with a sliding indicator (transform only)
 export const segmented = <T extends string>(
-  options: { id: T; label: string; title?: string }[],
+  options: { id: T; label: ReactNode; title?: string }[],
   value: T,
   onChange: (v: T) => void,
   size: "sm" | "md" = "md",
@@ -79,7 +79,7 @@ export const segmented = <T extends string>(
           onClick={() => onChange(o.id)}
           aria-label={o.title}
           aria-pressed={o.id === value}
-          className={`relative z-10 min-h-10 rounded-full px-2 py-1 leading-tight text-balance transition-colors duration-300 ${o.id === value ? "text-on-primary" : "text-muted hover:text-ink"}`}
+          className={`relative z-10 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-2 py-1 leading-tight text-balance transition-colors duration-300 ${o.id === value ? "text-on-primary" : "text-muted hover:text-ink"}`}
         >
           {o.label}
         </button>

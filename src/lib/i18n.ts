@@ -97,11 +97,12 @@ export const UI = {
     de: "+1 fürs Erwischen eines Hochstaplers, +2 fürs Entkommen als Hochstapler",
   },
   pts: { en: "pts", fr: "pts", de: "Pkt." },
+  pt: { en: "pt", fr: "pt", de: "Pkt." },
   suspected: { en: "Most suspected", fr: "Le plus suspecté", de: "Am meisten verdächtigt" },
   mvp: { en: "MVP", fr: "MVP", de: "MVP" },
   bestLiar: { en: "Best liar", fr: "Meilleur menteur", de: "Bester Lügner" },
   detective: { en: "Detective", fr: "Détective", de: "Detektiv" },
-  escapes: { en: "escapes", fr: "évasions", de: "entkommen" },
+  escapes: { en: "escaped", fr: "échappé", de: "entkommen" },
   hits: { en: "right votes", fr: "bons votes", de: "richtige Stimmen" },
   details: { en: "All numbers", fr: "Tous les chiffres", de: "Alle Zahlen" },
   player: { en: "Player", fr: "Joueur", de: "Spieler" },
@@ -154,9 +155,9 @@ export const UI = {
   themeDark: { en: "Dark", fr: "Sombre", de: "Dunkel" },
 } satisfies Record<string, T>;
 
-const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
+const BASE_TOPICS: { id: string; icon: string; name: T; words: T[] }[] = [
   {
-    id: "food", emoji: "🍕",
+    id: "food", icon: "Pizza",
     name: { en: "Food", fr: "Nourriture", de: "Essen" },
     words: [
       { en: "Pizza", fr: "Pizza", de: "Pizza" },
@@ -172,7 +173,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "places", emoji: "🏖️",
+    id: "places", icon: "Umbrella",
     name: { en: "Places", fr: "Lieux", de: "Orte" },
     words: [
       { en: "Beach", fr: "Plage", de: "Strand" },
@@ -188,7 +189,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "animals", emoji: "🦁",
+    id: "animals", icon: "PawPrint",
     name: { en: "Animals", fr: "Animaux", de: "Tiere" },
     words: [
       { en: "Lion", fr: "Lion", de: "Löwe" },
@@ -204,7 +205,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "objects", emoji: "🔦",
+    id: "objects", icon: "Flashlight",
     name: { en: "Objects", fr: "Objets", de: "Gegenstände" },
     words: [
       { en: "Umbrella", fr: "Parapluie", de: "Regenschirm" },
@@ -220,7 +221,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "jobs", emoji: "👩‍🚀",
+    id: "jobs", icon: "Briefcase",
     name: { en: "Jobs", fr: "Métiers", de: "Berufe" },
     words: [
       { en: "Astronaut", fr: "Astronaute", de: "Astronaut" },
@@ -236,7 +237,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "sports", emoji: "⚽",
+    id: "sports", icon: "Trophy",
     name: { en: "Sports", fr: "Sports", de: "Sport" },
     words: [
       { en: "Football", fr: "Football", de: "Fussball" },
@@ -252,7 +253,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "movies", emoji: "🎬",
+    id: "movies", icon: "Clapperboard",
     name: { en: "Movies & TV", fr: "Films & séries", de: "Filme & Serien" },
     words: [
       { en: "Harry Potter", fr: "Harry Potter", de: "Harry Potter" },
@@ -268,7 +269,7 @@ const BASE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
     ],
   },
   {
-    id: "travel", emoji: "✈️",
+    id: "travel", icon: "Plane",
     name: { en: "Travel", fr: "Voyages", de: "Reisen" },
     words: [
       { en: "Passport", fr: "Passeport", de: "Pass" },

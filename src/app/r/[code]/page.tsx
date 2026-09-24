@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, CircleCheck, Crown, Eye, Lock, MessagesSquare, PartyPopper, Rocket, Scale, Share2, VenetianMask, Vote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
@@ -7,6 +8,7 @@ import { UI, type Lang } from "@/lib/i18n";
 import { TopControls } from "@/components/TopControls";
 import type { Text } from "@/lib/game";
 import type { View } from "@/lib/room";
+import { Stats } from "@/components/Stats";
 import { api, loadIdentity, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, press } from "@/lib/ui";
 
@@ -149,7 +151,7 @@ export default function Room() {
         className={`card-back enter grid aspect-[4/5] w-full max-w-64 place-items-center self-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary ${press}`}
       >
         <span className="rounded-2xl bg-surface/95 px-6 py-5">
-          <span className="block text-5xl">👀</span>
+          <Eye className="mx-auto size-12" strokeWidth={1.75} aria-hidden />
           <span className="mt-3 block font-semibold">{t("tapReveal")}</span>
         </span>
       </button>
@@ -199,7 +201,7 @@ export default function Room() {
       {/* join form: new visitor, or identity lost */}
       {v && !joined && v.phase === "lobby" && (
         <div key="join" className="enter flex flex-1 flex-col justify-center gap-4 text-center">
-          <p className="text-muted">👑 {hostName}</p>
+          <p className="flex items-center justify-center gap-1.5 text-muted"><Crown className="size-4" aria-hidden /> {hostName}</p>
           <h1 className="text-4xl font-bold tracking-tight">{t("joinTitle")}</h1>
           <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary-ink">{code}</p>
           <form
@@ -227,7 +229,7 @@ export default function Room() {
 
       {v && !joined && v.phase !== "lobby" && (
         <div className="enter flex flex-1 flex-col items-center justify-center gap-4 text-center">
-          <span className="text-6xl">🔒</span>
+          <Lock className="size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <p className="text-lg">{t("errStarted")}</p>
           <button onClick={() => router.push("/")} className={`${ghost} border border-line`}>
             ← {t("home")}
@@ -245,7 +247,7 @@ export default function Room() {
             )}
             <p className="font-mono text-4xl font-bold tracking-[0.3em] text-primary-ink">{code}</p>
             <button onClick={share} className={`${ghost} border border-line`}>
-              {copied ? `✓ ${t("copied")}` : `🔗 ${t("share")}`}
+              <span className="flex items-center gap-2">{copied ? <Check className="size-5 shrink-0" aria-hidden /> : <Share2 className="size-5 shrink-0" aria-hidden />}{t(copied ? "copied" : "share")}</span>
             </button>
           </section>
           <section className={card}>
@@ -259,7 +261,7 @@ export default function Room() {
               {names.map((n, i) => (
                 <li key={i} className="pop rounded-full bg-tint px-4 py-2 font-medium text-primary-ink">
                   {n}
-                  {i === v.hostIndex && " 👑"}
+                  {i === v.hostIndex && <Crown className="ml-1 inline size-4 -translate-y-px" aria-label={t("host")} />}
                   {i === v.me && <span className="text-muted"> ({t("you")})</span>}
                 </li>
               ))}
@@ -268,7 +270,7 @@ export default function Room() {
           <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {v.isHost ? (
               <button onClick={() => send({ type: "start" })} disabled={busy || names.length < 3} className={`${btn} shadow-lg shadow-primary-dark/25`}>
-                {names.length < 3 ? t("needThree") : `🚀 ${t("start")}`}
+                {names.length < 3 ? t("needThree") : <><Rocket className="size-5 shrink-0" aria-hidden />{t("start")}</>}
               </button>
             ) : (
               waiting(t("waitingHost"))
@@ -281,7 +283,7 @@ export default function Room() {
         <div key="write" className="flex flex-1 flex-col justify-center gap-5">
           {v.iDone ? (
             <div className="enter flex flex-col items-center gap-4 text-center">
-              <span className="pop text-6xl">✅</span>
+              <CircleCheck className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
               {waiting(progressText)}
             </div>
           ) : (
@@ -335,7 +337,7 @@ export default function Room() {
           {theCard()}
           {v.isHost ? (
             <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${btn} enter [animation-delay:200ms]`}>
-              💬 {t("startDiscussion")}
+              <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("startDiscussion")}
             </button>
           ) : (
             waiting(t("hostNext"))
@@ -345,7 +347,7 @@ export default function Room() {
 
       {joined && v.phase === "discuss" && (
         <div key="discuss" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <span className="pop text-6xl">💬</span>
+          <MessagesSquare className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight">{t("discuss")}</h2>
           {v.starter !== null && (
             <p className="enter rounded-full bg-tint px-5 py-2 text-lg text-primary-ink [animation-delay:100ms]">
@@ -354,14 +356,14 @@ export default function Room() {
           )}
           <p className="enter max-w-xs text-muted [animation-delay:160ms]">{t("discussHelp")}</p>
           <button onClick={() => setShown(!shown)} className={`${ghost} border border-line`}>
-            👀 {t("myCard")}
+            <span className="flex items-center gap-2"><Eye className="size-5 shrink-0" aria-hidden /> {t("myCard")}</span>
           </button>
           {shown && theCard()}
           <div className="enter mt-4 flex w-full flex-col gap-2 [animation-delay:240ms]">
             {v.isHost ? (
               <>
                 <button onClick={() => send({ type: "startVote" })} disabled={busy} className={btn}>
-                  🗳️ {t("vote")}
+                  <Vote className="size-5 shrink-0" aria-hidden /> {t("vote")}
                 </button>
                 <button onClick={() => send({ type: "skipVote" })} disabled={busy} className={`${ghost} text-muted`}>
                   {t("skipVote")}
@@ -378,7 +380,7 @@ export default function Room() {
         <div key="vote" className="flex flex-1 flex-col justify-center gap-5 text-center">
           {v.iDone ? (
             <div className="enter flex flex-col items-center gap-4">
-              <span className="pop text-6xl">🗳️</span>
+              <Vote className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
               {waiting(progressText)}
             </div>
           ) : (
@@ -409,7 +411,7 @@ export default function Room() {
 
       {joined && v.phase === "tie" && (
         <div key="tie" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <span className="pop text-6xl">⚖️</span>
+          <Scale className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight">{t("tie")}</h2>
           <p className="enter max-w-xs text-muted">{t("tieHelp")}</p>
           <ul className="enter flex w-full flex-col gap-2">
@@ -428,7 +430,7 @@ export default function Room() {
           </ul>
           {v.isHost ? (
             <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${btn} enter mt-4`}>
-              💬 {t("discussAgain")}
+              <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("discussAgain")}
             </button>
           ) : (
             waiting(t("hostNext"))
@@ -441,7 +443,7 @@ export default function Room() {
           {v.result.accused !== null && (
             <div className="pop mb-2">
               <p className="text-4xl font-bold tracking-tight">
-                {v.result.imposters.includes(v.result.accused) ? `🎉 ${t("caught")}` : `😈 ${t("wrong")}`}
+                {v.result.imposters.includes(v.result.accused) ? <><PartyPopper className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("caught")}</> : <><VenetianMask className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("wrong")}</>}
               </p>
               <p className="mt-1 text-lg text-muted">
                 <span className="font-semibold text-ink">{names[v.result.accused]}</span>{" "}
@@ -468,6 +470,7 @@ export default function Room() {
               waiting(t("hostNext"))
             )}
           </div>
+          <Stats history={v.history} lang={lang} />
         </div>
       )}
 

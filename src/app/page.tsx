@@ -1,5 +1,7 @@
 "use client";
 
+import { CirclePlus, Eye, LogIn, MessagesSquare, PartyPopper, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { TopicIcon } from "@/components/TopicIcon";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
@@ -7,6 +9,8 @@ import { ScanCode } from "@/components/ScanCode";
 import { TopControls } from "@/components/TopControls";
 import { mergeWritten, newRound, packSecret, pick, type Round, type Secret, type Text } from "@/lib/game";
 import { tally } from "@/lib/vote";
+import type { RoundLog } from "@/lib/stats";
+import { Stats } from "@/components/Stats";
 import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper } from "@/lib/ui";
 
@@ -18,7 +22,7 @@ type Play = "pass" | "phones";
 type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
-  accused: number | null; play: Play; myName: string;
+  accused: number | null; play: Play; myName: string; history: RoundLog[];
 }>;
 const KEY = SAVE_KEY;
 const saved: Saved = (() => {
@@ -52,6 +56,7 @@ export default function Home() {
   const [votes, setVotes] = useState<number[]>(saved.votes ?? []);
   const [accused, setAccused] = useState<number | null>(saved.accused ?? null);
   const [play, setPlay] = useState<Play>(saved.play ?? "pass");
+  const [history, setHistory] = useState<RoundLog[]>(saved.history ?? []);
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState<"create" | "join">("create");
@@ -64,10 +69,10 @@ export default function Home() {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -166,6 +171,7 @@ export default function Home() {
     const { accused } = tally(v, players.length);
     if (accused === null) return setPhase("tie");
     setAccused(accused);
+    setHistory([...history, { names, imposters: round!.imposters, accused, votes: v, word: round!.word }]);
     setPhase("result");
   };
 
@@ -188,7 +194,7 @@ export default function Home() {
         className={`card-back enter mt-2 grid aspect-[4/5] w-full max-w-64 place-items-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary [animation-delay:80ms] ${press}`}
       >
         <span className="rounded-2xl bg-surface/95 px-6 py-5">
-          <span className="block text-5xl">{phase === "write" ? "✍️" : phase === "vote" ? "🗳️" : "👀"}</span>
+          {(() => { const Icon = phase === "write" ? PenLine : phase === "vote" ? Vote : Eye; return <Icon className="mx-auto size-12" strokeWidth={1.75} aria-hidden />; })()}
           <span className="mt-3 block font-semibold">{action}</span>
         </span>
       </button>
@@ -235,8 +241,8 @@ export default function Home() {
         <div key="setup" className="enter flex flex-1 flex-col gap-4">
           {segmented(
             [
-              { id: "pass" as Play, label: `📱 ${t("onePhone")}` },
-              { id: "phones" as Play, label: `📱📱 ${t("everyPhone")}` },
+              { id: "pass" as Play, label: <><Smartphone className="size-5 shrink-0" aria-hidden />{t("onePhone")}</> },
+              { id: "phones" as Play, label: <><Users className="size-5 shrink-0" aria-hidden />{t("everyPhone")}</> },
             ],
             play,
             setPlay,
@@ -293,7 +299,7 @@ export default function Home() {
                       online === o ? "border-primary-dark bg-tint" : "border-line"
                     }`}
                   >
-                    <span className="text-2xl">{o === "create" ? "✨" : "🔑"}</span>
+                    {o === "create" ? <CirclePlus className="size-7 text-primary-ink" aria-hidden /> : <LogIn className="size-7 text-primary-ink" aria-hidden />}
                     <span className="leading-tight font-semibold hyphens-auto">{t(o === "create" ? "createNew" : "joinExisting")}</span>
                     <span className="text-sm leading-snug text-muted">{t(o === "create" ? "createHelp" : "joinHelp")}</span>
                   </button>
@@ -376,7 +382,7 @@ export default function Home() {
                         aria-pressed={on}
                         className={`${chip} ${on ? chipOn : chipOff}`}
                       >
-                        {c.emoji} {c.name[lang]}
+                        <TopicIcon name={c.icon} /> {c.name[lang]}
                       </button>
                     );
                   })}
@@ -414,7 +420,7 @@ export default function Home() {
                 disabled={busy || code.length !== 4 || !myName.trim()}
                 className={`${btn} shadow-lg shadow-primary-dark/25`}
               >
-                {!myName.trim() ? t("yourName") : `🔑 ${t("join")}`}
+                {!myName.trim() ? t("yourName") : <><LogIn className="size-5 shrink-0" aria-hidden />{t("join")}</>}
               </button>
             ) : (
               <button
@@ -422,7 +428,7 @@ export default function Home() {
                 disabled={busy || !myName.trim() || (mode === "packs" && !cats.length)}
                 className={`${btn} shadow-lg shadow-primary-dark/25`}
               >
-                {!myName.trim() ? t("yourName") : mode === "packs" && !cats.length ? t("pickTopic") : `✨ ${t("createRoom")}`}
+                {!myName.trim() ? t("yourName") : mode === "packs" && !cats.length ? t("pickTopic") : <><CirclePlus className="size-5 shrink-0" aria-hidden />{t("createRoom")}</>}
               </button>
             )}
           </div>
@@ -508,7 +514,7 @@ export default function Home() {
 
       {phase === "discuss" && round && (
         <div key="discuss" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <span className="pop text-6xl">💬</span>
+          <MessagesSquare className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight [animation-delay:60ms]">{t("discuss")}</h2>
           <p className="enter rounded-full bg-tint px-5 py-2 text-lg text-primary-ink [animation-delay:140ms]">
             <span className="font-semibold">{names[round.starter]}</span> {t("starts")}
@@ -516,11 +522,12 @@ export default function Home() {
           <p className="enter max-w-xs text-muted [animation-delay:200ms]">{t("discussHelp")}</p>
           <div className="enter mt-6 flex w-full flex-col gap-2 [animation-delay:280ms]">
             <button onClick={startVote} className={btn}>
-              🗳️ {t("vote")}
+              <Vote className="size-5 shrink-0" aria-hidden /> {t("vote")}
             </button>
             <button
               onClick={() => {
                 setAccused(null);
+                setHistory([...history, { names, imposters: round.imposters, accused: null, votes: null, word: round.word }]);
                 setPhase("result");
               }}
               className={`${ghost} text-muted`}
@@ -563,7 +570,7 @@ export default function Home() {
 
       {phase === "tie" && round && (
         <div key="tie" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <span className="pop text-6xl">⚖️</span>
+          <Scale className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight">{t("tie")}</h2>
           <p className="enter max-w-xs text-muted [animation-delay:80ms]">{t("tieHelp")}</p>
           <ul className="enter flex w-full flex-col gap-2 [animation-delay:140ms]">
@@ -581,7 +588,7 @@ export default function Home() {
               ))}
           </ul>
           <button onClick={() => setPhase("discuss")} className={`${btn} enter mt-4 [animation-delay:220ms]`}>
-            💬 {t("discussAgain")}
+            <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("discussAgain")}
           </button>
         </div>
       )}
@@ -591,7 +598,7 @@ export default function Home() {
           {accused !== null && (
             <div className="pop mb-2">
               <p className="text-4xl font-bold tracking-tight">
-                {round.imposters.includes(accused) ? `🎉 ${t("caught")}` : `😈 ${t("wrong")}`}
+                {round.imposters.includes(accused) ? <><PartyPopper className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("caught")}</> : <><VenetianMask className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("wrong")}</>}
               </p>
               <p className="mt-1 text-lg text-muted">
                 <span className="font-semibold text-ink">{names[accused]}</span>{" "}
@@ -622,6 +629,7 @@ export default function Home() {
               {t("newSetup")}
             </button>
           </div>
+          <Stats history={history} lang={lang} onReset={() => setHistory([])} />
         </div>
       )}
     </main>

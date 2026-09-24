@@ -1,4 +1,4 @@
-import { CATEGORIES, LANGS, type Lang } from "./i18n.ts";
+import { CATEGORIES, type Lang } from "./i18n.ts";
 
 export type Text = string | Record<Lang, string>;
 // authors = players who wrote this word; they already know it, so they can't be the imposter
@@ -20,7 +20,7 @@ export function shuffle<T>(a: T[]): T[] {
 export function packSecret(cats: string[], used: Set<string>): Secret {
   const all = CATEGORIES.filter((c) => cats.includes(c.id)).flatMap((c) =>
     c.words.map((word, i) => {
-      const clue = Object.fromEntries(LANGS.map((l) => [l.id, `${c.emoji} ${c.name[l.id]}`])) as Record<Lang, string>;
+      const clue = c.name; // the topic is the imposter's clue
       return { word, clue, authors: [], key: `${c.id}:${i}` };
     }),
   );

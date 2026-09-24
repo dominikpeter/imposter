@@ -3,9 +3,9 @@ import type { Lang } from "./i18n.ts";
 type T = Record<Lang, string>;
 const w = (en: string, fr: string, de: string): T => ({ en, fr, de });
 
-export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] = [
+export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[] }[] = [
   {
-    id: "music", emoji: "🎵",
+    id: "music", icon: "Music",
     name: w("Music", "Musique", "Musik"),
     words: [
       w("Piano", "Piano", "Klavier"), w("Drums", "Batterie", "Schlagzeug"), w("Concert", "Concert", "Konzert"),
@@ -15,7 +15,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "swiss", emoji: "🇨🇭",
+    id: "swiss", icon: "Mountain",
     name: w("Switzerland", "Suisse", "Schweiz"),
     words: [
       w("Matterhorn", "Cervin", "Matterhorn"), w("Raclette", "Raclette", "Raclette"), w("Cowbell", "Cloche de vache", "Kuhglocke"),
@@ -25,7 +25,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "home", emoji: "🏠",
+    id: "home", icon: "House",
     name: w("At home", "À la maison", "Zuhause"),
     words: [
       w("Fridge", "Frigo", "Kühlschrank"), w("Sofa", "Canapé", "Sofa"), w("Bathtub", "Baignoire", "Badewanne"),
@@ -35,7 +35,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "nature", emoji: "🌲",
+    id: "nature", icon: "Trees",
     name: w("Nature", "Nature", "Natur"),
     words: [
       w("Volcano", "Volcan", "Vulkan"), w("Rainbow", "Arc-en-ciel", "Regenbogen"), w("Waterfall", "Cascade", "Wasserfall"),
@@ -45,7 +45,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "transport", emoji: "🚲",
+    id: "transport", icon: "Bike",
     name: w("Transport", "Transports", "Verkehr"),
     words: [
       w("Bicycle", "Vélo", "Velo"), w("Helicopter", "Hélicoptère", "Helikopter"), w("Submarine", "Sous-marin", "U-Boot"),
@@ -55,7 +55,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "fantasy", emoji: "🐉",
+    id: "fantasy", icon: "WandSparkles",
     name: w("Fantasy", "Fantastique", "Fantasy"),
     words: [
       w("Dragon", "Dragon", "Drache"), w("Unicorn", "Licorne", "Einhorn"), w("Wizard", "Sorcier", "Magier"),
@@ -65,7 +65,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "clothes", emoji: "👕",
+    id: "clothes", icon: "Shirt",
     name: w("Clothes", "Vêtements", "Kleider"),
     words: [
       w("Sunglasses", "Lunettes de soleil", "Sonnenbrille"), w("Pajamas", "Pyjama", "Pyjama"), w("Raincoat", "Imperméable", "Regenjacke"),
@@ -75,7 +75,7 @@ export const MORE_TOPICS: { id: string; emoji: string; name: T; words: T[] }[] =
     ],
   },
   {
-    id: "hobbies", emoji: "🎨",
+    id: "hobbies", icon: "Palette",
     name: w("Hobbies", "Loisirs", "Hobbys"),
     words: [
       w("Painting", "Peinture", "Malen"), w("Fishing", "Pêche", "Fischen"), w("Camping", "Camping", "Zelten"),

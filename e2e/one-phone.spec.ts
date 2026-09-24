@@ -46,6 +46,14 @@ test("full round: one imposter, same word for the crew, vote catches the imposte
 
   await expect(page.getByText("Caught!")).toBeVisible();
   await expect(page.getByText(seen.find(Boolean)!, { exact: true })).toBeVisible();
+
+  // end-of-round stats: 1 round, crew won, every crew member scored 1 point
+  const stats = page.getByRole("region", { name: "Game stats" });
+  await expect(stats).toBeVisible();
+  await expect(stats.getByText("Crew · 100%")).toBeVisible();
+  await expect(stats.getByText("Most suspected").first()).toBeVisible();
+  await stats.getByText("All numbers").click();
+  await expect(stats.getByRole("row")).toHaveCount(PLAYERS.length + 1);
 });
 
 test("a tie sends everyone back to discuss", async ({ page }) => {
