@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "next-best-practices": {
+      "source": "vercel-labs/openreview",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/next-best-practices/SKILL.md",
+      "computedHash": "db85045827ebeb83ac8dbc992b69188755eeb74dcf01cbf5e694d58aa494a106"
+    },
+    "vercel-cli": {
+      "source": "vercel/vercel",
+      "sourceType": "github",
+      "skillPath": "skills/vercel-cli/SKILL.md",
+      "computedHash": "bc312e5c407c79c264503ef588613ee697508636b8e6ba76ee2585979b49ba2b"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/react-best-practices/SKILL.md",
+      "computedHash": "3219a1944e404ffc14d1d9d6aef6dd2e3855b81387ee0a044ccbfe14d34c2357"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    }
+  }
+}
