@@ -363,3 +363,6 @@ export const CATEGORIES = [
   ...[...BASE_TOPICS, ...MORE_TOPICS].map((c) => ({ ...c, words: [...c.words, ...(EXTRA_WORDS[c.id] ?? [])] })),
   ...NEW_TOPICS,
 ];
+
+// topics selected in a fresh game: everything except opt-in ones (e.g. Nerd)
+export const DEFAULT_CATS = CATEGORIES.filter((c) => !("optional" in c && c.optional)).map((c) => c.id);

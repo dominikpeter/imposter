@@ -3,7 +3,8 @@ import type { Lang } from "./i18n.ts";
 type T = Record<Lang, string>;
 const w = (en: string, fr: string, de: string): T => ({ en, fr, de });
 
-export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[] }[] = [
+// optional topics are not selected by default (players opt in)
+export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[]; optional?: boolean }[] = [
   {
     id: "music", icon: "Music",
     name: w("Music", "Musique", "Musik"),
@@ -82,6 +83,26 @@ export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[] }[] = 
       w("Chess", "Échecs", "Schach"), w("Gardening", "Jardinage", "Gärtnern"), w("Knitting", "Tricot", "Stricken"),
       w("Photography", "Photographie", "Fotografieren"), w("Baking", "Pâtisserie", "Backen"), w("Video games", "Jeux vidéo", "Videospiele"),
       w("Magic tricks", "Tours de magie", "Zaubertricks"), w("Puzzle", "Puzzle", "Puzzle"), w("Dancing", "Danse", "Tanzen"),
+    ],
+  },
+  {
+    id: "nerd", icon: "Glasses", optional: true,
+    name: w("Nerd", "Geek", "Nerd"),
+    words: [
+      w("Algorithm", "Algorithme", "Algorithmus"), w("Pixel", "Pixel", "Pixel"), w("Router", "Routeur", "Router"),
+      w("Firewall", "Pare-feu", "Firewall"), w("Data center", "Centre de données", "Rechenzentrum"), w("Password", "Mot de passe", "Passwort"),
+      w("Bluetooth", "Bluetooth", "Bluetooth"), w("Hashtag", "Hashtag", "Hashtag"), w("Joystick", "Joystick", "Joystick"),
+      w("Lightsaber", "Sabre laser", "Lichtschwert"), w("Hobbit", "Hobbit", "Hobbit"), w("Cyborg", "Cyborg", "Cyborg"),
+      w("Hologram", "Hologramme", "Hologramm"), w("Motherboard", "Carte mère", "Mainboard"), w("Terminal", "Terminal", "Terminal"),
+      w("Bug", "Bug", "Bug"), w("Glitch", "Glitch", "Glitch"), w("Avatar", "Avatar", "Avatar"),
+      w("Emoji", "Emoji", "Emoji"), w("Spreadsheet", "Tableur", "Tabellenkalkulation"), w("Source code", "Code source", "Quellcode"),
+      w("Comic book", "Bande dessinée", "Comic"), w("Keyboard shortcut", "Raccourci clavier", "Tastenkürzel"), w("Anime", "Anime", "Anime"),
+      w("Cosplay", "Cosplay", "Cosplay"), w("Boss fight", "Combat de boss", "Bosskampf"), w("Save point", "Point de sauvegarde", "Speicherpunkt"),
+      w("Wi-Fi", "Wi-Fi", "WLAN"), w("Computer virus", "Virus informatique", "Computervirus"), w("Hacker", "Hacker", "Hacker"),
+      w("Binary code", "Code binaire", "Binärcode"), w("QR code", "QR code", "QR-Code"), w("USB stick", "Clé USB", "USB-Stick"),
+      w("3D printer", "Imprimante 3D", "3D-Drucker"), w("Virtual reality", "Réalité virtuelle", "Virtuelle Realität"), w("DNA", "ADN", "DNA"),
+      w("Periodic table", "Tableau périodique", "Periodensystem"), w("Twenty-sided die", "Dé à vingt faces", "Zwanzigseitiger Würfel"),
+      w("Dungeon", "Donjon", "Verlies"), w("Smartwatch", "Montre connectée", "Smartwatch"),
     ],
   },
 ];

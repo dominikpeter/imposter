@@ -4,7 +4,7 @@ import { CirclePlus, Eye, Sparkles, LogIn, MessagesSquare, PenLine, Scale, Smart
 import { TopicGrid } from "@/components/TopicGrid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
+import { CATEGORIES, DEFAULT_CATS, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { TopControls } from "@/components/TopControls";
 import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
@@ -48,7 +48,7 @@ export default function Home() {
   const [imposterCount, setImposterCount] = useState(saved.imposterCount ?? 1);
   const [mode, setMode] = useState<Mode>(saved.mode ?? "packs");
   const [cats, setCats] = useState(
-    saved.cats?.filter((id) => CATEGORIES.some((c) => c.id === id)) ?? CATEGORIES.map((c) => c.id),
+    saved.cats?.filter((id) => CATEGORIES.some((c) => c.id === id)) ?? DEFAULT_CATS,
   );
   const [perPlayer, setPerPlayer] = useState(saved.perPlayer ?? 2);
   const [pool, setPool] = useState<Secret[]>(saved.pool ?? []);

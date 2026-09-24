@@ -107,8 +107,8 @@ The card shows who the imposter was and what the word was. Tap **Play again** fo
 | **Imposters** | 1 up to half the players. With 2 or more, the imposters don't know about each other. |
 | **Imposter gets a clue** | The imposter sees the topic, or the writer's hint for your own words. Turn it off for a harder game. |
 | **Joker mode** | See [section 6](#6-joker-mode). Only available when the clue is off. |
-| **Words** | **Word packs** (1,040 ready-made words) or **Our own words** ([section 5](#5-your-own-words-and-ai-help)). |
-| **Topics** | 26 topics, from Food, Animals and Switzerland to Space. Pick any mix, or **All topics**. |
+| **Words** | **Word packs** (1,080 ready-made words) or **Our own words** ([section 5](#5-your-own-words-and-ai-help)). |
+| **Topics** | 27 topics, from Food, Animals and Switzerland to Space. **Nerd** (tech, gaming, sci-fi) is optional: not selected by default. Pick any mix, or **All topics**. |
 
 <img src="manual/02-topics.png" width="260" alt="Topics" />
 

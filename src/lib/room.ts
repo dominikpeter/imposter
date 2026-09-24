@@ -1,5 +1,5 @@
 import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "./game.ts";
-import { CATEGORIES, LANGS, type Lang } from "./i18n.ts";
+import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import { reviewWords } from "./ai.ts";
 import { allowAi } from "./rateLimit.ts";
@@ -55,7 +55,7 @@ function cleanSettings(s: Partial<Settings>): Settings {
   return {
     imposterCount: Math.max(1, Math.min(10, Math.round(Number(s.imposterCount) || 1))),
     mode: s.mode === "custom" ? "custom" : "packs",
-    cats: cats.length ? cats : CATEGORIES.map((c) => c.id),
+    cats: cats.length ? cats : DEFAULT_CATS,
     perPlayer: Math.max(1, Math.min(5, Math.round(Number(s.perPlayer) || 2))),
     hint: s.hint !== false,
     joker: s.joker === true && s.hint === false, // jokers only when imposters get no clue
