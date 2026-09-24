@@ -40,7 +40,7 @@ test("full round: one imposter, same word for the crew, vote catches the imposte
   expect(imposters).toHaveLength(1);
   expect(new Set(seen.filter(Boolean)).size).toBe(1);
 
-  await expect(page.getByRole("heading", { name: "Discuss!" })).toBeVisible();
+  await expect(page.getByText(/Word round 1/)).toBeVisible();
   const imp = imposters[0];
   await voteAll(page, PLAYERS.map((_, i) => PLAYERS[i === imp ? (imp + 1) % PLAYERS.length : imp]));
 
@@ -65,7 +65,7 @@ test("a tie sends everyone back to discuss", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "It's a tie!" })).toBeVisible();
   await expect(page.getByText("1 vote", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Discuss again/ }).click();
-  await expect(page.getByRole("heading", { name: "Discuss!" })).toBeVisible();
+  await expect(page.getByText(/Word round 1/)).toBeVisible();
 });
 
 test("own words: everyone writes, the author of the word is never the imposter", async ({ page }) => {

@@ -1,9 +1,10 @@
 "use client";
 
-import { ChartColumn, ChevronDown, CircleCheck, Footprints, Medal, RotateCcw, Search, Siren, Trophy, VenetianMask, type LucideIcon } from "lucide-react";
+import { ChartColumn, CircleCheck, Footprints, Medal, RotateCcw, Search, Siren, Trophy, VenetianMask, type LucideIcon } from "lucide-react";
 import { UI, type Lang } from "@/lib/i18n";
 import { stats, type PlayerStats, type RoundLog } from "@/lib/stats";
 import { card, ghost } from "@/lib/ui";
+import { Timeline } from "@/components/Timeline";
 
 const MEDALS = ["text-[#d4a017]", "text-[#9aa4b2]", "text-[#b87333]"]; // gold, silver, bronze
 
@@ -111,6 +112,33 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
         </ol>
       </div>
 
+      {s.rounds > 0 && <Timeline timeline={s.timeline} names={s.players.map((p) => p.name)} lang={lang} />}
+
+      {/* times imposter: one series, value labels at the bar end */}
+      {s.players.some((p) => p.imposter > 0) && (
+        <div>
+          <h3 className="mb-3 flex items-center gap-2 font-semibold">
+            <VenetianMask className="size-4 text-imp" aria-hidden /> {t("timesImposter")}
+          </h3>
+          <ol className="flex flex-col gap-2">
+            {[...s.players]
+              .sort((a, b) => b.imposter - a.imposter)
+              .map((p, i) => (
+                <li key={p.name} className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-2" title={`${p.name}: ${p.imposter}`}>
+                  <span className="truncate font-medium">{p.name}</span>
+                  <span className="h-3 rounded-full bg-tint">
+                    <span
+                      className="bar-grow block h-full rounded-full bg-imp"
+                      style={{ width: `${(p.imposter / Math.max(1, ...s.players.map((x) => x.imposter))) * 100}%`, animationDelay: `${750 + i * 70}ms` }}
+                    />
+                  </span>
+                  <span className="w-8 text-right text-sm font-semibold tabular-nums">{p.imposter}</span>
+                </li>
+              ))}
+          </ol>
+        </div>
+      )}
+
       {/* most suspected */}
       {suspects.length > 0 && (
         <div>
@@ -135,10 +163,8 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
       )}
 
       {/* table view: every number, for screen readers and the curious */}
-      <details className="group rounded-2xl border border-line">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 font-medium">
-          {t("details")} <ChevronDown className="size-5 transition-transform group-open:rotate-180" aria-hidden />
-        </summary>
+      <div className="rounded-2xl border border-line">
+        <h3 className="px-4 pt-3 font-semibold">{t("details")}</h3>
         <div className="overflow-x-auto px-2 pb-3">
           <table className="w-full text-sm tabular-nums">
             <thead className="text-muted">
@@ -173,7 +199,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
             </tbody>
           </table>
         </div>
-      </details>
+      </div>
 
       {onReset && (
         <button onClick={onReset} className={`${ghost} self-center text-muted`}>

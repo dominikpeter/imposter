@@ -21,3 +21,18 @@ test("scores crew catches, imposter escapes and skipped votes", () => {
   assert.equal(p.Lisa.imposter, 1);
   assert.equal(s.players[0].name, "Tim"); // leaderboard order
 });
+
+test("a caught imposter who guesses the word escapes; timeline is cumulative", () => {
+  const s = stats([
+    { names, imposters: [1], accused: 1, votes: [1, 0, 1], word: "a", guessed: true }, // Nora caught but guessed
+    { names, imposters: [2], accused: 2, votes: [2, 2, 0], word: "b" }, // Tim caught
+  ]);
+  assert.equal(s.imposterWins, 1);
+  assert.equal(s.crewWins, 1);
+  const p = Object.fromEntries(s.players.map((x) => [x.name, x]));
+  assert.equal(p.Nora.escaped, 1);
+  assert.deepEqual(s.timeline, [
+    { Lisa: 1, Nora: 2, Tim: 1 },
+    { Lisa: 2, Nora: 3, Tim: 1 },
+  ]);
+});

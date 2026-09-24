@@ -1,17 +1,22 @@
 "use client";
 
-import { Check, CircleCheck, Crown, Eye, Lock, MessagesSquare, PartyPopper, Rocket, Scale, Share2, VenetianMask, Vote } from "lucide-react";
+import { Check, CircleCheck, Crown, Eye, Lock, MessagesSquare, Rocket, Scale, Share2, VenetianMask, Vote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { TopControls } from "@/components/TopControls";
-import { reviewNotes, type Draft, type Note, type Review, type Text } from "@/lib/game";
+import { reviewNotes, speakerAt, type Draft, type Note, type Review, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { ExplainWord } from "@/components/ExplainWord";
 import type { View } from "@/lib/room";
 import { Stats } from "@/components/Stats";
-import { JokerEarned, JokerHint } from "@/components/Joker";
+import { TurnGuide } from "@/components/TurnGuide";
+import { GuessForm } from "@/components/GuessForm";
+import { Verdict } from "@/components/Verdict";
+import { RoomSettings } from "@/components/RoomSettings";
+import { stats } from "@/lib/stats";
+import { JokerHint } from "@/components/Joker";
 import { api, loadIdentity, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, press } from "@/lib/ui";
 
@@ -49,8 +54,10 @@ export default function Room() {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const t = (k: keyof typeof UI) => UI[k][lang];
-  const tx = (x: Text) => (typeof x === "string" ? x : x[lang]);
+  const L: Lang = v?.settings.lang ?? lang; // the host picks one language for the whole room
+  const t = (k: keyof typeof UI) => UI[k][L];
+  const f = (k: keyof typeof UI, name: string) => t(k).replace("{name}", name);
+  const tx = (x: Text) => (typeof x === "string" ? x : x[L]);
   const setLang = (l: Lang) => {
     setLangState(l);
     writeSaved({ lang: l });
@@ -80,8 +87,8 @@ export default function Room() {
   }, [refresh]);
 
   useEffect(() => {
-    document.documentElement.lang = lang;
-  }, [lang]);
+    document.documentElement.lang = v?.settings.lang ?? lang;
+  }, [lang, v?.settings.lang]);
 
   useEffect(() => {
     if (!url) return;
@@ -116,7 +123,7 @@ export default function Room() {
     setBusy(true);
     try {
       const confirm = JSON.stringify(draft) === confirmable;
-      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang, confirm });
+      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang: L, confirm });
       if (r.reviews) {
         const { fixed, notes } = reviewNotes(draft, r.reviews);
         setDraft(fixed);
@@ -212,7 +219,7 @@ export default function Room() {
           <span className="text-2xl leading-none">×</span>
           <span className="font-mono font-bold tracking-widest text-ink">{code}</span>
         </button>
-        <TopControls lang={lang} setLang={setLang} />
+        <TopControls lang={L} setLang={setLang} lockedNote={v ? t("roomLang") : undefined} />
       </header>
 
       {errMsg && (
@@ -295,6 +302,7 @@ export default function Room() {
               ))}
             </ul>
           </section>
+          <RoomSettings settings={v.settings} lang={L} />
           <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {v.isHost ? (
               <button onClick={() => send({ type: "start" })} disabled={busy || names.length < 3} className={`${btn} shadow-lg shadow-primary-dark/25`}>
@@ -321,7 +329,7 @@ export default function Room() {
               notes={notes}
               joker={v.settings.joker}
               busy={busy}
-              lang={lang}
+              lang={L}
               banner={v.lostWord ? t("replaceWord") : undefined}
               onSubmit={submitWords}
             />
@@ -333,36 +341,51 @@ export default function Room() {
         <div key="reveal" className="flex flex-1 flex-col justify-center gap-6 text-center">
           <p className="enter text-lg text-muted">{t("keepSecret")}</p>
           {theCard()}
-          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={lang} />}
-          {v.isHost ? (
-            <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${btn} enter [animation-delay:200ms]`}>
-              <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("startDiscussion")}
+          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={L} />}
+          {!v.iReady ? (
+            <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter [animation-delay:200ms]`}>
+              <Check className="size-5 shrink-0" aria-hidden /> {t("ready")}
             </button>
           ) : (
-            waiting(t("hostNext"))
+            waiting(f("readyCount", `${v.ready}/${names.length}`))
+          )}
+          {v.isHost && (
+            <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${ghost} text-muted`}>
+              <MessagesSquare className="mr-2 inline size-5" aria-hidden /> {t("startDiscussion")}
+            </button>
           )}
         </div>
       )}
 
-      {joined && v.phase === "discuss" && (
+      {joined && v.phase === "discuss" && v.starter !== null && (
         <div key="discuss" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <MessagesSquare className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
-          <h2 className="enter text-4xl font-bold tracking-tight">{t("discuss")}</h2>
-          {v.starter !== null && (
-            <p className="enter rounded-full bg-tint px-5 py-2 text-lg text-primary-ink [animation-delay:100ms]">
-              <span className="font-semibold">{names[v.starter]}</span> {t("starts")}
-            </p>
-          )}
-          <p className="enter max-w-xs text-muted [animation-delay:160ms]">{t("discussHelp")}</p>
+          <p className="text-sm text-muted">
+            {t("round")} {v.history.length + 1} / {v.settings.rounds}
+          </p>
+          <TurnGuide
+            names={names}
+            starter={v.starter}
+            spoken={v.spoken}
+            wordRound={v.wordRound}
+            me={v.me}
+            canAdvance={v.isHost || speakerAt(v.starter, v.spoken, names.length) === v.me}
+            onSaid={() => send({ type: "spoke" })}
+            lang={L}
+          />
           <button onClick={() => setShown(!shown)} className={`${ghost} border border-line`}>
             <span className="flex items-center gap-2"><Eye className="size-5 shrink-0" aria-hidden /> {t("myCard")}</span>
           </button>
           {shown && theCard()}
-          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={lang} />}
-          <div className="enter mt-4 flex w-full flex-col gap-2 [animation-delay:240ms]">
+          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={L} />}
+          <div className="flex w-full flex-col gap-2">
             {v.isHost ? (
               <>
-                <button onClick={() => send({ type: "startVote" })} disabled={busy} className={btn}>
+                {v.spoken >= names.length && (
+                  <button onClick={() => send({ type: "moreWords" })} disabled={busy} className={`${ghost} border border-line`}>
+                    <MessagesSquare className="mr-2 inline size-5" aria-hidden /> {t("moreWords")}
+                  </button>
+                )}
+                <button onClick={() => send({ type: "startVote" })} disabled={busy} className={v.spoken >= names.length ? btn : `${ghost} border border-line`}>
                   <Vote className="size-5 shrink-0" aria-hidden /> {t("vote")}
                 </button>
                 <button onClick={() => send({ type: "skipVote" })} disabled={busy} className={`${ghost} text-muted`}>
@@ -370,7 +393,7 @@ export default function Room() {
                 </button>
               </>
             ) : (
-              waiting(t("hostNext"))
+              v.spoken >= names.length && waiting(t("hostNext"))
             )}
           </div>
         </div>
@@ -438,46 +461,50 @@ export default function Room() {
         </div>
       )}
 
+      {joined && v.phase === "guess" && v.accused !== null && (
+        <div key="guess" className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+          {v.accused === v.me ? (
+            <GuessForm lang={L} busy={busy} onGuess={(text) => send({ type: "guess", text: text ?? "" })} />
+          ) : (
+            <>
+              <VenetianMask className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
+              {waiting(f("isGuessing", names[v.accused]))}
+            </>
+          )}
+        </div>
+      )}
+
       {joined && v.phase === "result" && v.result && (
         <div key="result" className="flex flex-1 flex-col justify-center gap-3 text-center">
-          {v.result.accused !== null && (
-            <div className="pop mb-2">
-              <p className="text-4xl font-bold tracking-tight">
-                {v.result.imposters.includes(v.result.accused) ? <><PartyPopper className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("caught")}</> : <><VenetianMask className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("wrong")}</>}
-              </p>
-              <p className="mt-1 text-lg text-muted">
-                <span className="font-semibold text-ink">{names[v.result.accused]}</span>{" "}
-                {t(v.result.imposters.includes(v.result.accused) ? "caughtHelp" : "wrongHelp")}
-              </p>
-            </div>
-          )}
-          {v.settings.joker && v.result.accused !== null && (
-            <JokerEarned
-              lang={lang}
-              names={v.result.imposters.filter((i) => i !== v.result!.accused).map((i) => names[i])}
-              text={t(v.result.imposters.filter((i) => i !== v.result!.accused).length > 1 ? "jokersEarned" : "jokerEarned")}
-            />
-          )}
-          <div className="flip imposter-back glow relative rounded-3xl px-6 py-10 text-white">
-            <p className="text-lg text-white/80">{t(v.result.imposters.length > 1 ? "impostersWere" : "imposterWas")}</p>
-            <p className="mt-1 text-4xl font-bold tracking-tight break-words">
-              {new Intl.ListFormat(lang).format(v.result.imposters.map((i) => names[i]))}
-            </p>
-          </div>
-          <div className={`${card} enter [animation-delay:200ms]`}>
-            <p className="text-muted">{t("theWord")}</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight break-words text-primary-ink">{tx(v.result.word)}</p>
-          </div>
+          <Verdict
+            names={names}
+            imposters={v.result.imposters}
+            accused={v.result.accused}
+            word={v.result.word}
+            guess={v.guess}
+            joker={v.settings.joker}
+            lang={L}
+          />
           <div className="enter mt-6 flex flex-col gap-3 [animation-delay:340ms]">
+            {v.gameOver && (
+              <>
+                <p className="pop text-3xl font-bold tracking-tight">{t("gameOver")}</p>
+                <p className="text-lg text-primary-ink">{f("winsGame", stats(v.history).players[0]?.name ?? "")}</p>
+              </>
+            )}
             {v.isHost ? (
-              <button onClick={() => send({ type: "start" })} disabled={busy} className={btn}>
-                {v.settings.mode === "custom" && !v.poolLeft ? t("writeNew") : t("playAgain")}
+              <button onClick={() => send({ type: v.gameOver ? "newGame" : "start" })} disabled={busy} className={btn}>
+                {v.gameOver
+                  ? t("newGame")
+                  : v.settings.mode === "custom" && !v.poolLeft
+                    ? t("writeNew")
+                    : `${t("playAgain")} · ${t("round")} ${v.history.length + 1}/${v.settings.rounds}`}
               </button>
             ) : (
               waiting(t("hostNext"))
             )}
           </div>
-          <Stats history={v.history} lang={lang} />
+          <Stats history={v.history} lang={L} />
         </div>
       )}
 

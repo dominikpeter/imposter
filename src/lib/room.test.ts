@@ -8,7 +8,7 @@ const store = () => (persistent ? envStore : memoryStore());
 
 async function setup(mode: "packs" | "custom", joker = false) {
   const db = store();
-  const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1, joker, hint: !joker });
+  const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1, joker, hint: !joker, rounds: 30 });
   const others = await Promise.all(["Nora", "Tim", "Beni"].map((n) => joinRoom(db, host.code, n)));
   // index i = the player's seat in the room (simultaneous joins may be ordered differently than listed)
   const seats = await Promise.all([host, ...others].map(async (p) => ({ p, me: (await view(db, host.code, p.pid, p.token)).me })));
@@ -90,7 +90,7 @@ test("joker: a surviving imposter earns a joker and gets the word hint next time
   assert.equal((await see(0)).result?.accused, innocent);
 
   // play (skipping votes, so no new jokers) until the joker holder is imposter again
-  for (let round = 0; round < 60; round++) {
+  for (let round = 0; round < 28; round++) {
     await as(0, { type: "start" });
     const vs = await Promise.all([0, 1, 2, 3].map(see));
     const now = vs.findIndex((v) => v.card?.imposter);
@@ -122,4 +122,52 @@ test("joker needs the imposter clue off", async () => {
   const db = store();
   const { code, pid, token } = await createRoom(db, "Lisa", { joker: true, hint: true });
   assert.equal((await view(db, code, pid, token)).settings.joker, false);
+});
+
+test("ready check, guided turns, imposter guess, rounds and new game", async () => {
+  const db = store();
+  const host = await createRoom(db, "Lisa", { rounds: 1, guess: true, lang: "de", cats: ["food"] });
+  const others = await Promise.all(["Nora", "Tim", "Beni"].map((n) => joinRoom(db, host.code, n)));
+  const seats = await Promise.all([host, ...others].map(async (p) => ({ p, me: (await view(db, host.code, p.pid, p.token)).me })));
+  const all = seats.sort((a, b) => a.me - b.me).map((x) => x.p);
+  const as = (i: number, a: Parameters<typeof act>[4]) => act(db, host.code, all[i].pid, all[i].token, a);
+  const see = (i: number) => view(db, host.code, all[i].pid, all[i].token);
+
+  assert.equal((await see(1)).settings.lang, "de"); // one language for the whole room
+  await as(0, { type: "start" });
+  for (const i of [0, 1, 2]) await as(i, { type: "ready" });
+  assert.equal((await see(0)).phase, "reveal"); // still waiting for Beni
+  assert.equal((await see(0)).ready, 3);
+  await as(3, { type: "ready" });
+  const d = await see(0);
+  assert.equal(d.phase, "discuss");
+
+  // only the current speaker (or the host) can hand over
+  const speaker = d.starter!;
+  const other = [1, 2, 3].find((i) => i !== speaker)!;
+  await assert.rejects(as(other, { type: "spoke" }), RoomError);
+  await as(speaker, { type: "spoke" });
+  assert.equal((await see(0)).spoken, 1);
+
+  // everyone votes for the imposter → caught → guess phase; guessing the German word counts
+  const views = await Promise.all([0, 1, 2, 3].map(see));
+  const imp = views.findIndex((v) => v.card?.imposter);
+  const word = (views.find((v) => v.card && !v.card.imposter)!.card as { word: Record<string, string> }).word;
+  await as(0, { type: "startVote" });
+  for (const i of [0, 1, 2, 3]) await as(i, { type: "vote", target: i === imp ? (imp + 1) % 4 : imp });
+  assert.equal((await see(imp)).phase, "guess");
+  await assert.rejects(as((imp + 1) % 4, { type: "guess", text: word.de }), RoomError); // only the accused guesses
+  await as(imp, { type: "guess", text: ` ${word.de.toLowerCase()} ` });
+  const r = await see(0);
+  assert.equal(r.phase, "result");
+  assert.deepEqual(r.guess, { text: word.de.toLowerCase(), correct: true });
+  assert.equal(r.history.at(-1)?.guessed, true);
+
+  // 1 round per game → game over: "start" is refused, "newGame" resets the stats
+  assert.equal(r.gameOver, true);
+  await assert.rejects(as(0, { type: "start" }), RoomError);
+  await as(0, { type: "newGame" });
+  const n = await see(0);
+  assert.equal(n.phase, "reveal");
+  assert.equal(n.history.length, 0);
 });

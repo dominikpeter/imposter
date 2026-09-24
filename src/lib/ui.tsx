@@ -49,9 +49,9 @@ export const btn = `flex min-h-14 w-full items-center justify-center rounded-ful
 export const ghost = `min-h-11 rounded-full px-4 font-medium text-primary-ink hover:bg-tint ${press}`;
 export const card = "rounded-3xl border border-line bg-surface p-5";
 export const heading = "text-lg font-semibold";
-export const chip = `min-h-11 rounded-full border px-4 font-medium ${press}`;
-export const chipOn = "border-line bg-tint text-primary-ink";
-export const chipOff = "border-divider/60 bg-surface text-muted hover:border-divider";
+export const chip = `inline-flex min-h-11 items-center gap-2 rounded-full border px-4 font-medium whitespace-nowrap ${press}`;
+export const chipOn = "border-primary-ink/40 bg-tint text-primary-ink shadow-sm";
+export const chipOff = "border-dashed border-divider/70 bg-transparent text-muted hover:border-divider hover:text-ink";
 export const round_btn = `size-11 rounded-full border border-divider/70 bg-surface text-2xl leading-none text-ink hover:border-primary hover:text-primary-ink disabled:opacity-30 disabled:active:scale-100 disabled:hover:border-divider/70 disabled:hover:text-ink ${press}`;
 export const field =
   "w-full rounded-2xl border border-divider/60 bg-surface px-4 py-3 text-lg transition outline-none placeholder:text-divider focus:border-primary focus-visible:outline-none";

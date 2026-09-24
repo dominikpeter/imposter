@@ -1,5 +1,5 @@
-import { earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "./game.ts";
-import { CATEGORIES } from "./i18n.ts";
+import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "./game.ts";
+import { CATEGORIES, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import { reviewWords } from "./ai.ts";
 import { allowAi } from "./rateLimit.ts";
@@ -11,8 +11,11 @@ const TTL = 60 * 60 * 24; // rooms vanish a day after the last write
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I lookalikes
 export const MAX_PLAYERS = 20;
 
-export type Settings = { imposterCount: number; mode: "packs" | "custom"; cats: string[]; perPlayer: number; hint: boolean; joker: boolean; ai: boolean };
-export type RoomPhase = "lobby" | "write" | "reveal" | "discuss" | "vote" | "tie" | "result";
+export type Settings = {
+  imposterCount: number; mode: "packs" | "custom"; cats: string[]; perPlayer: number; hint: boolean; joker: boolean; ai: boolean;
+  lang: Lang; rounds: number; guess: boolean;
+};
+export type RoomPhase = "lobby" | "write" | "reveal" | "discuss" | "vote" | "tie" | "guess" | "result";
 type Member = { id: string; name: string; token: string; at: number };
 type Room = {
   code: string;
@@ -27,6 +30,9 @@ type Room = {
   writeNo: number;
   voteNo: number;
   roundNo: number;
+  spoken?: number; // discuss: players who said their word in this word round
+  wordRound?: number;
+  guess?: { text: string; correct: boolean } | null; // caught imposter's guess (guess option)
   history?: RoundLog[]; // finished rounds, for the stats screen (optional: rooms created before stats)
   jokers?: string[]; // member ids holding a joker
 };
@@ -53,6 +59,9 @@ function cleanSettings(s: Partial<Settings>): Settings {
     hint: s.hint !== false,
     joker: s.joker === true && s.hint === false, // jokers only when imposters get no clue
     ai: s.ai !== false, // the host's "AI help" setting: AI checks for written words
+    lang: LANGS.some((l) => l.id === s.lang) ? s.lang! : "en", // one language for the whole room
+    rounds: Math.max(1, Math.min(30, Math.round(Number(s.rounds) || 5))),
+    guess: s.guess === true, // a caught imposter may still win by guessing the word
   };
 }
 
@@ -115,6 +124,9 @@ function nextRound(room: Room, members: Member[]) {
   const n = room.ids.length;
   const imposters = Math.min(room.settings.imposterCount, Math.max(1, Math.floor(n / 2)));
   room.accused = null;
+  room.guess = null;
+  room.spoken = 0;
+  room.wordRound = 1;
   room.roundNo++;
   if (room.settings.mode === "packs") {
     const s = packSecret(room.settings.cats, new Set(room.used));
@@ -139,7 +151,8 @@ function nextRound(room: Room, members: Member[]) {
 }
 
 export type Action =
-  | { type: "start" | "discuss" | "startVote" | "skipVote" }
+  | { type: "start" | "newGame" | "discuss" | "startVote" | "skipVote" | "ready" | "spoke" | "moreWords" }
+  | { type: "guess"; text: string }
   | { type: "words"; words: Draft[]; lang?: string; confirm?: boolean }
   | { type: "vote"; target: number };
 
@@ -148,19 +161,62 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
   const me = auth(members, pid, token);
   const host = me.id === room.hostId;
   const idx = room.ids.indexOf(me.id);
-  const log = (votes: number[] | null) => {
+  // round over: jokers for imposters who got away (or guessed the word), history for the stats
+  const finish = (votes: number[] | null, guessed = false) => {
     const names = room.ids.map((id) => members.find((m) => m.id === id)?.name ?? "?");
-    room.history = [...(room.history ?? []), { names, imposters: room.round!.imposters, accused: room.accused, votes, word: room.round!.word }];
+    const r = room.round!;
+    if (room.settings.joker && room.accused !== null) room.jokers = earnJokers(r.imposters, guessed ? -1 : room.accused, room.ids, room.jokers ?? []);
+    room.history = [...(room.history ?? []), { names, imposters: r.imposters, accused: room.accused, votes, word: r.word, guessed }];
+    room.phase = "result";
   };
+  const gameOver = (room.history?.length ?? 0) >= room.settings.rounds;
   const need = (ok: boolean) => {
     if (!ok) throw new RoomError("forbidden");
   };
 
   switch (a.type) {
     case "start":
-      need(host && (room.phase === "lobby" || room.phase === "result") && (room.ids.length || members.length) >= 3);
+      need(host && (room.phase === "lobby" || (room.phase === "result" && !gameOver)) && (room.ids.length || members.length) >= 3);
       nextRound(room, members);
       break;
+    case "newGame":
+      need(host && room.phase === "result");
+      room.history = [];
+      room.jokers = [];
+      nextRound(room, members);
+      break;
+    case "ready": {
+      // everyone confirms they've seen their card; the last one starts the discussion
+      need(room.phase === "reveal" && idx >= 0);
+      const key = `room:${code}:ready:${room.roundNo}`;
+      await db.hset(key, String(idx), true, TTL);
+      if (Object.keys(await db.hgetall(key)).length < room.ids.length) return;
+      room.phase = "discuss";
+      break;
+    }
+    case "spoke": {
+      // the current speaker (or the host, for someone without a phone at hand) hands over to the next
+      const speaker = (room.round!.starter + (room.spoken ?? 0)) % room.ids.length;
+      need(room.phase === "discuss" && (room.spoken ?? 0) < room.ids.length && (idx === speaker || host));
+      room.spoken = (room.spoken ?? 0) + 1;
+      break;
+    }
+    case "moreWords":
+      need(host && room.phase === "discuss");
+      room.spoken = 0;
+      room.wordRound = (room.wordRound ?? 1) + 1;
+      break;
+    case "guess": {
+      need(room.phase === "guess" && idx === room.accused);
+      const text = String(a.text ?? "").trim().slice(0, 40);
+      const taken = answers(room.round!.word);
+      const useAi = !!text && room.settings.ai && (await allowAi(`room:${code}`));
+      const correct = !!text && (await reviewWords([{ word: text, clue: "" }], taken, room.settings.lang, useAi))[0]?.problem === "taken";
+      room.guess = text ? { text, correct } : null;
+      const votes = await db.hgetall<number>(`room:${code}:votes:${room.voteNo}`);
+      finish(room.ids.map((_, i) => Number(votes[i])), correct);
+      break;
+    }
     case "discuss":
       need(host && (room.phase === "reveal" || room.phase === "tie"));
       room.phase = "discuss";
@@ -174,8 +230,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       need(host && room.phase === "discuss");
       room.voteNo++; // fresh, empty ballot so no stale counts show on the result
       room.accused = null;
-      room.phase = "result";
-      log(null);
+      finish(null);
       break;
     case "words": {
       need(room.phase === "write" && idx >= 0);
@@ -229,9 +284,9 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       if (accused === null) room.phase = "tie";
       else {
         room.accused = accused;
-        room.phase = "result";
-        if (room.settings.joker) room.jokers = earnJokers(room.round!.imposters, accused, room.ids, room.jokers ?? []);
-        log(Object.entries(all).sort(([a], [b]) => Number(a) - Number(b)).map(([, t]) => Number(t)));
+        // caught + guess option: the imposter gets one guess before the result
+        if (room.settings.guess && room.round!.imposters.includes(accused)) room.phase = "guess";
+        else finish(room.ids.map((_, i) => Number(all[i])));
       }
       break;
     }
@@ -260,6 +315,13 @@ export type View = {
   poolLeft: number;
   roundNo: number; // changes every round, even when the phase name stays the same
   history: RoundLog[]; // only finished rounds, so nothing secret
+  spoken: number;
+  wordRound: number;
+  ready: number; // reveal: players who confirmed they've seen their card
+  iReady: boolean;
+  accused: number | null; // guess phase: who is guessing
+  guess: { text: string; correct: boolean } | null;
+  gameOver: boolean;
 };
 
 /** What one player may see: their own card only, never someone else's role. */
@@ -277,6 +339,11 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
   let counts: number[] | null = null;
   const tracked =
     room.phase === "write" ? `words:${room.writeNo}` : ["vote", "tie", "result"].includes(room.phase) ? `votes:${room.voteNo}` : null;
+  const readyInfo = async () => {
+    if (room.phase !== "reveal") return { ready: 0, iReady: false };
+    const h = await db.hgetall(`room:${code}:ready:${room.roundNo}`);
+    return { ready: Object.keys(h).length, iReady: idx >= 0 && String(idx) in h };
+  };
   let missing = 0;
   let lostWord = false;
   if (tracked) {
@@ -318,6 +385,12 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
     poolLeft: room.pool.length,
     roundNo: room.roundNo,
     history: room.history ?? [],
+    spoken: room.spoken ?? 0,
+    wordRound: room.wordRound ?? 1,
+    ...(await readyInfo()),
+    accused: room.phase === "guess" || room.phase === "result" ? room.accused : null,
+    guess: room.phase === "result" ? (room.guess ?? null) : null,
+    gameOver: room.phase === "result" && (room.history?.length ?? 0) >= room.settings.rounds,
     missing,
     lostWord,
   };

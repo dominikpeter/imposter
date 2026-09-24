@@ -53,8 +53,11 @@ test("every phone: create, join by link, private cards, vote, result on all phon
   await late.goto(`/r/${code}`);
   await expect(late.getByText("This game already started.")).toBeVisible();
 
-  await host.getByRole("button", { name: /Discuss/ }).click();
-  for (const p of phones) await expect(p.getByRole("heading", { name: "Discuss!" })).toBeVisible();
+  // everyone confirms they've seen their card → the discussion starts by itself
+  for (const p of phones) await p.getByRole("button", { name: "I'm ready" }).click();
+  for (const p of phones) await expect(p.getByText(/Word round 1/)).toBeVisible();
+  // guided turns: exactly one phone says "Your turn!"; it hands over with Done
+  await expect.poll(async () => (await Promise.all(phones.map((p) => p.getByText("Your turn!").count()))).reduce((a, b) => a + b)).toBe(1);
   await host.getByRole("button", { name: /Vote/ }).click();
 
   for (const [i, p] of phones.entries()) {

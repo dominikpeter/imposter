@@ -96,3 +96,9 @@ export function earnJokers(imposters: number[], accused: number | null, ids: str
   if (accused === null) return holders;
   return [...new Set([...holders, ...imposters.filter((i) => i !== accused).map((i) => ids[i])])];
 }
+
+/** Who speaks at step `k` of the word round: everyone once, in seat order, starting with the starter. */
+export const speakerAt = (starter: number, k: number, players: number) => (starter + k) % players;
+
+/** Every spelling of the secret a guess may match: all languages of a pack word, or the written word. */
+export const answers = (word: Text) => (typeof word === "string" ? [word] : Object.values(word));

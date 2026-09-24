@@ -1,23 +1,26 @@
 "use client";
 
-import { CirclePlus, Eye, Sparkles, LogIn, MessagesSquare, PartyPopper, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { CirclePlus, Eye, Sparkles, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
 import { TopicIcon } from "@/components/TopicIcon";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { TopControls } from "@/components/TopControls";
-import { earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
+import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
+import { TurnGuide } from "@/components/TurnGuide";
+import { GuessForm } from "@/components/GuessForm";
+import { Verdict, type Guess } from "@/components/Verdict";
 import { ExplainWord } from "@/components/ExplainWord";
-import { JokerEarned, JokerHint } from "@/components/Joker";
+import { JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
-import type { RoundLog } from "@/lib/stats";
+import { stats, type RoundLog } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
 import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, chip, chipOff, chipOn, field, ghost, heading, press, segmented, stepper, useAi } from "@/lib/ui";
 
-type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "result";
+type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "guess" | "result";
 type Mode = "packs" | "custom";
 type Play = "pass" | "phones";
 
@@ -26,6 +29,7 @@ type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
   accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[]; queue: number[]; lost: number[];
+  rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess;
 }>;
 const KEY = SAVE_KEY;
 const saved: Saved = (() => {
@@ -61,6 +65,11 @@ export default function Home() {
   const [play, setPlay] = useState<Play>(saved.play ?? "pass");
   const [history, setHistory] = useState<RoundLog[]>(saved.history ?? []);
   const [joker, setJoker] = useState(saved.joker ?? false);
+  const [rounds, setRounds] = useState(saved.rounds ?? 5); // rounds per game
+  const [guessOpt, setGuessOpt] = useState(saved.guessOpt ?? false); // caught imposter may guess the word
+  const [spoken, setSpoken] = useState(saved.spoken ?? 0); // players who said their word this word round
+  const [wordRound, setWordRound] = useState(saved.wordRound ?? 1);
+  const [guess, setGuess] = useState<Guess>(saved.guess ?? null);
   const [jokers, setJokers] = useState<string[]>(saved.jokers ?? []); // names holding a joker
   const [queue, setQueue] = useState<number[]>(saved.queue ?? []); // players still to write (incl. replacements)
   const [lost, setLost] = useState<number[]>(saved.lost ?? []); // players whose word was cancelled by a clash
@@ -80,10 +89,10 @@ export default function Home() {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -112,6 +121,9 @@ export default function Home() {
       setJokers(spent.holders);
     }
     setRound(r);
+    setSpoken(0);
+    setWordRound(1);
+    setGuess(null);
     setVotes([]);
     setAccused(null);
     setTurn(0);
@@ -141,7 +153,7 @@ export default function Home() {
     }
   };
   const createRoom = () =>
-    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai } });
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai, rounds, guess: guessOpt, lang } });
   const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
   const joining = play === "phones" && online === "join";
 
@@ -222,9 +234,31 @@ export default function Home() {
     const { accused } = tally(v, players.length);
     if (accused === null) return setPhase("tie");
     setAccused(accused);
-    if (joker) setJokers(earnJokers(round!.imposters, accused, names, jokers));
-    setHistory([...history, { names, imposters: round!.imposters, accused, votes: v, word: round!.word }]);
+    if (guessOpt && round!.imposters.includes(accused)) return setPhase("guess");
+    finish(accused, v, false);
+  };
+
+  // round over: jokers for imposters who got away (or guessed the word), history for the stats
+  const finish = (acc: number | null, v: number[] | null, guessed: boolean) => {
+    if (joker && acc !== null) setJokers(earnJokers(round!.imposters, guessed ? -1 : acc, names, jokers));
+    setHistory([...history, { names, imposters: round!.imposters, accused: acc, votes: v, word: round!.word, guessed }]);
     setPhase("result");
+  };
+
+  const submitGuess = async (text: string | null) => {
+    let correct = false;
+    if (text) {
+      setChecking(true);
+      const taken = answers(round!.word);
+      const reviews: Review[] =
+        (await fetch("/api/words/check", { method: "POST", body: JSON.stringify({ words: [{ word: text, clue: "" }], taken, lang, ai }) })
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null)) ?? exactReview([{ word: text, clue: "" }], taken);
+      correct = reviews[0]?.problem === "taken"; // "same as the secret word", spelling-tolerant with AI
+      setChecking(false);
+    }
+    setGuess(text ? { text, correct } : null);
+    finish(accused, votes, correct);
   };
 
   const quit = () => {
@@ -395,6 +429,10 @@ export default function Home() {
                 </div>
                 {stepper(imposters, setImposterCount, 1, maxImposters)}
               </div>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className={heading}>{t("rounds")}</h2>
+                {stepper(rounds, setRounds, 1, 30)}
+              </div>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
                 <span>{t("hint")}</span>
                 <input
@@ -416,6 +454,16 @@ export default function Home() {
                   <span className="block text-sm text-muted">{t(hint ? "jokerNeedsNoHint" : "jokerHelp")}</span>
                 </span>
                 <input type="checkbox" checked={joker} disabled={hint} onChange={(e) => setJoker(e.target.checked)} className="peer sr-only" />
+                <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+              </label>
+              <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
+                <span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <VenetianMask className="size-4 text-primary-ink" aria-hidden /> {t("guessOption")}
+                  </span>
+                  <span className="block text-sm text-muted">{t("guessOptionHelp")}</span>
+                </span>
+                <input type="checkbox" checked={guessOpt} onChange={(e) => setGuessOpt(e.target.checked)} className="peer sr-only" />
                 <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
               </label>
             </section>
@@ -563,21 +611,37 @@ export default function Home() {
 
       {phase === "discuss" && round && (
         <div key="discuss" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
-          <MessagesSquare className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
-          <h2 className="enter text-4xl font-bold tracking-tight [animation-delay:60ms]">{t("discuss")}</h2>
-          <p className="enter rounded-full bg-tint px-5 py-2 text-lg text-primary-ink [animation-delay:140ms]">
-            <span className="font-semibold">{names[round.starter]}</span> {t("starts")}
+          <p className="text-sm text-muted">
+            {t("round")} {history.length + 1} / {rounds}
           </p>
-          <p className="enter max-w-xs text-muted [animation-delay:200ms]">{t("discussHelp")}</p>
-          <div className="enter mt-6 flex w-full flex-col gap-2 [animation-delay:280ms]">
-            <button onClick={startVote} className={btn}>
+          <TurnGuide
+            names={names}
+            starter={round.starter}
+            spoken={spoken}
+            wordRound={wordRound}
+            canAdvance
+            onSaid={() => setSpoken(spoken + 1)}
+            lang={lang}
+          />
+          <div className="enter mt-2 flex w-full flex-col gap-2">
+            {spoken >= players.length && (
+              <button
+                onClick={() => {
+                  setSpoken(0);
+                  setWordRound(wordRound + 1);
+                }}
+                className={`${ghost} border border-line`}
+              >
+                <MessagesSquare className="mr-2 inline size-5" aria-hidden /> {t("moreWords")}
+              </button>
+            )}
+            <button onClick={startVote} className={spoken >= players.length ? btn : `${ghost} border border-line`}>
               <Vote className="size-5 shrink-0" aria-hidden /> {t("vote")}
             </button>
             <button
               onClick={() => {
                 setAccused(null);
-                setHistory([...history, { names, imposters: round.imposters, accused: null, votes: null, word: round.word }]);
-                setPhase("result");
+                finish(null, null, false);
               }}
               className={`${ghost} text-muted`}
             >
@@ -642,40 +706,45 @@ export default function Home() {
         </div>
       )}
 
+      {phase === "guess" && round && accused !== null && (
+        <div key={`guess-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+          {!shown ? (
+            <>
+              <p className="text-lg text-muted">{t("passToGuess").replace("{name}", names[accused])}</p>
+              <button onClick={() => setShown(true)} className={btn}>
+                {names[accused]}
+              </button>
+            </>
+          ) : (
+            <GuessForm lang={lang} busy={checking} onGuess={submitGuess} />
+          )}
+        </div>
+      )}
+
       {phase === "result" && round && (
         <div key="result" className="flex flex-1 flex-col justify-center gap-3 text-center">
-          {accused !== null && (
-            <div className="pop mb-2">
-              <p className="text-4xl font-bold tracking-tight">
-                {round.imposters.includes(accused) ? <><PartyPopper className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("caught")}</> : <><VenetianMask className="inline size-9 -translate-y-1 text-primary-ink" aria-hidden /> {t("wrong")}</>}
-              </p>
-              <p className="mt-1 text-lg text-muted">
-                <span className="font-semibold text-ink">{names[accused]}</span>{" "}
-                {t(round.imposters.includes(accused) ? "caughtHelp" : "wrongHelp")}
-              </p>
-            </div>
-          )}
-          {joker && accused !== null && (
-            <JokerEarned
-              lang={lang}
-              names={round.imposters.filter((i) => i !== accused).map((i) => names[i])}
-              text={t(round.imposters.filter((i) => i !== accused).length > 1 ? "jokersEarned" : "jokerEarned")}
-            />
-          )}
-          <div className="flip imposter-back glow relative rounded-3xl px-6 py-10 text-white">
-            <p className="text-lg text-white/80">{t(round.imposters.length > 1 ? "impostersWere" : "imposterWas")}</p>
-            <p className="mt-1 text-4xl font-bold tracking-tight break-words">
-              {new Intl.ListFormat(lang).format(round.imposters.map((i) => names[i]))}
-            </p>
-          </div>
-          <div className={`${card} enter [animation-delay:200ms]`}>
-            <p className="text-muted">{t("theWord")}</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight break-words text-primary-ink">{tx(round.word)}</p>
-          </div>
+          <Verdict names={names} imposters={round.imposters} accused={accused} word={round.word} guess={guess} joker={joker} lang={lang} />
           <div className="enter flex flex-col gap-3 [animation-delay:340ms]">
-            <button onClick={start} className={`${btn} mt-6`}>
-              {mode === "custom" && !pool.length ? t("writeNew") : t("playAgain")}
-            </button>
+            {history.length >= rounds ? (
+              <>
+                <p className="pop mt-4 text-3xl font-bold tracking-tight">{t("gameOver")}</p>
+                <p className="text-lg text-primary-ink">{t("winsGame").replace("{name}", stats(history).players[0]?.name ?? "")}</p>
+                <button
+                  onClick={() => {
+                    setHistory([]);
+                    setJokers([]);
+                    start();
+                  }}
+                  className={btn}
+                >
+                  {t("newGame")}
+                </button>
+              </>
+            ) : (
+              <button onClick={start} className={`${btn} mt-6`}>
+                {mode === "custom" && !pool.length ? t("writeNew") : `${t("playAgain")} · ${t("round")} ${history.length + 1}/${rounds}`}
+              </button>
+            )}
             {mode === "custom" && pool.length > 0 && (
               <p className="text-sm text-muted">
                 {pool.length} {t("left")}
