@@ -1,10 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { act, createRoom, joinRoom, RoomError, view } from "./room.ts";
-import { memoryStore } from "./store.ts";
+import { db as envStore, memoryStore, persistent } from "./store.ts";
+
+// in-memory by default; set UPSTASH_REDIS_REST_URL/TOKEN (e.g. scripts/upstash-local.mjs) to run against Redis
+const store = () => (persistent ? envStore : memoryStore());
 
 async function setup(mode: "packs" | "custom") {
-  const db = memoryStore();
+  const db = store();
   const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1 });
   const others = await Promise.all(["Nora", "Tim", "Beni"].map((n) => joinRoom(db, host.code, n)));
   const all = [host, ...others];

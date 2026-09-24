@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Online rooms locally (like Vercel + Upstash)
+
+```bash
+redis-server --port 6380 --daemonize yes
+npm run redis:local            # Upstash-compatible REST API on :8079 (token "local")
+UPSTASH_REDIS_REST_URL=http://localhost:8079 UPSTASH_REDIS_REST_TOKEN=local npm run build
+UPSTASH_REDIS_REST_URL=http://localhost:8079 UPSTASH_REDIS_REST_TOKEN=local npx next start -p 3100
+BASE_URL=http://localhost:3100 npm run e2e
+```
+
+Without those env vars `next dev` uses an in-memory store (one process only).

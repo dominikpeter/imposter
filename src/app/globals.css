@@ -10,6 +10,8 @@
   --c-accent: #1e3475; /* imposter moments */
   --c-accent-deep: #0b132b;
   --c-glow: #5bc0be;
+  --c-crew: #00937d; /* chart series, validated (dataviz) on #fff */
+  --c-imp: #3154bd;
   --c-ink: #0b132b;
   --c-muted: #517197;
   --c-divider: #a5b8ce;
@@ -31,6 +33,8 @@
     --c-accent: #1e3475;
     --c-accent-deep: #070c1b;
     --c-glow: #6fffe9;
+    --c-crew: #00937d; /* validated on #1c2541 */
+    --c-imp: #6f89da;
     --c-ink: #e2fffb;
     --c-muted: #a5b8ce;
     --c-divider: #3a506b;
@@ -50,6 +54,8 @@
   --c-accent: #1e3475;
   --c-accent-deep: #070c1b;
   --c-glow: #6fffe9;
+  --c-crew: #00937d;
+  --c-imp: #6f89da;
   --c-ink: #e2fffb;
   --c-muted: #a5b8ce;
   --c-divider: #3a506b;
@@ -68,6 +74,8 @@
   --color-primary-light: var(--c-primary-light);
   --color-on-primary: var(--c-on-primary);
   --color-glow: var(--c-glow);
+  --color-crew: var(--c-crew);
+  --color-imp: var(--c-imp);
   --color-accent: var(--c-accent);
   --color-accent-deep: var(--c-accent-deep);
   --color-ink: var(--c-ink);
@@ -188,8 +196,15 @@ input:checked + .switch::after { transform: translateX(1.25rem); }
 }
 .shake { animation: shake 0.45s ease-out 0.5s both; }
 
+/* chart bars growing from their baseline */
+@keyframes grow {
+  from { transform: scaleX(0); }
+  to { transform: none; }
+}
+.grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
 @media (prefers-reduced-motion: reduce) {
-  .enter, .pop, .flip, .shake, .glow::before { animation: none; }
+  .enter, .pop, .flip, .shake, .grow, .glow::before { animation: none; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }
