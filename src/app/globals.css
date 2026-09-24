@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-dark: #1976d2;
+  --color-primary: #2196f3;
+  --color-primary-light: #bbdefb;
+  --color-accent: #7c4dff;
+  --color-ink: #212121;
+  --color-muted: #757575;
+  --color-divider: #bdbdbd;
+  /* tints derived from the palette */
+  --color-canvas: #f2f7fd; /* primary-light over white */
+  --color-accent-deep: #6a3df2; /* accent, slightly deeper, for pattern depth */
+  --font-sans: var(--font-bricolage);
+}
+
+html {
+  font-size: 112.5%; /* 18px base, scales all rem sizes */
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+button { touch-action: manipulation; user-select: none; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* face-down card: fine diagonal lines in primary-light */
+.card-back {
+  background-color: #fff;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-primary-light) 0 1px,
+    transparent 1px 9px
+  );
+}
+
+/* imposter surface: accent with a faint radial dot grid */
+.imposter-back {
+  background-color: var(--color-accent);
+  background-image:
+    radial-gradient(circle at center, rgba(255, 255, 255, 0.16) 1.2px, transparent 1.6px),
+    linear-gradient(160deg, var(--color-accent) 0%, var(--color-accent-deep) 100%);
+  background-size: 14px 14px, 100% 100%;
+}
+
+/* toggle switch */
+.switch {
+  width: 3rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: var(--color-divider);
+  position: relative;
+  transition: background 0.2s;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.2s;
+}
+input:checked + .switch { background: var(--color-primary-dark); }
+input:checked + .switch::after { transform: translateX(1.25rem); }
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade { animation: fade 0.2s ease-out both; }
+
+@keyframes reveal {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.reveal { animation: reveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade, .reveal { animation: none; }
+  .switch, .switch::after, * { transition-duration: 0.01ms !important; }
+}
