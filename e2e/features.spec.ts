@@ -6,7 +6,7 @@ import { expect, test, type APIRequestContext, type Browser, type Page } from "@
 
 test.describe.configure({ timeout: 60_000 }); // many full rounds and several phones per test
 
-const PLAYERS = ["Lisa", "Nora", "Tim", "Beni", "Domi"]; // app defaults
+const PLAYERS = ["Lisa", "Nora", "Tim", "Beni"]; // app defaults
 const ip = () => `10.${rnd()}.${rnd()}.${rnd()}`;
 const rnd = () => Math.floor(Math.random() * 250) + 1;
 
@@ -41,7 +41,7 @@ const catchVotes = (names: string[], imp: number) => names.map((_, i) => names[i
 
 async function threePlayers(page: Page) {
   await page.goto("/");
-  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+  await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
 }
 
 // the imposters / rounds steppers are the first two on the setup screen
@@ -468,4 +468,28 @@ test("prefers-reduced-motion switches the entrance animations off", async ({ pag
   await page.emulateMedia({ reducedMotion: "no-preference" });
   const moving = await page.locator(".enter").first().evaluate((e) => getComputedStyle(e).animationName);
   expect(moving).not.toBe("none");
+});
+
+test("rooms: a dropped phone — the host confirms and continues without it", async ({ browser, request }) => {
+  const { addr, code, ids } = await roomOf(request, {});
+  const act = (i: number, a: object) => request.post(`/api/rooms/${code}`, { data: { ...ids[i], ...a }, headers: { "x-real-ip": addr } });
+  await act(0, { type: "start" });
+  for (const i of [0, 1, 2]) await act(i, { type: "ready" });
+  await act(0, { type: "startVote" });
+  await act(0, { type: "vote", target: 1 });
+  await act(1, { type: "vote", target: 0 }); // seat 2's phone never votes
+
+  const host = await phoneAs(browser, addr, code, ids[0]);
+  await expect(host.getByText("Waiting for the others · 2/3")).toBeVisible();
+  const go = host.getByRole("button", { name: "Continue without them" });
+  host.once("dialog", (d) => d.dismiss()); // a stray tap asks first and changes nothing
+  await go.click();
+  await expect(host.getByText("Waiting for the others · 2/3")).toBeVisible();
+  host.once("dialog", (d) => d.accept());
+  await go.click();
+  await expect(host.getByText("It's a tie!")).toBeVisible(); // 1 : 1 → talk again
+
+  const guest = await phoneAs(browser, addr, code, ids[1]);
+  await expect(guest.getByText("It's a tie!")).toBeVisible();
+  await expect(guest.getByRole("button", { name: "Continue without them" })).toHaveCount(0); // host only
 });

@@ -182,7 +182,7 @@ export default function Room() {
   const progressText = v ? `${t("waitingOthers")} · ${v.done}/${names.length}` : "";
   // a phone dropped out: only the host can move the room on without it
   const force = v?.isHost && (
-    <button onClick={() => send({ type: "force" })} disabled={busy} className={`${ghost} text-muted`}>
+    <button onClick={() => confirm(t("continueConfirm")) && send({ type: "force" })} disabled={busy} className={`${ghost} text-muted`}>
       {t("continueWithout")}
     </button>
   );
@@ -362,8 +362,8 @@ export default function Room() {
             waiting(f("readyCount", `${v.ready}/${names.length}`))
           )}
           {v.isHost && (
-            <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${ghost} text-muted`}>
-              <MessagesSquare className="mr-2 inline size-5" aria-hidden /> {t("startDiscussion")}
+            <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${ghost} flex items-center justify-center gap-2 text-muted`}>
+              <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("startDiscussion")}
             </button>
           )}
         </div>
@@ -393,11 +393,11 @@ export default function Room() {
             {v.isHost ? (
               <>
                 {v.spoken >= names.length && (
-                  <button onClick={() => send({ type: "moreWords" })} disabled={busy} className={`${ghost} border border-line`}>
-                    <MessagesSquare className="mr-2 inline size-5" aria-hidden /> {t("moreWords")}
+                  <button onClick={() => send({ type: "moreWords" })} disabled={busy} className={`${ghost} flex items-center justify-center gap-2 border border-line`}>
+                    <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("moreWords")}
                   </button>
                 )}
-                <button onClick={() => send({ type: "startVote" })} disabled={busy} className={v.spoken >= names.length ? btn : `${ghost} border border-line`}>
+                <button onClick={() => send({ type: "startVote" })} disabled={busy} className={`${v.spoken >= names.length ? btn : `${ghost} border border-line`} flex items-center justify-center gap-2`}>
                   <Vote className="size-5 shrink-0" aria-hidden /> {t("vote")}
                 </button>
                 <button onClick={() => send({ type: "skipVote" })} disabled={busy} className={`${ghost} text-muted`}>

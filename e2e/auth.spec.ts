@@ -57,7 +57,7 @@ test.describe("signed out", () => {
 
     // no crew card offers "Explain with AI"
     await page.getByRole("button", { name: "Start game" }).click();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) { // the 4 default players
       await page.getByRole("button", { name: "Tap to reveal" }).click();
       await expect(page.getByText("IMPOSTER", { exact: true }).or(page.getByTestId("word"))).toBeVisible();
       await expect(explainBtn(page)).toHaveCount(0);
@@ -105,7 +105,7 @@ test.describe("signed in", () => {
     await page.getByRole("button", { name: "Close" }).click();
 
     await page.getByRole("button", { name: "Start game" }).click();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) { // the 4 default players
       await page.getByRole("button", { name: "Tap to reveal" }).click();
       const imposter = page.getByText("IMPOSTER", { exact: true });
       await expect(imposter.or(page.getByTestId("word"))).toBeVisible();

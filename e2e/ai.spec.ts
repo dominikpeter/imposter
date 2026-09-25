@@ -16,7 +16,7 @@ async function write(page: Page, word: string) {
 
 test("own words: autocorrect, too hard, duplicate cancels both, then AI explains a word", async ({ page }) => {
   await page.goto("/");
-  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+  await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
   await page.getByRole("button", { name: "Our own words" }).click();
   await page.getByRole("button", { name: "−" }).last().click(); // 1 word each
   await page.getByRole("button", { name: "Start game" }).click();

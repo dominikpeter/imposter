@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { CATEGORIES } from "../src/lib/i18n";
 
-const PLAYERS = ["Lisa", "Nora", "Tim", "Beni", "Domi"]; // app defaults
+const PLAYERS = ["Lisa", "Nora", "Tim", "Beni"]; // app defaults
 
 // reveal every card; returns the word per player, or null for imposters
 async function revealAll(page: Page, n: number) {
@@ -61,10 +61,10 @@ test("a tie sends everyone back to discuss", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Start game" }).click();
   await revealAll(page, PLAYERS.length);
-  // Lisa→Nora, Nora→Lisa, Tim→Nora, Beni→Lisa, Domi→Tim  ⇒  2 : 2 : 1
-  await voteAll(page, ["Nora", "Lisa", "Nora", "Lisa", "Tim"]);
+  // Lisa→Nora, Nora→Lisa, Tim→Nora, Beni→Lisa  ⇒  2 : 2
+  await voteAll(page, ["Nora", "Lisa", "Nora", "Lisa"]);
   await expect(page.getByRole("heading", { name: "It's a tie!" })).toBeVisible();
-  await expect(page.getByText("1 vote", { exact: true })).toBeVisible();
+  await expect(page.getByText("2 votes", { exact: true })).toHaveCount(2);
   await page.getByRole("button", { name: /Discuss again/ }).click();
   await expect(page.getByText(/Word round 1/)).toBeVisible();
 });
@@ -72,7 +72,7 @@ test("a tie sends everyone back to discuss", async ({ page }) => {
 test("own words: everyone writes, the author of the word is never the imposter", async ({ page }) => {
   await page.goto("/");
   // 3 players, 1 word each
-  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Remove" }).last().click();
+  await page.getByRole("button", { name: "Remove" }).last().click();
   await page.getByRole("button", { name: "Our own words" }).click();
   await page.getByRole("button", { name: "−" }).last().click();
   await page.getByRole("button", { name: "Start game" }).click();
@@ -139,7 +139,7 @@ test("word language: English app, German words", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Deutsch", exact: true }).click(); // word language, not the app language
   await page.getByRole("button", { name: "Start game" }).click();
-  const words = (await revealAll(page, 5)).filter((w): w is string => w !== null);
+  const words = (await revealAll(page, PLAYERS.length)).filter((w): w is string => w !== null);
   expect(words.length).toBeGreaterThan(0);
   for (const w of words) expect(german, `"${w}" is not a German pack word`).toContain(w);
   await expect(page.locator("html")).toHaveAttribute("lang", "en"); // the app itself stays English
@@ -161,7 +161,7 @@ test("joker mode: a surviving imposter earns a joker and later sees the word hin
   // 30 rounds: with the default 5 the holder is imposter again in time only ~80% of runs (3 players, 1/3 per round)
   await page.addInitScript(() => localStorage.getItem("imposter:v1") ?? localStorage.setItem("imposter:v1", JSON.stringify({ rounds: 30 })));
   await page.goto("/");
-  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+  await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
   const three = PLAYERS.slice(0, 3);
   await expect(page.getByRole("checkbox", { name: /Joker mode/ })).toBeDisabled(); // clue is on by default
   await page.getByText("Imposter gets a clue").click();

@@ -7,8 +7,12 @@ const SIZES = [
   { name: "375-se", width: 375, height: 667 }, // iPhone SE 2/3
   { name: "390-iphone", width: 390, height: 844 }, // iPhone 13–15
   { name: "430-promax", width: 430, height: 932 }, // iPhone Pro Max
+  { name: "412-android-large", width: 412, height: 915 }, // Galaxy S20+/Pixel XL class
+  { name: "844-landscape", width: 844, height: 390 }, // phone turned sideways
+  { name: "768-tablet", width: 768, height: 1024 }, // iPad portrait
+  { name: "1280-desktop", width: 1280, height: 800 }, // laptop
 ];
-const NAMES = ["Lisa", "Nora", "Tim", "Beni", "Domi"];
+const NAMES = ["Lisa", "Nora", "Tim", "Beni"]; // app defaults
 
 for (const size of SIZES) {
   test(`every screen fits: ${size.name}`, async ({ page, browser }) => {
@@ -18,6 +22,17 @@ for (const size of SIZES) {
       await p.waitForTimeout(700); // let entrance animations settle
       const sw = await p.evaluate(() => document.documentElement.scrollWidth);
       expect(sw, `${screen} scrolls sideways`).toBeLessThanOrEqual(size.width);
+      // pill buttons: icon and label on one line (a non-flex button once stacked the icon above its label)
+      const stacked = await p.evaluate(() =>
+        [...document.querySelectorAll("button.rounded-full")].flatMap((b) => {
+          const icon = b.querySelector(":scope > svg, :scope > span > svg");
+          const r = b.getBoundingClientRect();
+          if (!icon || !b.textContent?.trim() || !r.height || getComputedStyle(b).visibility === "hidden") return [];
+          const i = icon.getBoundingClientRect();
+          return Math.abs(i.top + i.height / 2 - (r.top + r.height / 2)) > 8 ? [b.textContent.trim()] : [];
+        }),
+      );
+      expect(stacked, `${screen}: icon not beside its label`).toEqual([]);
       await p.screenshot({ path: `test-results/layout/${size.name}/${screen}.png`, fullPage });
     };
 
@@ -30,7 +45,7 @@ for (const size of SIZES) {
     await page.getByRole("button", { name: "Start game" }).click();
     await check(page, "03-pass");
     let imp = -1;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < NAMES.length; i++) {
       await page.getByRole("button", { name: "Tap to reveal" }).click();
       const card = page.getByText("IMPOSTER", { exact: true });
       await expect(card.or(page.getByTestId("word"))).toBeVisible();
@@ -44,10 +59,10 @@ for (const size of SIZES) {
     await page.getByRole("button", { name: /^Done/ }).click();
     await check(page, "07-turn-2");
     await page.getByRole("button", { name: /Vote/ }).click();
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < NAMES.length; i++) {
       await page.getByRole("button", { name: "Tap to vote" }).click();
       if (i === 0) await check(page, "08-vote");
-      await page.getByRole("button", { name: NAMES[i === imp ? (imp + 1) % 5 : imp], exact: true }).click();
+      await page.getByRole("button", { name: NAMES[i === imp ? (imp + 1) % NAMES.length : imp], exact: true }).click();
     }
     await check(page, "09-result", true);
 

@@ -32,7 +32,7 @@ You need **3 or more players**. There are two ways to play:
 
 ## 2. Playthrough: one round on one phone
 
-Here's a full round with 5 friends: Lisa, Nora, Tim, Beni and Domi.
+Here's a full round with 4 friends: Lisa, Nora, Tim and Beni (the app's default players).
 
 ### Step 1: Setup
 <img src="manual/01-setup.png" width="260" align="right" alt="Setup screen" />
@@ -71,7 +71,7 @@ Remember what you saw, tap **Hide & pass on**, and hand the phone to the next pl
 
 The app picks who **starts** and guides the turns: the screen shows whose turn it is and who's next. Everyone says **one word** about the secret, then taps **Done** to hand over. The phone can lie on the table during this part.
 
-Example (secret word *Beach*): Lisa: "sand", Nora: "towel", Tim (the imposter, clue *Places*): "sunny"… Beni: "waves", Domi: "holiday".
+Example (secret word *Beach*): Lisa: "sand", Nora: "towel", Tim (the imposter, clue *Places*): "sunny"… Beni: "waves".
 
 Tap **Another round of words** if nobody's sure yet. When you're ready, tap **Vote**.
 

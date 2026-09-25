@@ -50,7 +50,7 @@ export default function Home() {
   const [lang, setLang] = useState<Lang>(saved.lang ?? "en");
   const [wordLang, setWordLang] = useState<Lang | "">(saved.wordLang ?? ""); // "" = same as the app
   const W = wordLang || lang; // language of the secret words
-  const [players, setPlayers] = useState(saved.players ?? ["Lisa", "Nora", "Tim", "Beni", "Domi"]);
+  const [players, setPlayers] = useState(saved.players ?? ["Lisa", "Nora", "Tim", "Beni"]);
   const [imposterCount, setImposterCount] = useState(saved.imposterCount ?? 1);
   const [mode, setMode] = useState<Mode>(saved.mode ?? "packs");
   const [cats, setCats] = useState(
@@ -122,10 +122,10 @@ export default function Home() {
     setPlayers(next);
   };
 
-  const begin = (secret: Secret, held = jokers) => {
+  const begin = (secret: Secret, held = jokers, who = names) => {
     const r: Round = newRound(players.length, imposters, secret);
     if (joker) {
-      const spent = spendJokers(r.imposters, names, held);
+      const spent = spendJokers(r.imposters, who, held);
       r.jokered = spent.jokered;
       setJokers(spent.holders);
     }
@@ -140,10 +140,10 @@ export default function Home() {
     setPhase("reveal");
   };
 
-  const beginFromPool = (p: Secret[], held = jokers) => {
+  const beginFromPool = (p: Secret[], held = jokers, who = names) => {
     const i = pick(p.length);
     setPool(p.filter((_, j) => j !== i));
-    begin(p[i], held);
+    begin(p[i], held, who);
   };
 
   const errText = (e: unknown) =>
@@ -174,13 +174,15 @@ export default function Home() {
       setHistory([]);
       setJokers([]);
     }
-    if (new Set(players.map((p) => p.toLowerCase())).size < players.length) setPlayers(uniqueNames(players));
+    // two "Tim"s would share stats and jokers: rename before the round, and use the new names for it right away
+    const who = uniqueNames(names);
+    if (who.some((n, i) => n !== names[i])) setPlayers(who);
     if (mode === "packs") {
       const s = packSecret(cats, new Set(used));
       setUsed(used.includes(s.key) ? [s.key] : [...used, s.key]); // already used = every word was played, start over
-      return begin(s, held);
+      return begin(s, held, who);
     }
-    if (pool.length) return beginFromPool(pool, held);
+    if (pool.length) return beginFromPool(pool, held, who);
     setWriting([]);
     setQueue(players.map((_, i) => i));
     setLost([]);
@@ -648,12 +650,12 @@ export default function Home() {
                   setSpoken(0);
                   setWordRound(wordRound + 1);
                 }}
-                className={`${ghost} border border-line`}
+                className={`${ghost} flex items-center justify-center gap-2 border border-line`}
               >
-                <MessagesSquare className="mr-2 inline size-5" aria-hidden /> {t("moreWords")}
+                <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("moreWords")}
               </button>
             )}
-            <button onClick={startVote} className={spoken >= players.length ? btn : `${ghost} border border-line`}>
+            <button onClick={startVote} className={`${spoken >= players.length ? btn : `${ghost} border border-line`} flex items-center justify-center gap-2`}>
               <Vote className="size-5 shrink-0" aria-hidden /> {t("vote")}
             </button>
             <button

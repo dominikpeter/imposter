@@ -21,8 +21,8 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
   const awards = [
     { Icon: Trophy as LucideIcon, label: t("mvp"), p: top((p) => p.points), value: (p: PlayerStats) => `${p.points} ${t(p.points === 1 ? "pt" : "pts")}` },
     { Icon: VenetianMask, label: t("bestLiar"), p: top((p) => p.escaped), value: (p: PlayerStats) => `${p.escaped}× ${t("escapes")}` },
-    { Icon: Search, label: t("detective"), p: top((p) => p.correctVotes), value: (p: PlayerStats) => `${p.correctVotes} ${t("hits")}` },
-    { Icon: Siren, label: t("suspected"), p: top((p) => p.votesTaken), value: (p: PlayerStats) => `${p.votesTaken} ${t("votes")}` },
+    { Icon: Search, label: t("detective"), p: top((p) => p.correctVotes), value: (p: PlayerStats) => `${p.correctVotes} ${t(p.correctVotes === 1 ? "hit" : "hits")}` },
+    { Icon: Siren, label: t("suspected"), p: top((p) => p.votesTaken), value: (p: PlayerStats) => `${p.votesTaken} ${t(p.votesTaken === 1 ? "vote1" : "votes")}` },
   ].filter((a) => a.p);
   const maxPts = Math.max(1, ...s.players.map((p) => p.points));
   const suspects = [...s.players].filter((p) => p.votesTaken > 0).sort((a, b) => b.votesTaken - a.votesTaken);

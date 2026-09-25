@@ -24,7 +24,7 @@ export function Verdict(p: { names: string[]; imposters: number[]; accused: numb
             {caught && !guessed ? <PartyPopper className={icon} aria-hidden /> : <VenetianMask className={icon} aria-hidden />}{" "}
             {t(guessed ? "guessedRight" : caught ? "caught" : "wrong")}
           </p>
-          <p className="mt-1 text-lg text-muted">
+          <p className="mt-1 text-lg text-balance text-muted">
             {guessed ? (
               fill(t("guessedRightHelp"), { name: names[accused] })
             ) : (
