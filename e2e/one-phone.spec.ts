@@ -158,6 +158,8 @@ test("no horizontal scrolling on a small phone", async ({ page }) => {
 });
 
 test("joker mode: a surviving imposter earns a joker and later sees the word hint", async ({ page }) => {
+  // 30 rounds: with the default 5 the holder is imposter again in time only ~80% of runs (3 players, 1/3 per round)
+  await page.addInitScript(() => localStorage.getItem("imposter:v1") ?? localStorage.setItem("imposter:v1", JSON.stringify({ rounds: 30 })));
   await page.goto("/");
   for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
   const three = PLAYERS.slice(0, 3);

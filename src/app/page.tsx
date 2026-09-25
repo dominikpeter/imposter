@@ -122,10 +122,10 @@ export default function Home() {
     setPlayers(next);
   };
 
-  const begin = (secret: Secret) => {
+  const begin = (secret: Secret, held = jokers) => {
     const r: Round = newRound(players.length, imposters, secret);
     if (joker) {
-      const spent = spendJokers(r.imposters, names, jokers);
+      const spent = spendJokers(r.imposters, names, held);
       r.jokered = spent.jokered;
       setJokers(spent.holders);
     }
@@ -140,10 +140,10 @@ export default function Home() {
     setPhase("reveal");
   };
 
-  const beginFromPool = (p: Secret[]) => {
+  const beginFromPool = (p: Secret[], held = jokers) => {
     const i = pick(p.length);
     setPool(p.filter((_, j) => j !== i));
-    begin(p[i]);
+    begin(p[i], held);
   };
 
   const errText = (e: unknown) =>
@@ -167,13 +167,20 @@ export default function Home() {
   const joining = play === "phones" && online === "join";
 
   const start = () => {
+    // the last game is over (also when starting again from setup): a new game starts with fresh rounds and jokers
+    const over = history.length >= rounds;
+    const held = over ? [] : jokers; // state updates land after this render, so pass the fresh list on
+    if (over) {
+      setHistory([]);
+      setJokers([]);
+    }
     if (new Set(players.map((p) => p.toLowerCase())).size < players.length) setPlayers(uniqueNames(players));
     if (mode === "packs") {
       const s = packSecret(cats, new Set(used));
       setUsed(used.includes(s.key) ? [s.key] : [...used, s.key]); // already used = every word was played, start over
-      return begin(s);
+      return begin(s, held);
     }
-    if (pool.length) return beginFromPool(pool);
+    if (pool.length) return beginFromPool(pool, held);
     setWriting([]);
     setQueue(players.map((_, i) => i));
     setLost([]);
@@ -272,8 +279,8 @@ export default function Home() {
 
   const quit = () => {
     if (!confirm(t("quitConfirm"))) return;
-    // a joker spent on a round that never finished goes back to its holder
-    if (round?.jokered?.length && phase !== "result") setJokers([...jokers, ...round.jokered.map((i) => names[i])]);
+    // a joker spent on a round that never finished goes back to its holder (in "write" the round is already over)
+    if (round?.jokered?.length && ["reveal", "discuss", "vote", "tie", "guess"].includes(phase)) setJokers([...jokers, ...round.jokered.map((i) => names[i])]);
     setWriting([]);
     setPhase("setup");
   };
@@ -741,11 +748,7 @@ export default function Home() {
                 <p className="pop mt-4 text-3xl font-bold tracking-tight">{t("gameOver")}</p>
                 <p className="text-lg text-primary-ink">{((w) => t(w.length > 1 ? "winGameTie" : "winsGame").replace("{name}", new Intl.ListFormat(lang).format(w)))(winners(history))}</p>
                 <button
-                  onClick={() => {
-                    setHistory([]);
-                    setJokers([]);
-                    start();
-                  }}
+                  onClick={start}
                   className={btn}
                 >
                   {t("newGame")}
