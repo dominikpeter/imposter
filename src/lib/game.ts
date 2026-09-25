@@ -6,7 +6,8 @@ export type Secret = { word: Text; clue: Text; authors: number[]; key: string };
 // jokered = imposters who spent a joker this round and get the word hint
 export type Round = Secret & { imposters: number[]; starter: number; jokered?: number[] };
 
-export const pick = (n: number) => Math.floor(Math.random() * n);
+// crypto RNG: who is imposter and room codes must not be predictable from earlier outputs (modulo bias ~n/2^32, negligible)
+export const pick = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
 
 export function shuffle<T>(a: T[]): T[] {
   const r = [...a];

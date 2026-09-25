@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, DEFAULT_CATS, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
+import { Hero } from "@/components/Hero";
 import { TopControls } from "@/components/TopControls";
 import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
@@ -310,7 +311,9 @@ export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-safe pb-safe">
       <header className="mb-6 flex items-center justify-between gap-3">
-        {phase === "setup" || phase === "result" ? (
+        {phase === "setup" ? (
+          <span />
+        ) : phase === "result" ? (
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Imposter</h1>
             <p className="text-sm text-muted">{t("tagline")}</p>
@@ -326,6 +329,11 @@ export default function Home() {
 
       {phase === "setup" && (
         <div key="setup" className="enter flex flex-1 flex-col gap-4">
+          <div className="-mt-4 mb-2 text-center">
+            <Hero word="Pizza" />
+            <h1 className="mt-3 text-5xl font-bold tracking-tight text-primary-ink">Imposter</h1>
+            <p className="mt-1 text-lg text-muted">{t("tagline")}</p>
+          </div>
           {segmented(
             [
               { id: "pass" as Play, label: <><Smartphone className="size-5 shrink-0" aria-hidden />{t("onePhone")}</> },

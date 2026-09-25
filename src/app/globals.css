@@ -354,8 +354,25 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
 }
 .bar-grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--delay, 0s); }
 
+/* start screen: cards deal into a fan, then bob; the imposter's mask glances around */
+.hero-card {
+  position: absolute; left: 50%; bottom: 0.5rem; transform-origin: 50% 130%;
+  width: 24cqw; font-size: 4.6cqw;
+  translate: calc(-50% + var(--x)) var(--y); rotate: var(--rot);
+  animation: deal 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.15) calc(var(--i) * 90ms) both, bob 3.2s ease-in-out calc(0.8s + var(--i) * 0.25s) infinite;
+}
+@keyframes deal { from { opacity: 0; transform: translateY(3rem) scale(0.6) rotate(calc(var(--rot) * -1)); } }
+@keyframes bob { 50% { transform: translateY(-0.35rem); } }
+.hero-mask { width: 10cqw; height: 10cqw; animation: glance 4s ease-in-out 1.4s infinite; }
+@keyframes glance {
+  0%, 60%, 100% { transform: none; }
+  66% { transform: translateX(-3px) rotate(-12deg); }
+  78% { transform: translateX(3px) rotate(12deg); }
+  88% { transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .enter, .pop, .flip, .shake, .bar-grow, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  .enter, .pop, .flip, .shake, .bar-grow, .hero-card, .hero-mask, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }
