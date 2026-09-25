@@ -1,10 +1,10 @@
 "use client";
 
-import { createAuthClient } from "better-auth/react";
 import { useEffect, useState } from "react";
 import type { AiUser } from "./auth";
 
-export const authClient = createAuthClient();
+// the Better Auth client is only needed when someone taps sign-in/out: load it then, not on every page load
+const client = () => import("better-auth/react").then((m) => m.createAuthClient());
 
 // ai: false when the admin switched AI off for everyone
 export type Me = { user: AiUser | null; providers: ("google" | "github" | "microsoft")[]; ai: boolean };
@@ -27,9 +27,9 @@ export function useMe() {
   return me;
 }
 
-export const signIn = (provider: Me["providers"][number]) => authClient.signIn.social({ provider, callbackURL: location.pathname });
+export const signIn = async (provider: Me["providers"][number]) => (await client()).signIn.social({ provider, callbackURL: location.pathname });
 export const signOut = async () => {
-  await authClient.signOut();
+  await (await client()).signOut();
   cache = null;
   location.reload();
 };

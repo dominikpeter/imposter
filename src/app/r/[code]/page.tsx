@@ -2,7 +2,6 @@
 
 import { Check, CircleCheck, Crown, Eye, Lock, MessagesSquare, Rocket, Scale, Share2, VenetianMask, Vote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import QRCode from "qrcode";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { TopControls } from "@/components/TopControls";
@@ -92,10 +91,14 @@ export default function Room() {
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // the QR code only shows in the lobby: load the library there, not for every phone mid-game
+  const inLobby = v?.phase === "lobby";
   useEffect(() => {
-    if (!url) return;
-    QRCode.toDataURL(url, { margin: 1, width: 480, color: { dark: "#0b132b", light: "#ffffff" } }).then(setQr, () => {});
-  }, [url]);
+    if (!url || !inLobby || qr) return;
+    import("qrcode")
+      .then((m) => m.default.toDataURL(url, { margin: 1, width: 480, color: { dark: "#0b132b", light: "#ffffff" } }))
+      .then(setQr, () => {});
+  }, [url, inLobby, qr]);
 
   // new phase or round → hide the card again, fresh word fields
   const phaseKey = v ? `${v.phase}-${v.roundNo}-${v.missing}` : ""; // missing changes when someone clashes with my word
