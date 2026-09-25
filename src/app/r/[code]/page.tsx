@@ -8,6 +8,7 @@ import { TopControls } from "@/components/TopControls";
 import { reviewNotes, speakerAt, type Draft, type Note, type Review, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { ExplainWord } from "@/components/ExplainWord";
+import { SecretCard } from "@/components/SecretCard";
 import { VoteTimeline } from "@/components/VoteTimeline";
 import type { View } from "@/lib/room";
 import { Stats } from "@/components/Stats";
@@ -16,7 +17,6 @@ import { GuessForm } from "@/components/GuessForm";
 import { Verdict } from "@/components/Verdict";
 import { RoomSettings } from "@/components/RoomSettings";
 import { winners } from "@/lib/stats";
-import { JokerHint } from "@/components/Joker";
 import { api, errorKey, loadIdentity, readSaved, saveIdentity, writeSaved, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, press } from "@/lib/ui";
 
@@ -221,23 +221,16 @@ export default function Room() {
           <span className="mt-3 block font-semibold">{t("tapReveal")}</span>
         </span>
       </button>
-    ) : v.card.imposter ? (
-      <button onClick={() => setShown(false)} className="flip imposter-back glow relative w-full rounded-3xl px-6 py-12 text-white short:py-8 tiny:py-5">
-        <p className="text-lg text-white/80">{t("youAre")}</p>
-        <p className="shake mt-1 text-4xl font-bold tracking-tight break-words tiny:text-3xl">{t("imposter")}</p>
-        {v.card.clue && (
-          <p className="mx-auto mt-6 inline-block rounded-full bg-white/15 px-4 py-1.5 font-medium">
-            {t("clueLabel")}: {tx(v.card.clue)}
-          </p>
-        )}
-        {v.card.jokerHint && <JokerHint label={t("jokerHint")} hint={tw(v.card.jokerHint)} />}
-        <p className="mt-4 text-white/80 tiny:hidden">{t("blend")}</p>
-      </button>
     ) : (
-      <button onClick={() => setShown(false)} className={`${card} flip w-full py-14 short:py-8 tiny:py-5`}>
-        <p className="text-lg text-muted">{tx(v.card.clue) || t("yourWord")}</p>
-        <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink short:text-4xl tiny:text-3xl">{tw(v.card.word)}</p>
-      </button>
+      <SecretCard
+        lang={L}
+        onClick={() => setShown(false)}
+        card={
+          v.card.imposter
+            ? { imposter: true, clue: v.card.clue ? tx(v.card.clue) : null, jokerHint: v.card.jokerHint ? tw(v.card.jokerHint) : null }
+            : { imposter: false, word: tw(v.card.word), clue: tx(v.card.clue) }
+        }
+      />
     ));
 
   return (

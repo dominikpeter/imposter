@@ -14,8 +14,8 @@ import { TurnGuide } from "@/components/TurnGuide";
 import { GuessForm } from "@/components/GuessForm";
 import { Verdict, type Guess } from "@/components/Verdict";
 import { ExplainWord } from "@/components/ExplainWord";
+import { SecretCard } from "@/components/SecretCard";
 import { useMe } from "@/lib/authClient";
-import { JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
 import { type RoundLog, winners } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
@@ -622,24 +622,14 @@ export default function Home() {
             passScreen(t("tapReveal"))
           ) : (
             <>
-              {round.imposters.includes(turn) ? (
-                <div className="flip imposter-back glow relative w-full rounded-3xl px-6 py-12 text-white short:py-8 tiny:py-5">
-                  <p className="text-lg text-white/80">{t("youAre")}</p>
-                  <p className="shake mt-1 text-4xl font-bold tracking-tight break-words sm:text-5xl tiny:text-3xl">{t("imposter")}</p>
-                  {hint && tx(round.clue) && (
-                    <p className="mx-auto mt-6 inline-block rounded-full bg-white/15 px-4 py-1.5 font-medium">
-                      {t("clueLabel")}: {tx(round.clue)}
-                    </p>
-                  )}
-                  {round.jokered?.includes(turn) && <JokerHint label={t("jokerHint")} hint={tw(wordHint(round))} />}
-                  <p className="mt-4 text-white/80 tiny:hidden">{t("blend")}</p>
-                </div>
-              ) : (
-                <div className={`${card} flip w-full py-16 short:py-8 tiny:py-5`}>
-                  <p className="text-lg text-muted">{tx(round.clue) || t("yourWord")}</p>
-                  <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink short:text-4xl tiny:text-3xl">{tw(round.word)}</p>
-                </div>
-              )}
+              <SecretCard
+                lang={lang}
+                card={
+                  round.imposters.includes(turn)
+                    ? { imposter: true, clue: hint ? tx(round.clue) || null : null, jokerHint: round.jokered?.includes(turn) ? tw(wordHint(round)) : null }
+                    : { imposter: false, word: tw(round.word), clue: tx(round.clue) }
+                }
+              />
               {!round.imposters.includes(turn) && <ExplainWord word={tw(round.word)} lang={lang} />}
               <button onClick={next} className={`${btn} enter anim-delay-250`}>
                 {t("hideNext")}
