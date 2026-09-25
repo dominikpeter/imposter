@@ -70,6 +70,8 @@ export const UI = {
   joinTitle: { en: "Join the game", fr: "Rejoindre la partie", de: "Dem Spiel beitreten" },
   scanToJoin: { en: "Scan to join", fr: "Scanne pour rejoindre", de: "Scannen zum Beitreten" },
   share: { en: "Share link", fr: "Partager le lien", de: "Link teilen" },
+  whatsapp: { en: "WhatsApp", fr: "WhatsApp", de: "WhatsApp" },
+  invite: { en: "Join my Imposter game! Room {name}", fr: "Rejoins ma partie d'Imposter ! Salle {name}", de: "Spiel mit bei Imposter! Raum {name}" },
   copied: { en: "Link copied", fr: "Lien copié", de: "Link kopiert" },
   host: { en: "Host", fr: "Hôte", de: "Gastgeber" },
   you: { en: "you", fr: "toi", de: "du" },

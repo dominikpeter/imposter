@@ -200,7 +200,7 @@ Turn off **Imposter gets a clue**, then turn on **Joker mode**.
 The lobby shows a **5-character code** and a **QR code**. Friends can:
 
 - scan the QR code with their phone camera, or
-- tap **Share link** and send it, or
+- tap **WhatsApp** to send the invite straight into a chat, or **Share link** for any other app, or
 - open the app, choose **Join a room**, and type the code or tap the **scan** button next to it.
 
 Players appear in the lobby as they join. Once there are 3 or more, the host taps **Start game**.

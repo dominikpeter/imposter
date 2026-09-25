@@ -208,6 +208,7 @@
 @theme inline {
   --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.2);
   /* leaderboard medals: same in light and dark */
+  --color-whatsapp: #25d366; /* brand green, share button icon */
   --color-gold: #d4a017;
   --color-silver: #9aa4b2;
   --color-bronze: #b87333;

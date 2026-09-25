@@ -30,6 +30,10 @@ test("every phone: create, join by link, private cards, vote, result on all phon
   await host.waitForURL(/\/r\/[A-Z0-9]{5}$/);
   const code = host.url().split("/").pop()!;
   await expect(host.getByAltText(`QR ${code}`)).toBeVisible();
+  // WhatsApp: opens a chat with the invite text and this room's link
+  const wa = new URL((await host.getByRole("link", { name: "WhatsApp" }).getAttribute("href"))!);
+  expect(wa.host).toBe("wa.me");
+  expect(wa.searchParams.get("text")).toMatch(new RegExp(`^Join my Imposter game! Room ${code} https?://.+/r/${code}$`));
   await expect(host.getByRole("button", { name: /at least 3 players/ })).toBeDisabled();
 
   const nora = await phone(browser);

@@ -14,6 +14,7 @@ import { TurnGuide } from "@/components/TurnGuide";
 import { GuessForm } from "@/components/GuessForm";
 import { Verdict, type Guess } from "@/components/Verdict";
 import { ExplainWord } from "@/components/ExplainWord";
+import { useMe } from "@/lib/authClient";
 import { JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
 import { type RoundLog, winners } from "@/lib/stats";
@@ -85,7 +86,8 @@ export default function Home() {
   const [notes, setNotes] = useState<(Note | null)[]>([]);
   const [checking, setChecking] = useState(false);
   const [confirmable, setConfirmable] = useState(""); // corrected draft shown to the player; sending it unchanged = accepted
-  const ai = useAi();
+  const me = useMe();
+  const ai = useAi() && !!me?.user; // AI only for signed-in players (and only when their switch is on)
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState<"create" | "join">("create");
@@ -195,10 +197,11 @@ export default function Home() {
 
   // words stay in `writing` until everyone is done, so quitting halfway never leaves a partial pool
   const submitWords = async () => {
-    setChecking(true);
     const taken = writing.map((s) => s.word as string);
-    const reviews: Review[] =
-      (await fetch("/api/words/check", {
+    setChecking(ai); // signed out: exact checks right here, no round trip and no spinner
+    const reviews: Review[] = !ai
+      ? exactReview(draft, taken)
+      : (await fetch("/api/words/check", {
         method: "POST",
         body: JSON.stringify({ words: draft, taken, lang: W, ai: ai && JSON.stringify(draft) !== confirmable }),
       })

@@ -67,6 +67,24 @@ test.describe("signed out", () => {
     expect((await page.request.post("/api/words/explain", { data: { word: "Pizza", lang: "en" } })).status()).toBe(401);
   });
 
+  test("own words: checked on the phone, never sent to the AI; duplicates still caught", async ({ page }) => {
+    const aiCalls: string[] = [];
+    page.on("request", (r) => r.url().includes("/api/words/") && aiCalls.push(r.url()));
+    await page.goto("/");
+    await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+    await page.getByRole("button", { name: "Our own words" }).click();
+    await page.getByRole("button", { name: "−" }).last().click(); // 1 word each
+    await page.getByRole("button", { name: "Start game" }).click();
+    for (const w of ["Bananna", "bananna"]) {
+      await page.getByRole("button", { name: "Tap to write" }).click();
+      await page.getByPlaceholder(/^Word/).fill(w);
+      await page.getByRole("button", { name: "Done" }).click();
+    }
+    // Lisa's "Bananna" was never autocorrected, so Nora's "bananna" is an exact clash: both cancelled
+    await expect(page.getByRole("status").filter({ hasText: "Someone already wrote this" })).toBeVisible();
+    expect(aiCalls).toEqual([]);
+  });
+
   test("every configured provider starts a real OAuth redirect", async ({ page, request, baseURL }) => {
     const { providers } = (await (await request.get("/api/me")).json()) as { providers: Provider[] };
     test.skip(!providers.length, "no OAuth provider configured in .env.local (just auth-setup)");
