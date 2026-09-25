@@ -1,4 +1,5 @@
 import { db, persistent } from "./store.ts";
+import { later } from "./metrics.ts";
 
 const PER_MINUTE = 60; // per account
 const PER_USER_DAY = 200; // per account and day: one person can't use up everyone's budget
@@ -26,18 +27,20 @@ export const setAiEnabled = (on: boolean) => db.set(AI_OFF, !on, { ex: 10 * 365 
 export async function allowAi(key: string, perMinute = PER_MINUTE, perDay = PER_DAY, perUserDay = PER_USER_DAY) {
   // serverless instances don't share memory: without Redis a limit can't hold on Vercel, so no AI there
   if (!persistent && process.env.VERCEL) return false;
-  if (!(await aiEnabled())) return false;
   const now = Date.now();
   const minute = `rl:${key}:${Math.floor(now / 60_000)}`;
   const day = `rl:day:${Math.floor(now / 86_400_000)}`;
   const userDay = `rl:uday:${key}:${Math.floor(now / 86_400_000)}`;
   // ponytail: read-then-write counters, a burst of parallel requests can slip a few past the limit
-  const [m = 0, d = 0, u = 0] = (await Promise.all([db.get<number>(minute), db.get<number>(day), db.get<number>(userDay)])).map((x) => x ?? 0);
-  if (m >= perMinute || d >= perDay || u >= perUserDay) return false;
-  await Promise.all([
-    db.set(minute, m + 1, { ex: 60 }),
-    db.set(day, d + 1, { ex: 2 * 86_400 }),
-    db.set(userDay, u + 1, { ex: 2 * 86_400 }),
-  ]);
+  // one parallel round of reads (incl. the global switch); the counter writes happen after the response
+  const [off, m, d, u] = await Promise.all([db.get<boolean>(AI_OFF), db.get<number>(minute), db.get<number>(day), db.get<number>(userDay)]);
+  if (off || (m ?? 0) >= perMinute || (d ?? 0) >= perDay || (u ?? 0) >= perUserDay) return false;
+  later(() =>
+    Promise.all([
+      db.set(minute, (m ?? 0) + 1, { ex: 60 }),
+      db.set(day, (d ?? 0) + 1, { ex: 2 * 86_400 }),
+      db.set(userDay, (u ?? 0) + 1, { ex: 2 * 86_400 }),
+    ]),
+  );
   return true;
 }

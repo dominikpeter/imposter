@@ -111,3 +111,36 @@ test("signed out: no AI explain button, AI word check needs an account", async (
   const check = await (await page.request.post("/api/words/check", { data: { words: [{ word: "Bananna", clue: "" }], taken: [], lang: "en" } })).json();
   expect(check[0].word).toBe("Bananna"); // exact checks only, no AI autocorrect
 });
+
+test("explanations are cached: the second ask is instant and identical", async ({ request }) => {
+  const word = `Kangaroo`;
+  const lang = ["en", "fr", "de"][Math.floor(Math.random() * 3)]; // fresh-ish key between runs
+  const ask = async () => {
+    const t = Date.now();
+    const res = await request.post("/api/words/explain", { data: { word, lang } });
+    expect(res.status()).toBe(200);
+    return { text: (await res.json()).text as string, ms: Date.now() - t };
+  };
+  const first = await ask();
+  const second = await ask();
+  expect(second.text).toBe(first.text);
+  expect(second.ms).toBeLessThan(Math.max(300, first.ms / 3));
+});
+
+test("word check starts while the player pauses: Done answers instantly", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+  await page.getByRole("button", { name: "Our own words" }).click();
+  await page.getByRole("button", { name: "−" }).last().click(); // 1 word each
+  await page.getByRole("button", { name: "Start game" }).click();
+  await page.getByRole("button", { name: "Tap to write" }).click();
+  const prefetch = page.waitForResponse((r) => r.url().includes("/api/words/check"));
+  await page.getByPlaceholder(/^Word/).fill(`Guitarr`);
+  await prefetch; // the check ran in the background after a 1 s pause
+  await page.waitForTimeout(300); // cached on the server just after that response
+  const t = Date.now();
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Autocorrected" })).toBeVisible();
+  expect(Date.now() - t).toBeLessThan(600); // no second ~1 s model call
+  await expect(page.getByPlaceholder(/^Word/)).toHaveValue("Guitar");
+});

@@ -1,36 +1,38 @@
+import { createHash } from "node:crypto";
 import { createOpenAI, type OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { exactReview, wordKey, type Draft, type Review } from "./game.ts";
-import { recordAi } from "./metrics.ts";
+import { later, recordAi } from "./metrics.ts";
+import { db } from "./store.ts";
 
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
 // explicit base URL: don't inherit a machine-wide OPENAI_BASE_URL (e.g. a local dev proxy)
 const openai = createOpenAI({ baseURL: "https://api.openai.com/v1" });
 
+// kept short on purpose: every token here is sent (and paid for) on every word check
 const schema = z.object({
-  results: z.array(
-    z.object({
-      word: z.string().describe("the word with spelling fixed; same language and meaning"),
-      hint: z.string().describe("the hint with spelling fixed, or empty"),
-      tooHard: z.boolean(),
-      sameAs: z.string().describe('the TAKEN word it duplicates, copied exactly, or ""'),
-    }),
-  ),
+  results: z.array(z.object({ word: z.string(), hint: z.string(), tooHard: z.boolean(), sameAs: z.string() })),
 });
 
-const instructions = `You check secret words that players type into "Imposter", a party game where everyone describes the word with one-word hints.
-For each word, in order:
-- word: fix spelling and capitalisation only. Keep the language the player used, never translate or swap it for another word. German: Swiss spelling ("ss", never "ß").
-- hint: fix its spelling the same way (keep empty if empty).
-- tooHard: true if most players (teens included) wouldn't know it, it's very technical or obscure, or it isn't a real word or well-known name.
-- sameAs: if the word means the same thing as one of the TAKEN words (same thing, synonym, translation, plural, other spelling), copy that TAKEN word exactly; otherwise "".`;
+const instructions = `Party game word check. For each word, in order:
+word: "" if spelled right; else the word with spelling and capitals fixed (same language, never translate; German "ss", not "ß").
+hint: "" unless its spelling needs a fix; then the fixed hint.
+tooHard: true if a typical teen wouldn't know it, it's technical/scientific jargon, or not a real word.
+sameAs: the TAKEN entry meaning the same thing (synonym, translation, plural, variant), copied exactly; else "".`;
 
 /**
  * Autocorrect + "too hard" + duplicate check for players' own words.
  * Exact duplicates are always caught; the AI adds spelling fixes, difficulty and same-meaning duplicates.
  * Without OPENAI_API_KEY (or if the call fails) it falls back to the exact checks only.
  */
+// A check started while the player was still typing (prefetch) lands here; "Done" with the same input then gets it
+// instantly instead of waiting ~1 s for the model again. Keyed by the exact input, short-lived.
+const reviewKey = (draft: Draft[], taken: string[], lang: string) =>
+  `review:${createHash("sha1").update(JSON.stringify([draft, taken, lang])).digest("base64url")}`;
+export const cachedReview = (draft: Draft[], taken: string[], lang: string) =>
+  db.get<Review[]>(reviewKey(draft, taken, lang)).catch(() => null);
+
 // `who`: the account the call runs on (a user id, or the room host's), for the admin usage stats
 export async function reviewWords(draft: Draft[], taken: string[], lang: string, useAi = true, who?: string): Promise<Review[]> {
   const exact = exactReview(draft, taken);
@@ -43,23 +45,38 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
       instructions,
       prompt: JSON.stringify({ uiLanguage: lang, TAKEN: taken, words: draft }),
     });
-    await recordAi(who, usage);
+    later(() => recordAi(who, usage));
     const fixed: Draft[] = draft.map((d, i) => ({
       word: (output.results[i]?.word || d.word).trim().slice(0, 40),
       clue: (output.results[i]?.hint || d.clue).trim().slice(0, 40), // an empty AI hint never erases the writer's
     }));
     // exact checks again on the corrected words (a fix can turn into a duplicate)
-    return exactReview(fixed, taken).map((r, i) => {
+    const result: Review[] = exactReview(fixed, taken).map((r, i) => {
       if (r.problem) return r;
       const ai = output.results[i];
       const same = ai?.sameAs ? taken.findIndex((t) => wordKey(t) === wordKey(ai.sameAs)) : -1;
       if (same >= 0) return { ...r, problem: "taken", taken: same };
       return ai?.tooHard ? { ...r, problem: "too_hard" } : r;
     });
+    later(() => db.set(reviewKey(draft, taken, lang), result, { ex: 600 }));
+    return result;
   } catch (e) {
     console.warn("reviewWords: AI check failed, exact checks only:", (e as Error).message);
     return exact;
   }
+}
+
+// Explanations don't depend on who asks: pack words come up again and again, so a cached one answers in
+// milliseconds without an AI call (and without using anyone's AI budget)
+const explainKey = (word: string, lang: string) => `explain:${lang}:${wordKey(word)}`;
+export const cachedExplanation = (word: string, lang: string) => db.get<string>(explainKey(word, lang)).catch(() => null);
+
+/** Fill the cache ahead of time (scripts/warm-explanations.mts): true if a new explanation was stored. */
+export async function warmExplanation(word: string, lang: string) {
+  if (await cachedExplanation(word, lang)) return false;
+  const text = await explainWord(word, lang);
+  if (text) await db.set(explainKey(word, lang), text, { ex: 90 * 86_400 });
+  return !!text;
 }
 
 /** A short, kid-friendly explanation of a secret word for crew members who don't know it (never shown to imposters). */
@@ -68,15 +85,18 @@ export async function explainWord(word: string, lang: string, who?: string): Pro
   try {
     const { text, usage } = await generateText({
       model: openai(MODEL),
-      providerOptions: { openai: { reasoningEffort: "none", store: false } satisfies OpenAILanguageModelResponsesOptions },
-      maxOutputTokens: 200,
+      // priority processing: measured ~0.8 s instead of 1.6–2.7 s; a call is ~100 tokens, so the premium is tiny
+      providerOptions: { openai: { reasoningEffort: "none", store: false, serviceTier: "priority" } satisfies OpenAILanguageModelResponsesOptions },
+      maxOutputTokens: 80,
       instructions:
-        "Explain the given word in 1-2 short, simple sentences for a party game player who doesn't know it. " +
+        "Explain the given word in 1-2 short, simple sentences (at most 30 words) for a party game player who doesn't know it. " +
         'Answer in the language with this code: "' + lang + '" (German: Swiss spelling, "ss" not "ß"). No lists, no markdown.',
       prompt: word,
     });
-    await recordAi(who, usage);
-    return text.trim() || null;
+    later(() => recordAi(who, usage));
+    const clean = text.trim();
+    if (clean) later(() => db.set(explainKey(word, lang), clean, { ex: 90 * 86_400 }));
+    return clean || null;
   } catch (e) {
     console.warn("explainWord failed:", (e as Error).message);
     return null;

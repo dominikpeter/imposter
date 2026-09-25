@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { db } from "./store.ts";
 
 // Usage numbers for the admin page, in the same Redis as the rooms: one counter hash per day plus one row per
@@ -8,6 +9,16 @@ const USERS = "metrics:users";
 const zurichDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich" }); // en-CA formats as YYYY-MM-DD
 const day = (d: Date) => zurichDay.format(d);
 const dayKey = (d: Date) => `metrics:day:${day(d)}`;
+
+/** Bookkeeping that nobody waits for: runs after the response is sent (Vercel keeps the function alive for it).
+ *  Outside a request (unit tests, scripts) it just runs now. */
+export function later(task: () => Promise<unknown>) {
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
 
 export const METRICS = ["logins", "rooms", "roomRounds", "localRounds", "aiCalls", "tokensIn", "tokensOut"] as const;
 export type Metric = (typeof METRICS)[number];

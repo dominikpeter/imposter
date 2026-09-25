@@ -124,6 +124,14 @@ export default function Room() {
   // in a room, AI follows the room (host signed in, AI on), not the player's own account; the server looks the word up itself
   const explain = () => api<{ text: string | null }>(`/${code}`, { ...id, type: "explain", lang: L }).then((d) => d.text, () => null);
 
+  // start the room's AI check while the player pauses (all words filled): "Done" then finds it cached on the server
+  const aiRoom = !!v?.settings.ai && v.phase === "write" && !v.iDone;
+  useEffect(() => {
+    if (!aiRoom || !draft.length || !draft.every((d) => d.word.trim()) || JSON.stringify(draft) === confirmable) return;
+    const timer = setTimeout(() => api(`/${code}`, { ...id, type: "precheck", words: draft, lang: W }).catch(() => {}), 1000);
+    return () => clearTimeout(timer);
+  }, [aiRoom, draft, confirmable, code, id, W]);
+
   const submitWords = async () => {
     setBusy(true);
     try {
@@ -365,18 +373,21 @@ export default function Room() {
           <p className="enter text-lg text-muted tiny:hidden">{t("keepSecret")}</p>
           {theCard()}
           {shown && v.card && !v.card.imposter && v.settings.ai && <ExplainWord word={tw(v.card.word)} lang={L} explain={explain} />}
-          {!v.iReady ? (
-            <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter anim-delay-200`}>
-              <Check className="size-5 shrink-0" aria-hidden /> {t("ready")}
-            </button>
-          ) : (
-            waiting(f("readyCount", `${v.ready}/${names.length}`))
-          )}
-          {v.isHost && (
-            <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${ghost} flex items-center justify-center gap-2 text-muted`}>
-              <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("startDiscussion")}
-            </button>
-          )}
+          {/* side by side on a phone turned sideways: plenty of width, little height */}
+          <div className="flex flex-col gap-3 tiny:flex-row tiny:items-center tiny:gap-2">
+            {!v.iReady ? (
+              <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter anim-delay-200 tiny:flex-1`}>
+                <Check className="size-5 shrink-0" aria-hidden /> {t("ready")}
+              </button>
+            ) : (
+              <div className="tiny:flex-1">{waiting(f("readyCount", `${v.ready}/${names.length}`))}</div>
+            )}
+            {v.isHost && (
+              <button onClick={() => send({ type: "discuss" })} disabled={busy} className={`${ghost} flex items-center justify-center gap-2 text-muted tiny:flex-1`}>
+                <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("startDiscussion")}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

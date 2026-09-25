@@ -39,6 +39,15 @@ e2e *args:
 manual-shots:
     MANUAL_SHOTS=1 npx playwright test e2e/manual.spec.ts --workers=1
 
+# precompute "Explain with AI" for every pack word into production Redis (pulls prod env temporarily)
+warm-explanations:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    vercel env pull .env.warm.local --environment production --yes >/dev/null
+    trap 'rm -f .env.warm.local' EXIT
+    # Vercel hands out a placeholder for sensitive vars: Redis comes from production, the OpenAI key from .env.local
+    npx tsx --env-file=.env.warm.local --env-file=.env.local scripts/warm-explanations.mts
+
 # everything CI would run
 check: lint typecheck test e2e
 

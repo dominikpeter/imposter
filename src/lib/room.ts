@@ -1,9 +1,9 @@
 import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, uniqueName, wordHint, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
-import { explainWord, reviewWords } from "./ai.ts";
-import { allowAi } from "./rateLimit.ts";
-import { count } from "./metrics.ts";
+import { cachedExplanation, cachedReview, explainWord, reviewWords } from "./ai.ts";
+import { aiEnabled, allowAi } from "./rateLimit.ts";
+import { count, later } from "./metrics.ts";
 import type { Draft, Review } from "./game.ts";
 import type { RoundLog } from "./stats.ts";
 import { tally } from "./vote.ts";
@@ -157,7 +157,7 @@ export type Action =
   | { type: "start" | "newGame" | "discuss" | "startVote" | "skipVote" | "ready" | "spoke" | "moreWords" | "force" }
   | { type: "guess"; text: string }
   | { type: "explain"; lang?: string }
-  | { type: "words"; words: Draft[]; lang?: string; confirm?: boolean }
+  | { type: "words" | "precheck"; words: Draft[]; lang?: string; confirm?: boolean }
   | { type: "vote"; target: number };
 
 export async function act(db: Store, code: string, pid: unknown, token: unknown, a: Action) {
@@ -249,7 +249,9 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       room.accused = null;
       finish(null);
       break;
-    case "words": {
+    case "words":
+    case "precheck": {
+      // precheck: the same review, started while the player is still typing and cached; "words" then finds it ready
       need(room.phase === "write" && idx >= 0);
       const key = `room:${code}:words:${room.writeNo}`;
       const all = await db.hgetall<Draft[]>(key); // "<seat>" → accepted words, "lost:<seat>" → true after a clash
@@ -263,7 +265,15 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
 
       // autocorrect / too hard / duplicates against everyone's words so far
       const written = room.ids.flatMap((_, p) => (all[p] ?? []).map((w) => ({ p, w })));
-      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`)), room.aiUser)).map((r) =>
+      const taken = written.map((x) => x.w.word);
+      const lang = String(a.lang ?? "en");
+      const useAi = room.settings.ai && !a.confirm;
+      const [hit, on] = useAi ? await Promise.all([cachedReview(clean, taken, lang), aiEnabled()]) : [null, false];
+      if (a.type === "precheck") {
+        if (useAi && !hit && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) await reviewWords(clean, taken, lang, true, room.aiUser);
+        return {};
+      }
+      const reviews: Review[] = (hit && on ? hit : await reviewWords(clean, taken, lang, useAi && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`)), room.aiUser)).map((r) =>
         r.problem === "taken" && written[r.taken].p === idx ? { ...r, problem: "twice" } : r,
       );
       const changed = reviews.some((r, i) => r.problem || r.word !== clean[i].word.trim() || r.clue !== clean[i].clue.trim());
@@ -304,10 +314,13 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       // The word comes from the room, never from the client, so imposters and other rounds can't be asked about.
       const r = room.round;
       need(!!r && room.settings.ai && idx >= 0 && !r.imposters.includes(idx) && !["lobby", "write", "result"].includes(room.phase));
-      if (!(await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) throw new RoomError("rate_limited");
       const lang = LANGS.find((l) => l.id === a.lang)?.id ?? room.settings.lang; // explain in the player's app language
       const w = r!.word;
-      return { text: await explainWord(typeof w === "string" ? w : w[room.settings.lang], lang, room.aiUser) };
+      const word = typeof w === "string" ? w : w[room.settings.lang];
+      const [hit, on] = await Promise.all([cachedExplanation(word, lang), aiEnabled()]);
+      if (hit && on) return { text: hit }; // cached: instant, no AI call
+      if (!(await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) throw new RoomError("rate_limited");
+      return { text: await explainWord(word, lang, room.aiUser) };
     }
     case "force": {
       // a phone dropped out: the host carries on without the missing players instead of waiting forever
@@ -332,7 +345,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       throw new RoomError("bad_request");
   }
   await save(db, room);
-  if (roundDone) await count({ roomRounds: 1 }); // awaited: a serverless function may stop right after responding
+  if (roundDone) later(() => count({ roomRounds: 1 })); // after the response; Vercel keeps the function alive for it
 }
 
 export type View = {

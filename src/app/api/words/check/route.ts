@@ -1,6 +1,6 @@
-import { reviewWords } from "@/lib/ai";
+import { cachedReview, reviewWords } from "@/lib/ai";
 import { aiUser } from "@/lib/auth";
-import { allowAi } from "@/lib/rateLimit";
+import { aiEnabled, allowAi } from "@/lib/rateLimit";
 
 
 // POST { words: [{word, clue}], taken: string[], lang } → one review per word (autocorrect, too hard, duplicates)
@@ -13,5 +13,10 @@ export async function POST(req: Request) {
 
   // AI only for signed-in accounts within their limits; otherwise exact checks only, the game keeps working
   const user = body?.ai !== false ? await aiUser(req) : null;
-  return Response.json(await reviewWords(words, taken, clip(body?.lang, 5), !!user && (await allowAi(`user:${user.id}`)), user?.id));
+  const lang = clip(body?.lang, 5);
+  if (user) {
+    const [hit, on] = await Promise.all([cachedReview(words, taken, lang), aiEnabled()]);
+    if (hit && on) return Response.json(hit); // checked already while typing: instant, no second AI call
+  }
+  return Response.json(await reviewWords(words, taken, lang, !!user && (await allowAi(`user:${user.id}`)), user?.id));
 }

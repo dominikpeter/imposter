@@ -197,6 +197,16 @@ export default function Home() {
     setPhase("write");
   };
 
+  // start the AI check while the player pauses (all words filled): "Done" then finds the answer cached on the server
+  useEffect(() => {
+    if (!ai || phase !== "write" || !shown || !draft.every((d) => d.word.trim()) || JSON.stringify(draft) === confirmable) return;
+    const taken = writing.map((s) => s.word as string);
+    const timer = setTimeout(() => {
+      fetch("/api/words/check", { method: "POST", body: JSON.stringify({ words: draft, taken, lang: W, ai: true }) }).catch(() => {});
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [ai, phase, shown, draft, confirmable, writing, W]);
+
   // words stay in `writing` until everyone is done, so quitting halfway never leaves a partial pool
   const submitWords = async () => {
     const taken = writing.map((s) => s.word as string);

@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { createAuthMiddleware } from "better-auth/api";
-import { recordLogin } from "./metrics.ts";
+import { later, recordLogin } from "./metrics.ts";
 
 // Login only unlocks the AI features (the game itself needs no account). No database: the session is an
 // encrypted cookie (stateless mode). Providers are switched on by their env vars, so any subset works.
@@ -50,7 +50,7 @@ export const auth = betterAuth({
     after: createAuthMiddleware(async (ctx) => {
       const s = ctx.context.newSession;
       if (!s || !ctx.path.startsWith("/callback/")) return;
-      await recordLogin({ id: s.user.id, name: s.user.name ?? "", email: s.user.email ?? "", provider: ctx.path.split("/")[2] ?? "" });
+      later(() => recordLogin({ id: s.user.id, name: s.user.name ?? "", email: s.user.email ?? "", provider: ctx.path.split("/")[2] ?? "" }));
     }),
   },
 });
