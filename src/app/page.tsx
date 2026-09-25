@@ -7,6 +7,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, DEFAULT_CATS, LANGS, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { Hero } from "@/components/Hero";
+import { Splash } from "@/components/Splash";
 import { TopControls } from "@/components/TopControls";
 import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, uniqueNames, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
@@ -331,7 +332,7 @@ export default function Home() {
     else setPhase("discuss");
   };
 
-  if (!hydrated) return <main className="flex-1" />;
+  if (!hydrated) return <Splash />; // painted from the server HTML, long before the app script arrives
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-safe pb-safe">

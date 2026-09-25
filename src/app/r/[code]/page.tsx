@@ -8,6 +8,7 @@ import { TopControls } from "@/components/TopControls";
 import { reviewNotes, speakerAt, type Draft, type Note, type Review, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { ExplainWord } from "@/components/ExplainWord";
+import { Splash } from "@/components/Splash";
 import { SecretCard } from "@/components/SecretCard";
 import { VoteTimeline } from "@/components/VoteTimeline";
 import type { View } from "@/lib/room";
@@ -166,7 +167,7 @@ export default function Room() {
     } catch {} // user cancelled the share sheet
   };
 
-  if (!hydrated) return <main className="flex-1" />;
+  if (!hydrated) return <Splash />; // painted from the server HTML, long before the app script arrives
 
   const errMsg = err ? t(errorKey(err)) : "";
   const joined = !!v && v.me >= 0;
