@@ -8,6 +8,7 @@ import { TopControls } from "@/components/TopControls";
 import { reviewNotes, speakerAt, type Draft, type Note, type Review, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { ExplainWord } from "@/components/ExplainWord";
+import { VoteTimeline } from "@/components/VoteTimeline";
 import type { View } from "@/lib/room";
 import { Stats } from "@/components/Stats";
 import { TurnGuide } from "@/components/TurnGuide";
@@ -192,6 +193,28 @@ export default function Room() {
   );
   const progressText = v ? `${t("waitingOthers")} · ${v.done}/${names.length}` : "";
   // a phone dropped out: only the host can move the room on without it
+  // early voting: my current suspect, changeable any time during the talk (hidden from the others)
+  const suspectPicker = v?.settings.earlyVote && v.me >= 0 && (
+    <section className="enter w-full text-left" aria-label={t("yourSuspect")}>
+      <h3 className="font-semibold">{t("yourSuspect")}</h3>
+      <p className="mb-2 text-sm text-muted">{t("yourSuspectHelp")}</p>
+      <div className="flex flex-wrap gap-2">
+        {names.map((n, i) =>
+          i === v.me ? null : (
+            <button
+              key={i}
+              onClick={() => send({ type: "lean", target: i })}
+              disabled={busy}
+              aria-pressed={v.myLean === i}
+              className={`min-h-11 rounded-full border px-4 font-medium ${press} ${v.myLean === i ? "border-primary-dark bg-primary-dark text-on-primary" : "border-line text-ink"}`}
+            >
+              {n}
+            </button>
+          ),
+        )}
+      </div>
+    </section>
+  );
   const force = v?.isHost && (
     <button onClick={() => confirm(t("continueConfirm")) && send({ type: "force" })} disabled={busy} className={`${ghost} text-muted`}>
       {t("continueWithout")}
@@ -409,6 +432,7 @@ export default function Room() {
             onSaid={() => send({ type: "spoke" })}
             lang={L}
           />
+          {suspectPicker}
           <button onClick={() => setShown(!shown)} className={`${ghost} border border-line`}>
             <span className="flex items-center gap-2"><Eye className="size-5 shrink-0" aria-hidden /> {t("myCard")}</span>
           </button>
@@ -475,6 +499,7 @@ export default function Room() {
           <Scale className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight">{t("tie")}</h2>
           <p className="enter max-w-xs text-muted">{t("tieHelp")}</p>
+          {suspectPicker}
           <ul className="enter flex w-full flex-col gap-2">
             {(v.counts ?? [])
               .map((c, i) => ({ c, i }))
@@ -524,6 +549,11 @@ export default function Room() {
             joker={v.settings.joker}
             lang={L}
           />
+          {!!v.voteLog?.length && (
+            <div className={`${card} enter anim-delay-300`}>
+              <VoteTimeline log={v.voteLog} names={names} imposters={v.result.imposters} lang={L} />
+            </div>
+          )}
           <div className="enter mt-6 flex flex-col gap-3 anim-delay-340">
             {v.gameOver && (
               <>

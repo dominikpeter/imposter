@@ -1,4 +1,4 @@
-import { Globe, Lightbulb, ListOrdered, PenLine, Spade, Users, VenetianMask, WandSparkles } from "lucide-react";
+import { ChartColumnStacked, Globe, Lightbulb, ListOrdered, PenLine, Spade, Users, VenetianMask, WandSparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { CATEGORIES, LANGS, UI, type Lang } from "@/lib/i18n";
@@ -32,6 +32,7 @@ export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: 
         {row(<Lightbulb className={i} aria-hidden />, t("hint"), on(s.hint))}
         {row(<Spade className={i} aria-hidden />, t("joker"), on(s.joker))}
         {row(<VenetianMask className={i} aria-hidden />, t("guessOption"), on(s.guess))}
+        {s.earlyVote && row(<ChartColumnStacked className={i} aria-hidden />, t("earlyVote"), on(true))}
         {/* AI runs on the host's account: only listed when the host is signed in */}
         {s.ai && me?.ai !== false && row(<WandSparkles className={i} aria-hidden />, t("aiHelp"), on(s.ai))}
         {s.mode === "custom" && row(<PenLine className={i} aria-hidden />, t("ourWords"), `${s.perPlayer} × ${t("word")}`)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlus, Eye, Languages, Spade, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { ChartColumnStacked, CirclePlus, Eye, Languages, Spade, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -31,7 +31,7 @@ type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
   accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[]; queue: number[]; lost: number[];
-  rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess; wordLang: Lang | "";
+  rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess; wordLang: Lang | ""; earlyVote: boolean;
 }>;
 const KEY = SAVE_KEY;
 // read on every mount, not once per page load: the room page also writes KEY (language, name) and navigates back here
@@ -77,6 +77,7 @@ export default function Home() {
   const [joker, setJoker] = useState(saved.joker ?? false);
   const [rounds, setRounds] = useState(saved.rounds ?? 5); // rounds per game
   const [guessOpt, setGuessOpt] = useState(saved.guessOpt ?? false); // caught imposter may guess the word
+  const [earlyVote, setEarlyVote] = useState(saved.earlyVote ?? false); // rooms only: pick suspects during the talk
   const [spoken, setSpoken] = useState(saved.spoken ?? 0); // players who said their word this word round
   const [wordRound, setWordRound] = useState(saved.wordRound ?? 1);
   const [guess, setGuess] = useState<Guess>(saved.guess ?? null);
@@ -101,10 +102,10 @@ export default function Home() {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang, earlyVote }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang, earlyVote]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
@@ -166,7 +167,7 @@ export default function Home() {
   };
   const createRoom = () =>
     // the switch as set: the server turns AI on only for a real session (me may not have loaded yet)
-    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai: aiPref, rounds, guess: guessOpt, lang: W } });
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai: aiPref, rounds, guess: guessOpt, lang: W, earlyVote } });
   const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
   const joining = play === "phones" && online === "join";
 
@@ -507,6 +508,19 @@ export default function Home() {
                 <input type="checkbox" checked={guessOpt} onChange={(e) => setGuessOpt(e.target.checked)} className="peer sr-only" />
                 <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
               </label>
+              {/* rooms only: on one shared phone a vote you can see and change wouldn't stay secret */}
+              {play === "phones" && (
+                <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
+                  <span>
+                    <span className="flex items-start gap-1.5 font-medium">
+                      <ChartColumnStacked className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("earlyVote")}
+                    </span>
+                    <span className="block text-sm text-muted">{t("earlyVoteHelp")}</span>
+                  </span>
+                  <input type="checkbox" checked={earlyVote} onChange={(e) => setEarlyVote(e.target.checked)} className="peer sr-only" />
+                  <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+                </label>
+              )}
             </section>
 
             <section className={`${card} flex flex-col gap-4`}>

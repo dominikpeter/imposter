@@ -85,3 +85,37 @@ test("unknown room code shows a clear message and a way back", async ({ page }) 
   await page.getByRole("button", { name: /Back to start/ }).click();
   await expect(page).toHaveURL("/");
 });
+
+test("early voting: pick and change a suspect while talking; the result shows how the votes moved", async ({ browser, request }) => {
+  const addr = { "x-real-ip": `10.9.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` };
+  const host = await (await request.post("/api/rooms", { data: { name: "Lisa", settings: { earlyVote: true } }, headers: addr })).json();
+  const ids = [host];
+  for (const name of ["Nora", "Tim"]) ids.push(await (await request.post(`/api/rooms/${host.code}`, { data: { type: "join", name }, headers: addr })).json());
+  const act = (i: number, a: object) => request.post(`/api/rooms/${host.code}`, { data: { ...ids[i], ...a }, headers: addr });
+  const seat = async (i: number) => (await (await request.get(`/api/rooms/${host.code}`, { headers: { "x-pid": ids[i].pid, "x-token": ids[i].token } })).json()).me as number;
+  const seats = await Promise.all([0, 1, 2].map(seat));
+  const byName = ["Lisa", "Nora", "Tim"];
+  await act(0, { type: "start" });
+  await act(0, { type: "discuss" });
+
+  const phone = await (await browser.newContext({ ...test.info().project.use, extraHTTPHeaders: addr })).newPage();
+  await phone.addInitScript(([k, v]) => localStorage.setItem(k, v), [`imposter:room:${host.code}`, JSON.stringify(ids[0])] as const);
+  await phone.goto(`/r/${host.code}`);
+  const picker = phone.getByRole("region", { name: "Your suspect" });
+  await expect(picker).toBeVisible();
+  await expect(picker.getByRole("button", { name: "Lisa" })).toHaveCount(0); // never yourself
+  await picker.getByRole("button", { name: "Nora" }).click();
+  await expect(picker.getByRole("button", { name: "Nora" })).toHaveAttribute("aria-pressed", "true");
+  await picker.getByRole("button", { name: "Tim" }).click(); // changed my mind
+  await expect(picker.getByRole("button", { name: "Tim" })).toHaveAttribute("aria-pressed", "true");
+  await expect(picker.getByRole("button", { name: "Nora" })).toHaveAttribute("aria-pressed", "false");
+  await act(1, { type: "lean", target: seats[0] });
+
+  await act(0, { type: "startVote" });
+  for (const [i, target] of [[0, 2], [1, 2], [2, 0]] as const) await act(i, { type: "vote", target: seats[target] });
+  const chart = phone.getByRole("region", { name: "How the votes moved" });
+  await expect(chart).toBeVisible({ timeout: 10_000 });
+  for (const n of byName) await expect(chart.getByRole("listitem").filter({ hasText: n })).toHaveCount(1);
+  await expect(chart.getByLabel("Imposter")).toHaveCount(1); // the real imposter is marked in the legend
+  await chart.screenshot({ path: "test-results/vote-timeline.png" }); // for a look at the chart
+});

@@ -6,9 +6,9 @@ import { db as envStore, memoryStore, persistent } from "./store.ts";
 // in-memory by default; set UPSTASH_REDIS_REST_URL/TOKEN (e.g. scripts/upstash-local.mjs) to run against Redis
 const store = () => (persistent ? envStore : memoryStore());
 
-async function setup(mode: "packs" | "custom", joker = false) {
+async function setup(mode: "packs" | "custom", joker = false, extra: Record<string, unknown> = {}) {
   const db = store();
-  const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1, joker, hint: !joker, rounds: 30 });
+  const host = await createRoom(db, "Lisa", { mode, perPlayer: 1, imposterCount: 1, joker, hint: !joker, rounds: 30, ...extra });
   const others = await Promise.all(["Nora", "Tim", "Beni"].map((n) => joinRoom(db, host.code, n)));
   // index i = the player's seat in the room (simultaneous joins may be ordered differently than listed)
   const seats = await Promise.all([host, ...others].map(async (p) => ({ p, me: (await view(db, host.code, p.pid, p.token)).me })));
@@ -196,4 +196,33 @@ test("host can continue when a phone drops out (vote, own words)", async () => {
   for (const i of [0, 1]) await w.as(i, { type: "words", words: [{ word: `Word${i}`, clue: "" }], confirm: true });
   await w.as(0, { type: "force" }); // seats 2 and 3 never write
   assert.equal((await w.see(0)).phase, "reveal");
+});
+
+test("early voting: off by default; picked and changed during the talk; timeline only with the result", async () => {
+  const off = await setup("packs");
+  await off.as(0, { type: "start" });
+  await off.as(0, { type: "discuss" });
+  await assert.rejects(off.as(1, { type: "lean", target: 0 }), RoomError); // off unless the host turns it on
+
+  const { as, see } = await setup("packs", false, { earlyVote: true });
+  await assert.rejects(as(1, { type: "lean", target: 0 }), RoomError); // not in the lobby
+  await as(0, { type: "start" });
+  await as(0, { type: "discuss" });
+  await as(1, { type: "lean", target: 2 });
+  await as(1, { type: "lean", target: 0 }); // changed their mind
+  await assert.rejects(as(1, { type: "lean", target: 1 }), RoomError); // never yourself
+  await as(3, { type: "lean", target: 0 });
+  assert.equal((await see(1)).myLean, 0);
+  assert.equal((await see(2)).myLean, null);
+  assert.equal((await see(2)).voteLog, null); // nobody sees the others' picks before the result
+
+  await as(0, { type: "startVote" });
+  await assert.rejects(as(1, { type: "lean", target: 2 }), RoomError); // the talk is over
+  for (const [voter, target] of [[0, 3], [1, 0], [2, 0], [3, 0]]) await as(voter, { type: "vote", target });
+  const v = await see(2);
+  assert.ok(v.phase === "result" || v.phase === "guess");
+  const log = v.voteLog!;
+  assert.deepEqual(log.filter((e) => !e.final).map((e) => [e.voter, e.target]), [[1, 2], [1, 0], [3, 0]]); // in order
+  assert.deepEqual(log.filter((e) => e.final).map((e) => e.voter).sort(), [0, 1, 2, 3]); // every final vote
+  assert.ok(log.every((e, i) => i === 0 || e.at >= log[i - 1].at)); // chronological
 });

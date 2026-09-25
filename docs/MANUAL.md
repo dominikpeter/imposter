@@ -224,6 +224,7 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 - The host's **word language** applies to the whole room, so everyone gets the same word. Each phone keeps its own app language, and the lobby shows the word language under *Game settings*.
 - If the caught imposter may guess, their phone shows a field for the word while the others wait.
 - **Votes** and **own words** are entered on each phone at the same time. The screen shows how many players are still missing.
+- **Early voting** (host setting, off by default): during the discussion everyone can tap a suspect under *Your suspect* and change it as often as they like. Nobody sees the others' picks. With the result, *How the votes moved* shows one column per change of mind, stacked by suspect, up to the final vote, with the imposter marked.
 - **A phone dropped out?** While waiting for votes, words or the imposter's guess, the host can tap **Continue without them**: the game counts what's there and moves on.
 - Stats and jokers work the same as on one phone.
 

@@ -15,7 +15,7 @@ export const MAX_PLAYERS = 20;
 
 export type Settings = {
   imposterCount: number; mode: "packs" | "custom"; cats: string[]; perPlayer: number; hint: boolean; joker: boolean; ai: boolean;
-  lang: Lang; rounds: number; guess: boolean;
+  lang: Lang; rounds: number; guess: boolean; earlyVote: boolean;
 };
 export type RoomPhase = "lobby" | "write" | "reveal" | "discuss" | "vote" | "tie" | "guess" | "result";
 type Member = { id: string; name: string; token: string; at: number };
@@ -65,6 +65,7 @@ function cleanSettings(s: Partial<Settings>): Settings {
     lang: LANGS.some((l) => l.id === s.lang) ? s.lang! : "en", // one language for the whole room
     rounds: Math.max(1, Math.min(30, Math.round(Number(s.rounds) || 5))),
     guess: s.guess === true, // a caught imposter may still win by guessing the word
+    earlyVote: s.earlyVote === true, // pick (and change) a suspect during the talk; the result shows how opinions moved
   };
 }
 
@@ -158,7 +159,20 @@ export type Action =
   | { type: "guess"; text: string }
   | { type: "explain"; lang?: string }
   | { type: "words" | "precheck"; words: Draft[]; lang?: string; confirm?: boolean }
-  | { type: "vote"; target: number };
+  | { type: "vote" | "lean"; target: number };
+
+// early voting: every pick during the talk and every final vote, in order (seq), for the result's timeline
+export type VoteEvent = { at: number; voter: number; target: number; final?: boolean };
+const leansKey = (code: string, roundNo: number) => `room:${code}:leans:${roundNo}`;
+async function logVote(db: Store, code: string, roundNo: number, e: VoteEvent) {
+  const key = leansKey(code, roundNo);
+  const seq = Object.keys(await db.hgetall(key)).length; // ponytail: two players at the same instant share a seq; the voter in the field keeps both
+  await db.hset(key, `${String(seq).padStart(5, "0")}:${e.voter}`, e, TTL);
+}
+async function voteLog(db: Store, code: string, roundNo: number) {
+  const all = await db.hgetall<VoteEvent>(leansKey(code, roundNo));
+  return Object.keys(all).sort().map((k) => all[k]);
+}
 
 export async function act(db: Store, code: string, pid: unknown, token: unknown, a: Action) {
   const { room, members } = await load(db, code);
@@ -299,11 +313,18 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       nextRound(room, members);
       break;
     }
+    case "lean": {
+      const target = Number(a.target);
+      need(room.settings.earlyVote && (room.phase === "discuss" || room.phase === "tie") && idx >= 0 && Number.isInteger(target) && target >= 0 && target < room.ids.length && target !== idx);
+      await logVote(db, code, room.roundNo, { at: Date.now(), voter: idx, target });
+      return {}; // nothing else changes: no save
+    }
     case "vote": {
       const target = Number(a.target);
       need(room.phase === "vote" && idx >= 0 && Number.isInteger(target) && target >= 0 && target < room.ids.length && target !== idx);
       const key = `room:${code}:votes:${room.voteNo}`;
       await db.hset(key, String(idx), target, TTL);
+      if (room.settings.earlyVote) await logVote(db, code, room.roundNo, { at: Date.now(), voter: idx, target, final: true });
       const all = await db.hgetall<number>(key);
       if (Object.keys(all).length < room.ids.length) return;
       closeVote(all);
@@ -374,6 +395,8 @@ export type View = {
   accused: number | null; // guess phase: who is guessing
   guess: { text: string; correct: boolean } | null;
   gameOver: boolean;
+  myLean: number | null; // early voting: my current suspect during the talk
+  voteLog: VoteEvent[] | null; // early voting: every pick and final vote, only once the result is out
 };
 
 /** What one player may see: their own card only, never someone else's role. */
@@ -445,5 +468,15 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
     gameOver: room.phase === "result" && (room.history?.length ?? 0) >= room.settings.rounds,
     missing,
     lostWord,
+    ...(await leanInfo()),
   };
+
+  // early voting: my own current pick while talking; everyone's picks only once the result is out
+  async function leanInfo() {
+    const talking = room.phase === "discuss" || room.phase === "tie";
+    if (!room.settings.earlyVote || idx < 0 || !(talking || room.phase === "result")) return { myLean: null, voteLog: null };
+    const log = await voteLog(db, code, room.roundNo);
+    if (room.phase === "result") return { myLean: null, voteLog: log };
+    return { myLean: log.filter((e) => e.voter === idx && !e.final).at(-1)?.target ?? null, voteLog: null };
+  }
 }
