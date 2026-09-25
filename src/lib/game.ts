@@ -102,9 +102,17 @@ export function spendJokers(imposters: number[], ids: string[], holders: string[
 }
 
 /** Imposters who survived a vote (someone else was accused) earn a joker; a skipped vote earns nothing. */
-export function earnJokers(imposters: number[], accused: number | null, ids: string[], holders: string[]) {
-  if (accused === null) return holders;
-  return [...new Set([...holders, ...imposters.filter((i) => i !== accused).map((i) => ids[i])])];
+/** The one place that decides a round: skipped vote → nothing decided; a caught imposter who guesses the word got away. */
+export function outcome(imposters: number[], accused: number | null, guessed = false) {
+  const decided = accused !== null;
+  const caught = decided && imposters.includes(accused) && !guessed;
+  const survivors = decided ? imposters.filter((i) => i !== accused || guessed) : [];
+  return { decided, caught, survivors, crewWins: caught };
+}
+
+/** Imposters who got away earn a joker (no doubles). */
+export function earnJokers(imposters: number[], accused: number | null, ids: string[], holders: string[], guessed = false) {
+  return [...new Set([...holders, ...outcome(imposters, accused, guessed).survivors.map((i) => ids[i])])];
 }
 
 /** Who speaks at step `k` of the word round: everyone once, in seat order, starting with the starter. */

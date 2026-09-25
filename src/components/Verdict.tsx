@@ -1,6 +1,6 @@
 import { PartyPopper, VenetianMask } from "lucide-react";
 import { JokerEarned } from "@/components/Joker";
-import type { Text } from "@/lib/game";
+import { outcome, type Text } from "@/lib/game";
 import { UI, type Lang } from "@/lib/i18n";
 import { card } from "@/lib/ui";
 
@@ -12,9 +12,9 @@ const fill = (s: string, v: Record<string, string>) => s.replace(/\{(\w+)\}/g, (
 export function Verdict(p: { names: string[]; imposters: number[]; accused: number | null; word: Text; guess: Guess; joker: boolean; lang: Lang }) {
   const t = (k: keyof typeof UI) => UI[k][p.lang];
   const { names, imposters, accused, guess } = p;
-  const caught = accused !== null && imposters.includes(accused);
-  const guessed = caught && !!guess?.correct;
-  const survivors = accused === null ? [] : imposters.filter((i) => i !== accused || guessed);
+  const guessed = accused !== null && imposters.includes(accused) && !!guess?.correct;
+  const { survivors } = outcome(imposters, accused, guessed);
+  const caught = accused !== null && imposters.includes(accused); // "Caught!" even when they then guess the word
   const icon = "inline size-9 -translate-y-1 text-primary-ink";
   return (
     <>

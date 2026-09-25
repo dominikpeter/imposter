@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { earnJokers, exactReview, mergeWritten, reviewNotes, newRound, packSecret, spendJokers, uniqueNames, wordHint } from "./game.ts";
+import { earnJokers, outcome, exactReview, mergeWritten, reviewNotes, newRound, packSecret, spendJokers, uniqueNames, wordHint } from "./game.ts";
 import { CATEGORIES } from "./i18n.ts";
 
 test("pack words never repeat until the topic is exhausted", () => {
@@ -88,4 +88,19 @@ test("every topic is selected by default, Nerd included", async () => {
 
 test("duplicate names get a number", () => {
   assert.deepEqual(uniqueNames(["Tim", "Nora", "tim", "Tim"]), ["Tim", "Nora", "tim 2", "Tim 3"]);
+});
+
+test("outcome: who is caught, who got away, who wins", () => {
+  // imposters, accused, guessed → decided, caught, survivors, crewWins
+  const cases: [number[], number | null, boolean, boolean, boolean, number[], boolean][] = [
+    [[1], 1, false, true, true, [], true], // caught
+    [[1], 2, false, true, false, [1], false], // accused an innocent: the imposter got away
+    [[1], 1, true, true, false, [1], false], // caught but guessed the word: still got away
+    [[1], null, false, false, false, [], false], // vote skipped: nobody wins, nobody escapes
+    [[1, 3], 3, false, true, true, [1], true], // two imposters, one caught: crew wins, the other escaped
+  ];
+  for (const [imposters, accused, guessed, decided, caught, survivors, crewWins] of cases)
+    assert.deepEqual(outcome(imposters, accused, guessed), { decided, caught, survivors, crewWins }, JSON.stringify([imposters, accused, guessed]));
+  const ids = ["a", "b", "c", "d"];
+  assert.deepEqual(earnJokers([1], 1, ids, [], true), ["b"]); // a correct guess earns the joker too
 });

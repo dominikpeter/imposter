@@ -5,6 +5,7 @@ import { z } from "zod";
 import { exactReview, wordKey, type Draft, type Review } from "./game.ts";
 import { later, recordAi } from "./metrics.ts";
 import { db } from "./store.ts";
+import { aiEnabled, allowAi } from "./rateLimit.ts";
 
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
 // explicit base URL: don't inherit a machine-wide OPENAI_BASE_URL (e.g. a local dev proxy)
@@ -113,4 +114,23 @@ export async function explainWord(word: string, lang: string, who?: string, fast
     console.warn("explainWord failed:", (e as Error).message);
     return null;
   }
+}
+
+// ---- the AI gate: every entry point (routes and rooms) goes through these two ----
+// cached answer (only while the admin switch is on) → the account's budget → the model
+
+/** Word check for `account` (a user id, or null = signed out / AI off: exact checks only). */
+export async function checkWords(draft: Draft[], taken: string[], lang: string, account: string | null): Promise<Review[]> {
+  if (!account) return exactReview(draft, taken);
+  const [hit, on] = await Promise.all([cachedReview(draft, taken, lang), aiEnabled()]);
+  if (hit && on) return hit;
+  return reviewWords(draft, taken, lang, await allowAi(`user:${account}`), account);
+}
+
+/** Explanation on `account`'s budget; "rate_limited" when the budget (or the admin switch) says no. */
+export async function explain(word: string, lang: string, account: string): Promise<string | null | "rate_limited"> {
+  const [hit, on] = await Promise.all([cachedExplanation(word, lang), aiEnabled()]);
+  if (hit && on) return hit;
+  if (!(await allowAi(`user:${account}`))) return "rate_limited";
+  return explainWord(word, lang, account);
 }

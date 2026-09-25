@@ -32,3 +32,23 @@ export async function api<T>(path: string, body?: unknown, id?: Identity | null)
   if (!res.ok) throw new ApiError(data.error ?? "offline");
   return data as T;
 }
+
+/** A room API error code as the i18n key of the message players see (anything unknown: connection problem). */
+export const errorKey = (code: string) =>
+  (({ started: "errStarted", not_found: "errNotFound", full: "errFull", no_storage: "errNoStorage", rate_limited: "errTooMany" }) as const)[
+    code as "started"
+  ] ?? "errOffline";
+
+/** The one-phone game's saved state (the room page reads/writes its language and name too). Read fresh each time. */
+export function readSaved<T extends object>(): Partial<T> {
+  try {
+    return JSON.parse(localStorage.getItem(SAVE_KEY) ?? "{}") ?? {};
+  } catch {
+    return {};
+  }
+}
+export function writeSaved(patch: object) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ ...readSaved(), ...patch }));
+  } catch {}
+}

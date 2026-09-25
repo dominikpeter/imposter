@@ -17,35 +17,23 @@ import { Verdict } from "@/components/Verdict";
 import { RoomSettings } from "@/components/RoomSettings";
 import { winners } from "@/lib/stats";
 import { JokerHint } from "@/components/Joker";
-import { api, loadIdentity, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
+import { api, errorKey, loadIdentity, readSaved, saveIdentity, writeSaved, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, press } from "@/lib/ui";
 
 const noop = () => () => {};
 const POLL_MS = 1500;
 
-function readSaved(): { lang?: Lang; myName?: string } {
-  try {
-    return JSON.parse(localStorage.getItem(SAVE_KEY) ?? "{}") ?? {};
-  } catch {
-    return {};
-  }
-}
-function writeSaved(patch: object) {
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ ...readSaved(), ...patch }));
-  } catch {}
-}
 
 export default function Room() {
   const code = useParams<{ code: string }>().code.toUpperCase();
   const router = useRouter();
   // server + hydration render nothing, so localStorage-derived state never mismatches
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
-  const [lang, setLangState] = useState<Lang>(() => (typeof window === "undefined" ? "en" : (readSaved().lang ?? "en")));
+  const [lang, setLangState] = useState<Lang>(() => (typeof window === "undefined" ? "en" : (readSaved<{ lang: Lang }>().lang ?? "en")));
   const [id, setId] = useState<Identity | null>(() => (typeof window === "undefined" ? null : loadIdentity(code)));
   const [v, setV] = useState<View | null>(null);
   const [err, setErr] = useState("");
-  const [name, setName] = useState(() => (typeof window === "undefined" ? "" : (readSaved().myName ?? "")));
+  const [name, setName] = useState(() => (typeof window === "undefined" ? "" : (readSaved<{ myName: string }>().myName ?? "")));
   const [draft, setDraft] = useState<Draft[]>([]);
   const [notes, setNotes] = useState<(Note | null)[]>([]);
   const [confirmable, setConfirmable] = useState(""); // corrected draft shown; sending it unchanged = accepted
@@ -180,8 +168,7 @@ export default function Room() {
 
   if (!hydrated) return <main className="flex-1" />;
 
-  const errMsg =
-    err === "not_found" ? t("errNotFound") : err === "started" ? t("errStarted") : err === "full" ? t("errFull") : err === "no_storage" ? t("errNoStorage") : err === "rate_limited" ? t("errTooMany") : err ? t("errOffline") : "";
+  const errMsg = err ? t(errorKey(err)) : "";
   const joined = !!v && v.me >= 0;
   const names = v?.players ?? [];
   const hostName = v ? names[v.hostIndex] : "";

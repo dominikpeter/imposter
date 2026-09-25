@@ -134,7 +134,7 @@ After every round, **Game stats** shows the whole session so far:
 - **Times imposter:** how often each player got the imposter card.
 - **All numbers:** the full table below the charts, shaded like a heatmap: the stronger the colour, the higher the value in that column. The top value of each column is a solid cell, and a legend under the table explains the icons.
 
-**Reset stats** starts a fresh session.
+**Reset stats** starts a fresh session: scores and jokers go back to zero.
 
 <br clear="right"/>
 

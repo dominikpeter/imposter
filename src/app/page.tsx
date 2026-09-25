@@ -19,7 +19,7 @@ import { JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
 import { type RoundLog, winners } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
-import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
+import { api, errorKey, readSaved, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, heading, press, segmented, stepper, useAi } from "@/lib/ui";
 
 type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "guess" | "result";
@@ -33,21 +33,12 @@ type Saved = Partial<{
   accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[]; queue: number[]; lost: number[];
   rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess; wordLang: Lang | ""; earlyVote: boolean;
 }>;
-const KEY = SAVE_KEY;
-// read on every mount, not once per page load: the room page also writes KEY (language, name) and navigates back here
-const readSaved = (): Saved => {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {};
-  } catch {
-    return {};
-  }
-};
 const written = (w: Secret[], p: number) => w.filter((s) => s.authors.includes(p)).length; // words player p has in w
 const blank = (n: number) => Array.from({ length: n }, () => ({ word: "", clue: "" }));
 const noop = () => () => {};
 
 export default function Home() {
-  const [saved] = useState(readSaved);
+  const [saved] = useState(() => readSaved<NonNullable<Saved>>() as Saved); // on every mount: the room page writes it too
   const [lang, setLang] = useState<Lang>(saved.lang ?? "en");
   const [wordLang, setWordLang] = useState<Lang | "">(saved.wordLang ?? ""); // "" = same as the app
   const W = wordLang || lang; // language of the secret words
@@ -101,7 +92,7 @@ export default function Home() {
     document.documentElement.lang = lang;
     try {
       localStorage.setItem(
-        KEY,
+        SAVE_KEY,
         JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang, earlyVote }),
       );
     } catch {}
@@ -150,8 +141,7 @@ export default function Home() {
     begin(p[i], held, who);
   };
 
-  const errText = (e: unknown) =>
-    t(({ started: "errStarted", not_found: "errNotFound", full: "errFull", no_storage: "errNoStorage", rate_limited: "errTooMany" } as const)[(e as Error).message as "started"] ?? "errOffline");
+  const errText = (e: unknown) => t(errorKey((e as Error).message));
 
   const goOnline = async (path: string, body: object) => {
     setBusy(true);
@@ -274,7 +264,7 @@ export default function Home() {
 
   // round over: jokers for imposters who got away (or guessed the word), history for the stats
   const finish = (acc: number | null, v: number[] | null, guessed: boolean) => {
-    if (joker && acc !== null) setJokers(earnJokers(round!.imposters, guessed ? -1 : acc, names, jokers));
+    if (joker && acc !== null) setJokers(earnJokers(round!.imposters, acc, names, jokers, guessed));
     setHistory([...history, { names, imposters: round!.imposters, accused: acc, votes: v, word: round!.word, guessed }]);
     setPhase("result");
     fetch("/api/metrics", { method: "POST", keepalive: true }).catch(() => {}); // anonymous "a round was played" for the admin stats
@@ -800,7 +790,7 @@ export default function Home() {
               {t("newSetup")}
             </button>
           </div>
-          <Stats history={history} lang={lang} onReset={() => setHistory([])} />
+          <Stats history={history} lang={lang} onReset={() => { setHistory([]); setJokers([]); }} /* a fresh start: jokers belong to the old session too */ />
         </div>
       )}
     </main>

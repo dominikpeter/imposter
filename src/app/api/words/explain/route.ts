@@ -1,6 +1,5 @@
-import { cachedExplanation, explainWord } from "@/lib/ai";
+import { explain } from "@/lib/ai";
 import { aiUser } from "@/lib/auth";
-import { aiEnabled, allowAi } from "@/lib/rateLimit";
 
 // POST { word, lang } → { text } short explanation of a secret word
 export async function POST(req: Request) {
@@ -11,9 +10,7 @@ export async function POST(req: Request) {
   const user = await aiUser(req);
   if (!user) return Response.json({ error: "login" }, { status: 401 });
   const lang = String(body?.lang ?? "en").slice(0, 5);
-  const [hit, on] = await Promise.all([cachedExplanation(word, lang), aiEnabled()]);
-  if (hit && on) return Response.json({ text: hit }); // cached: instant, no AI call, no budget used
-  if (!(await allowAi(`user:${user.id}`))) return Response.json({ error: "rate_limited" }, { status: 429 });
-  const text = await explainWord(word, lang, user.id);
+  const text = await explain(word, lang, user.id);
+  if (text === "rate_limited") return Response.json({ error: "rate_limited" }, { status: 429 });
   return text ? Response.json({ text }) : Response.json({ error: "no_ai" }, { status: 503 });
 }

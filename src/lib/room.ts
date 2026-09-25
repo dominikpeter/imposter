@@ -1,8 +1,7 @@
 import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, uniqueName, wordHint, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
-import { cachedExplanation, cachedReview, explainWord, reviewWords } from "./ai.ts";
-import { aiEnabled, allowAi } from "./rateLimit.ts";
+import { checkWords, explain } from "./ai.ts";
 import { count, later } from "./metrics.ts";
 import type { Draft, Review } from "./game.ts";
 import type { RoundLog } from "./stats.ts";
@@ -184,12 +183,13 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
   const finish = (votes: number[] | null, guessed = false) => {
     const names = room.ids.map((id) => members.find((m) => m.id === id)?.name ?? "?");
     const r = room.round!;
-    if (room.settings.joker && room.accused !== null) room.jokers = earnJokers(r.imposters, guessed ? -1 : room.accused, room.ids, room.jokers ?? []);
+    if (room.settings.joker && room.accused !== null) room.jokers = earnJokers(r.imposters, room.accused, room.ids, room.jokers ?? [], guessed);
     room.history = [...(room.history ?? []), { names, imposters: r.imposters, accused: room.accused, votes, word: r.word, guessed }];
     room.phase = "result";
     roundDone = true;
   };
   const gameOver = (room.history?.length ?? 0) >= room.settings.rounds;
+  const aiAccount = room.aiUser ?? `room:${code}`; // AI in a room runs on the signed-in host's account
   const need = (ok: boolean) => {
     if (!ok) throw new RoomError("forbidden");
   };
@@ -241,8 +241,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       need(room.phase === "guess" && idx === room.accused);
       const text = String(a.text ?? "").trim().slice(0, 40);
       const taken = answers(room.round!.word);
-      const useAi = !!text && room.settings.ai && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`));
-      const correct = !!text && (await reviewWords([{ word: text, clue: "" }], taken, room.settings.lang, useAi, room.aiUser))[0]?.problem === "taken";
+      const correct = !!text && (await checkWords([{ word: text, clue: "" }], taken, room.settings.lang, room.settings.ai ? aiAccount : null))[0]?.problem === "taken";
       room.guess = text ? { text, correct } : null;
       const votes = await db.hgetall<number>(`room:${code}:votes:${room.voteNo}`);
       finish(room.ids.map((_, i) => Number(votes[i])), correct);
@@ -281,13 +280,13 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       const written = room.ids.flatMap((_, p) => (all[p] ?? []).map((w) => ({ p, w })));
       const taken = written.map((x) => x.w.word);
       const lang = String(a.lang ?? "en");
-      const useAi = room.settings.ai && !a.confirm;
-      const [hit, on] = useAi ? await Promise.all([cachedReview(clean, taken, lang), aiEnabled()]) : [null, false];
+      const account = room.settings.ai && !a.confirm ? aiAccount : null;
+      const checked = checkWords(clean, taken, lang, account); // precheck: runs and caches it; words: usually a cache hit then
       if (a.type === "precheck") {
-        if (useAi && !hit && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) await reviewWords(clean, taken, lang, true, room.aiUser);
+        if (account) await checked;
         return {};
       }
-      const reviews: Review[] = (hit && on ? hit : await reviewWords(clean, taken, lang, useAi && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`)), room.aiUser)).map((r) =>
+      const reviews: Review[] = (await checked).map((r) =>
         r.problem === "taken" && written[r.taken].p === idx ? { ...r, problem: "twice" } : r,
       );
       const changed = reviews.some((r, i) => r.problem || r.word !== clean[i].word.trim() || r.clue !== clean[i].clue.trim());
@@ -338,10 +337,9 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       const lang = LANGS.find((l) => l.id === a.lang)?.id ?? room.settings.lang; // explain in the player's app language
       const w = r!.word;
       const word = typeof w === "string" ? w : w[room.settings.lang];
-      const [hit, on] = await Promise.all([cachedExplanation(word, lang), aiEnabled()]);
-      if (hit && on) return { text: hit }; // cached: instant, no AI call
-      if (!(await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) throw new RoomError("rate_limited");
-      return { text: await explainWord(word, lang, room.aiUser) };
+      const text = await explain(word, lang, aiAccount);
+      if (text === "rate_limited") throw new RoomError("rate_limited");
+      return { text };
     }
     case "force": {
       // a phone dropped out: the host carries on without the missing players instead of waiting forever

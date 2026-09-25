@@ -141,6 +141,6 @@ test("word check starts while the player pauses: Done answers instantly", async 
   const t = Date.now();
   await page.getByRole("button", { name: "Done" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Autocorrected" })).toBeVisible();
-  expect(Date.now() - t).toBeLessThan(600); // no second ~1 s model call
+  expect(Date.now() - t).toBeLessThan(800); // no second model call (that alone takes 1.1 s+); headroom for a busy machine
   await expect(page.getByPlaceholder(/^Word/)).toHaveValue("Guitar");
 });
