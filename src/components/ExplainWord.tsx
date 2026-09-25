@@ -15,7 +15,7 @@ export function ExplainWord({ word, lang, explain }: { word: string; lang: Lang;
   const me = useMe();
   const [state, setState] = useState<{ key: string; text?: string; loading?: boolean; failed?: boolean }>({ key: "" });
   const key = `${lang}:${word}`;
-  if (!ai || (!explain && !me?.user)) return null; // your AI switch always counts; one phone also needs your account
+  if (!ai || me?.ai === false || (!explain && !me?.user)) return null; // your AI switch always counts; one phone also needs your account
   const t = (k: keyof typeof UI) => UI[k][lang];
   const cur = state.key === key ? state : { key }; // new word or language → start fresh
 

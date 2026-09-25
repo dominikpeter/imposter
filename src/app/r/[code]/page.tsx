@@ -193,7 +193,7 @@ export default function Room() {
       <button
         onClick={() => setShown(true)}
         aria-label={t("tapReveal")}
-        className={`card-back enter grid aspect-card w-full max-w-64 place-items-center self-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary ${press}`}
+        className={`card-back enter grid aspect-card w-full max-w-64 short:aspect-square place-items-center self-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary ${press}`}
       >
         <span className="rounded-2xl bg-surface/95 px-6 py-5">
           <Eye className="mx-auto size-12" strokeWidth={1.75} aria-hidden />
@@ -201,27 +201,27 @@ export default function Room() {
         </span>
       </button>
     ) : v.card.imposter ? (
-      <button onClick={() => setShown(false)} className="flip imposter-back glow relative w-full rounded-3xl px-6 py-12 text-white">
+      <button onClick={() => setShown(false)} className="flip imposter-back glow relative w-full rounded-3xl px-6 py-12 text-white short:py-8 tiny:py-5">
         <p className="text-lg text-white/80">{t("youAre")}</p>
-        <p className="shake mt-1 text-4xl font-bold tracking-tight break-words">{t("imposter")}</p>
+        <p className="shake mt-1 text-4xl font-bold tracking-tight break-words tiny:text-3xl">{t("imposter")}</p>
         {v.card.clue && (
           <p className="mx-auto mt-6 inline-block rounded-full bg-white/15 px-4 py-1.5 font-medium">
             {t("clueLabel")}: {tx(v.card.clue)}
           </p>
         )}
         {v.card.jokerHint && <JokerHint label={t("jokerHint")} hint={tw(v.card.jokerHint)} />}
-        <p className="mt-4 text-white/80">{t("blend")}</p>
+        <p className="mt-4 text-white/80 tiny:hidden">{t("blend")}</p>
       </button>
     ) : (
-      <button onClick={() => setShown(false)} className={`${card} flip w-full py-14`}>
+      <button onClick={() => setShown(false)} className={`${card} flip w-full py-14 short:py-8 tiny:py-5`}>
         <p className="text-lg text-muted">{tx(v.card.clue) || t("yourWord")}</p>
-        <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tw(v.card.word)}</p>
+        <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink short:text-4xl tiny:text-3xl">{tw(v.card.word)}</p>
       </button>
     ));
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-safe pb-safe">
-      <header className="mb-6 flex items-center justify-between gap-3">
+      <header className="mb-6 flex items-center justify-between gap-3 short:mb-3 tiny:mb-1">
         <button
           onClick={() => (!joined || v?.phase === "lobby" || confirm(t("leaveConfirm"))) && router.push("/")}
           aria-label={t("leave")}
@@ -246,16 +246,16 @@ export default function Room() {
 
       {/* join form: new visitor, or identity lost */}
       {v && !joined && v.phase === "lobby" && (
-        <div key="join" className="enter flex flex-1 flex-col justify-center gap-4 text-center">
+        <div key="join" className="enter flex flex-1 flex-col justify-center gap-4 text-center short:gap-2">
           <p className="flex items-center justify-center gap-1.5 text-muted"><Crown className="size-4" aria-hidden /> {hostName}</p>
-          <h1 className="text-4xl font-bold tracking-tight">{t("joinTitle")}</h1>
+          <h1 className="text-4xl font-bold tracking-tight short:text-3xl">{t("joinTitle")}</h1>
           <p className="font-mono text-3xl font-bold tracking-code text-primary-ink">{code}</p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
               join();
             }}
-            className="mt-4 flex flex-col gap-3"
+            className="mt-4 flex flex-col gap-3 short:mt-2"
           >
             <input
               autoFocus
@@ -338,7 +338,7 @@ export default function Room() {
       )}
 
       {joined && v.phase === "write" && (
-        <div key="write" className="flex flex-1 flex-col justify-center gap-5">
+        <div key="write" className="flex flex-1 flex-col justify-center gap-5 short:gap-3 tiny:gap-2">
           {v.iDone ? (
             <div className="enter flex flex-col items-center gap-4 text-center">
               <CircleCheck className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
@@ -361,8 +361,8 @@ export default function Room() {
       )}
 
       {joined && v.phase === "reveal" && (
-        <div key="reveal" className="flex flex-1 flex-col justify-center gap-6 text-center">
-          <p className="enter text-lg text-muted">{t("keepSecret")}</p>
+        <div key="reveal" className="flex flex-1 flex-col justify-center gap-6 text-center short:gap-3 tiny:gap-2">
+          <p className="enter text-lg text-muted tiny:hidden">{t("keepSecret")}</p>
           {theCard()}
           {shown && v.card && !v.card.imposter && v.settings.ai && <ExplainWord word={tw(v.card.word)} lang={L} explain={explain} />}
           {!v.iReady ? (
@@ -381,7 +381,7 @@ export default function Room() {
       )}
 
       {joined && v.phase === "discuss" && v.starter !== null && (
-        <div key="discuss" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <div key="discuss" className="flex flex-1 flex-col items-center justify-center gap-5 text-center short:gap-3 tiny:gap-2">
           <p className="text-sm text-muted">
             {t("round")} {v.history.length + 1} / {v.settings.rounds}
           </p>
@@ -423,7 +423,7 @@ export default function Room() {
       )}
 
       {joined && v.phase === "vote" && (
-        <div key="vote" className="flex flex-1 flex-col justify-center gap-5 text-center">
+        <div key="vote" className="flex flex-1 flex-col justify-center gap-5 text-center short:gap-3 tiny:gap-2">
           {v.iDone ? (
             <div className="enter flex flex-col items-center gap-4">
               <Vote className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
@@ -457,7 +457,7 @@ export default function Room() {
       )}
 
       {joined && v.phase === "tie" && (
-        <div key="tie" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
+        <div key="tie" className="flex flex-1 flex-col items-center justify-center gap-5 text-center short:gap-3 tiny:gap-2">
           <Scale className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight">{t("tie")}</h2>
           <p className="enter max-w-xs text-muted">{t("tieHelp")}</p>
@@ -486,7 +486,7 @@ export default function Room() {
       )}
 
       {joined && v.phase === "guess" && v.accused !== null && (
-        <div key="guess" className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <div key="guess" className="flex flex-1 flex-col items-center justify-center gap-6 text-center short:gap-3 tiny:gap-2">
           {v.accused === v.me ? (
             <GuessForm lang={L} busy={busy} onGuess={(text) => send({ type: "guess", text: text ?? "" })} />
           ) : (

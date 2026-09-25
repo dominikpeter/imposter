@@ -405,6 +405,10 @@ test("rooms: tie → discuss again, caught imposter guesses on their own phone, 
 // ---------- platform ----------
 
 test("rate limits: 20 new rooms and 30 joins per minute per IP, then 429", async ({ browser, request }) => {
+  test.setTimeout(90_000);
+  // limits count per clock minute: start early in a minute so the burst and the checks share one
+  const left = 60_000 - (Date.now() % 60_000);
+  if (left < 25_000) await new Promise((r) => setTimeout(r, left + 200));
   const addr = ip();
   for (let i = 0; i < 20; i++) await createRoom(request, addr, {});
   const blocked = await request.post("/api/rooms", { data: { name: "Lisa", settings: {} }, headers: { "x-real-ip": addr } });

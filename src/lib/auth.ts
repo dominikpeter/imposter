@@ -1,5 +1,7 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
+import { createAuthMiddleware } from "better-auth/api";
+import { recordLogin } from "./metrics.ts";
 
 // Login only unlocks the AI features (the game itself needs no account). No database: the session is an
 // encrypted cookie (stateless mode). Providers are switched on by their env vars, so any subset works.
@@ -43,21 +45,35 @@ export const auth = betterAuth({
   // we only need who you are, not your provider tokens: keeps the cookie small
   account: { storeStateStrategy: "cookie", storeAccountCookie: false },
   plugins: [nextCookies()],
+  // every completed sign-in (/callback/<provider>) lands in the admin stats
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const s = ctx.context.newSession;
+      if (!s || !ctx.path.startsWith("/callback/")) return;
+      await recordLogin({ id: s.user.id, name: s.user.name ?? "", email: s.user.email ?? "", provider: ctx.path.split("/")[2] ?? "" });
+    }),
+  },
 });
 
-export type AiUser = { id: string; name: string };
+export type AiUser = { id: string; name: string; email: string };
 
 /**
  * The signed-in user allowed to use AI, or null. E2E bypass: header `x-e2e-user`, honoured only by the dev
  * server started with E2E_AUTH_BYPASS=1 (never in a production build).
  */
-export async function aiUser(req: Request): Promise<AiUser | null> {
+export async function aiUser(req: { headers: Headers }): Promise<AiUser | null> {
   const bypass = env.NODE_ENV === "development" && env.E2E_AUTH_BYPASS === "1" && req.headers.get("x-e2e-user");
-  if (bypass) return { id: `e2e:${bypass}`, name: bypass };
+  if (bypass) return { id: `e2e:${bypass}`, name: bypass, email: `${bypass.toLowerCase()}@e2e.test` };
   try {
     const s = await auth.api.getSession({ headers: req.headers });
-    return s ? { id: s.user.id, name: s.user.name || s.user.email } : null;
+    return s ? { id: s.user.id, name: s.user.name || s.user.email, email: s.user.email } : null;
   } catch {
     return null;
   }
+}
+
+/** Admin page access: signed-in accounts listed in ADMIN_EMAIL (comma-separated, set in Vercel; not in the repo). */
+export function isAdmin(user: AiUser | null) {
+  const allowed = (env.ADMIN_EMAIL ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return !!user?.email && allowed.includes(user.email.toLowerCase());
 }

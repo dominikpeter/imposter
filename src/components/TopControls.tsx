@@ -85,7 +85,7 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
           </section>
 
           {/* AI is for signed-in players only: signed out, this is just the way in (hidden when no login is configured) */}
-          {me?.user ? (
+          {me?.user && me.ai ? (
             <>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
                 <span>
@@ -100,7 +100,9 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
               <SignIn lang={lang} />
             </>
           ) : (
-            !!me?.providers.length && (
+            me?.user ? (
+              <SignIn lang={lang} /> // AI paused for everyone: just the account and sign-out
+            ) : !!me?.ai && !!me.providers.length && (
               <section className="flex flex-col gap-2">
                 <h3 className="flex items-center gap-1.5 font-semibold">
                   <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("aiHelp")}

@@ -3,6 +3,7 @@ import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import { explainWord, reviewWords } from "./ai.ts";
 import { allowAi } from "./rateLimit.ts";
+import { count } from "./metrics.ts";
 import type { Draft, Review } from "./game.ts";
 import type { RoundLog } from "./stats.ts";
 import { tally } from "./vote.ts";
@@ -57,7 +58,7 @@ function cleanSettings(s: Partial<Settings>): Settings {
     imposterCount: Math.max(1, Math.min(10, Math.round(Number(s.imposterCount) || 1))),
     mode: s.mode === "custom" ? "custom" : "packs",
     cats: cats.length ? cats : DEFAULT_CATS,
-    perPlayer: Math.max(1, Math.min(5, Math.round(Number(s.perPlayer) || 2))),
+    perPlayer: Math.max(1, Math.min(10, Math.round(Number(s.perPlayer) || 2))),
     hint: s.hint !== false,
     joker: s.joker === true && s.hint === false, // jokers only when imposters get no clue
     ai: s.ai !== false, // the host's "AI help" setting: AI checks for written words
@@ -171,6 +172,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
     if (room.settings.joker && room.accused !== null) room.jokers = earnJokers(r.imposters, guessed ? -1 : room.accused, room.ids, room.jokers ?? []);
     room.history = [...(room.history ?? []), { names, imposters: r.imposters, accused: room.accused, votes, word: r.word, guessed }];
     room.phase = "result";
+    void count({ roomRounds: 1 }); // admin stats; never blocks or fails the game
   };
   const gameOver = (room.history?.length ?? 0) >= room.settings.rounds;
   const need = (ok: boolean) => {
@@ -225,7 +227,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       const text = String(a.text ?? "").trim().slice(0, 40);
       const taken = answers(room.round!.word);
       const useAi = !!text && room.settings.ai && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`));
-      const correct = !!text && (await reviewWords([{ word: text, clue: "" }], taken, room.settings.lang, useAi))[0]?.problem === "taken";
+      const correct = !!text && (await reviewWords([{ word: text, clue: "" }], taken, room.settings.lang, useAi, room.aiUser))[0]?.problem === "taken";
       room.guess = text ? { text, correct } : null;
       const votes = await db.hgetall<number>(`room:${code}:votes:${room.voteNo}`);
       finish(room.ids.map((_, i) => Number(votes[i])), correct);
@@ -260,7 +262,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
 
       // autocorrect / too hard / duplicates against everyone's words so far
       const written = room.ids.flatMap((_, p) => (all[p] ?? []).map((w) => ({ p, w })));
-      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`)))).map((r) =>
+      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`)), room.aiUser)).map((r) =>
         r.problem === "taken" && written[r.taken].p === idx ? { ...r, problem: "twice" } : r,
       );
       const changed = reviews.some((r, i) => r.problem || r.word !== clean[i].word.trim() || r.clue !== clean[i].clue.trim());
@@ -304,7 +306,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       if (!(await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) throw new RoomError("rate_limited");
       const lang = LANGS.find((l) => l.id === a.lang)?.id ?? room.settings.lang; // explain in the player's app language
       const w = r!.word;
-      return { text: await explainWord(typeof w === "string" ? w : w[room.settings.lang], lang) };
+      return { text: await explainWord(typeof w === "string" ? w : w[room.settings.lang], lang, room.aiUser) };
     }
     case "force": {
       // a phone dropped out: the host carries on without the missing players instead of waiting forever

@@ -1,4 +1,4 @@
-import { Globe, Lightbulb, ListOrdered, PenLine, Sparkles, Users, VenetianMask, WandSparkles } from "lucide-react";
+import { Globe, Lightbulb, ListOrdered, PenLine, Spade, Users, VenetianMask, WandSparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { CATEGORIES, LANGS, UI, type Lang } from "@/lib/i18n";
@@ -28,7 +28,7 @@ export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: 
         {row(<Users className={i} aria-hidden />, t("imposters"), s.imposterCount)}
         {row(<ListOrdered className={i} aria-hidden />, t("rounds"), s.rounds)}
         {row(<Lightbulb className={i} aria-hidden />, t("hint"), on(s.hint))}
-        {row(<Sparkles className={i} aria-hidden />, t("joker"), on(s.joker))}
+        {row(<Spade className={i} aria-hidden />, t("joker"), on(s.joker))}
         {row(<VenetianMask className={i} aria-hidden />, t("guessOption"), on(s.guess))}
         {/* AI runs on the host's account: only listed when the host is signed in */}
         {s.ai && row(<WandSparkles className={i} aria-hidden />, t("aiHelp"), on(s.ai))}

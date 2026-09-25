@@ -132,7 +132,7 @@ After every round, **Game stats** shows the whole session so far:
   - **+2** for surviving a vote as the imposter
 - **Points per round:** a line per player showing how the points added up.
 - **Times imposter:** how often each player got the imposter card.
-- **All numbers:** the full table, always visible below the charts.
+- **All numbers:** the full table below the charts, shaded like a heatmap: the stronger the colour, the higher the value in that column.
 
 **Reset stats** starts a fresh session.
 
@@ -142,7 +142,7 @@ After every round, **Game stats** shows the whole session so far:
 
 ## 5. Your own words and AI help
 
-Choose **Our own words** and set **Words per player** (1–5). Before the round, every player secretly writes their words, plus an optional hint.
+Choose **Our own words** and set **Words per player** (1–10). Before the round, every player secretly writes their words, plus an optional hint.
 
 - One word from everyone's words is drawn at random each round. **Whoever wrote it is never the imposter for it**, since they already know it.
 - When all the words have been played, the game asks for new ones.
@@ -240,7 +240,7 @@ The **sun/moon** button at the top switches between light and dark mode. The **g
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.
 - **AI help:** sign in with Google, GitHub or Microsoft to use it; once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
-- **Colors:** Night, Classic, Forest or Berry.
+- **Colors:** Night, Classic, Forest, Berry, Arosa (blue and sun yellow) or Aarau (red and black).
 
 Your choices are remembered on your phone.
 

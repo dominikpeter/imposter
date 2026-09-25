@@ -1,6 +1,6 @@
 "use client";
 
-import { CirclePlus, Eye, Languages, Sparkles, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { CirclePlus, Eye, Languages, Spade, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -88,7 +88,7 @@ export default function Home() {
   const [confirmable, setConfirmable] = useState(""); // corrected draft shown to the player; sending it unchanged = accepted
   const me = useMe();
   const aiPref = useAi();
-  const ai = aiPref && !!me?.user; // AI only for signed-in players (and only when their switch is on)
+  const ai = aiPref && !!me?.user && me.ai; // AI only for signed-in players, their switch on, and not paused by the admin
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState<"create" | "join">("create");
@@ -266,6 +266,7 @@ export default function Home() {
     if (joker && acc !== null) setJokers(earnJokers(round!.imposters, guessed ? -1 : acc, names, jokers));
     setHistory([...history, { names, imposters: round!.imposters, accused: acc, votes: v, word: round!.word, guessed }]);
     setPhase("result");
+    fetch("/api/metrics", { method: "POST", keepalive: true }).catch(() => {}); // anonymous "a round was played" for the admin stats
   };
 
   const submitGuess = async (text: string | null) => {
@@ -302,7 +303,7 @@ export default function Home() {
       <button
         onClick={() => setShown(true)}
         aria-label={action}
-        className={`card-back enter mt-2 grid aspect-card w-full max-w-64 place-items-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary anim-delay-80 ${press}`}
+        className={`card-back enter mt-2 grid aspect-card w-full max-w-64 short:aspect-square place-items-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary anim-delay-80 ${press}`}
       >
         <span className="rounded-2xl bg-surface/95 px-6 py-5">
           {(() => { const Icon = phase === "write" ? PenLine : phase === "vote" ? Vote : Eye; return <Icon className="mx-auto size-12" strokeWidth={1.75} aria-hidden />; })()}
@@ -333,7 +334,7 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-safe pb-safe">
-      <header className="mb-6 flex items-center justify-between gap-3">
+      <header className="mb-6 flex items-center justify-between gap-3 short:mb-3 tiny:mb-1">
         {phase === "setup" ? (
           <span />
         ) : phase === "result" ? (
@@ -353,7 +354,7 @@ export default function Home() {
       {phase === "setup" && (
         <div key="setup" className="enter flex flex-1 flex-col gap-4">
           <div className="-mt-4 mb-2 text-center">
-            <Hero word="Pizza" />
+            <Hero lang={W} />
             <h1 className="mt-3 text-5xl font-bold tracking-tight text-primary-ink">Imposter</h1>
             <p className="mt-1 text-lg text-muted">{t("tagline")}</p>
           </div>
@@ -479,7 +480,7 @@ export default function Home() {
               <label className={`flex min-h-11 items-center justify-between gap-3 ${hint ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                 <span>
                   <span className="flex items-start gap-1.5 font-medium">
-                    <Sparkles className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("joker")}
+                    <Spade className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("joker")}
                   </span>
                   <span className="block text-sm text-muted">{t(hint ? "jokerNeedsNoHint" : "jokerHelp")}</span>
                 </span>
@@ -536,7 +537,7 @@ export default function Home() {
                 <div key="custom" className="enter flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-3">
                     <span className="min-w-0 hyphens-auto">{t("perPlayer")}</span>
-                    {stepper(perPlayer, setPerPlayer, 1, 5)}
+                    {stepper(perPlayer, setPerPlayer, 1, 10)}
                   </div>
                   {pool.length > 0 && (
                     <div className="flex items-center justify-between gap-3 rounded-2xl bg-canvas px-4 py-2">
@@ -581,7 +582,7 @@ export default function Home() {
       )}
 
       {phase === "write" && (
-        <div key={`write-${turn}-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <div key={`write-${turn}-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center short:gap-3 tiny:gap-2">
           {progress}
           {!shown ? (
             passScreen(t("tapWrite"))
@@ -601,28 +602,28 @@ export default function Home() {
       )}
 
       {phase === "reveal" && round && (
-        <div key={`reveal-${turn}-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <div key={`reveal-${turn}-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center short:gap-3 tiny:gap-2">
           {progress}
           {!shown ? (
             passScreen(t("tapReveal"))
           ) : (
             <>
               {round.imposters.includes(turn) ? (
-                <div className="flip imposter-back glow relative w-full rounded-3xl px-6 py-12 text-white">
+                <div className="flip imposter-back glow relative w-full rounded-3xl px-6 py-12 text-white short:py-8 tiny:py-5">
                   <p className="text-lg text-white/80">{t("youAre")}</p>
-                  <p className="shake mt-1 text-4xl font-bold tracking-tight break-words sm:text-5xl">{t("imposter")}</p>
+                  <p className="shake mt-1 text-4xl font-bold tracking-tight break-words sm:text-5xl tiny:text-3xl">{t("imposter")}</p>
                   {hint && tx(round.clue) && (
                     <p className="mx-auto mt-6 inline-block rounded-full bg-white/15 px-4 py-1.5 font-medium">
                       {t("clueLabel")}: {tx(round.clue)}
                     </p>
                   )}
                   {round.jokered?.includes(turn) && <JokerHint label={t("jokerHint")} hint={tw(wordHint(round))} />}
-                  <p className="mt-4 text-white/80">{t("blend")}</p>
+                  <p className="mt-4 text-white/80 tiny:hidden">{t("blend")}</p>
                 </div>
               ) : (
-                <div className={`${card} flip w-full py-16`}>
+                <div className={`${card} flip w-full py-16 short:py-8 tiny:py-5`}>
                   <p className="text-lg text-muted">{tx(round.clue) || t("yourWord")}</p>
-                  <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tw(round.word)}</p>
+                  <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink short:text-4xl tiny:text-3xl">{tw(round.word)}</p>
                 </div>
               )}
               {!round.imposters.includes(turn) && <ExplainWord word={tw(round.word)} lang={lang} />}
@@ -677,7 +678,7 @@ export default function Home() {
       )}
 
       {phase === "vote" && round && (
-        <div key={`vote-${turn}-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <div key={`vote-${turn}-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center short:gap-3 tiny:gap-2">
           {progress}
           {!shown ? (
             passScreen(t("tapVote"))
@@ -732,7 +733,7 @@ export default function Home() {
       )}
 
       {phase === "guess" && round && accused !== null && (
-        <div key={`guess-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+        <div key={`guess-${shown}`} className="flex flex-1 flex-col items-center justify-center gap-6 text-center short:gap-3 tiny:gap-2">
           {!shown ? (
             <>
               <p className="text-lg text-muted">{t("passToGuess").replace("{name}", names[accused])}</p>

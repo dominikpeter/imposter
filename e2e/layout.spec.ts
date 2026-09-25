@@ -22,6 +22,9 @@ for (const size of SIZES) {
       await p.waitForTimeout(700); // let entrance animations settle
       const sw = await p.evaluate(() => document.documentElement.scrollWidth);
       expect(sw, `${screen} scrolls sideways`).toBeLessThanOrEqual(size.width);
+      // no scrolling "just for a few pixels": a screen either fits, or has real content below the fold
+      const over = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+      expect.soft(over <= 0 || over > 80, `${screen} scrolls by only ${over}px`).toBe(true);
       // pill buttons: icon and label on one line (a non-flex button once stacked the icon above its label)
       const stacked = await p.evaluate(() =>
         [...document.querySelectorAll("button.rounded-full")].flatMap((b) => {

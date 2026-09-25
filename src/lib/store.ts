@@ -6,6 +6,7 @@ export interface Store {
   set(key: string, value: unknown, opts: { ex: number; nx?: boolean }): Promise<boolean>;
   hset(key: string, field: string, value: unknown, ex: number): Promise<void>;
   hgetall<T>(key: string): Promise<Record<string, T>>;
+  hincr(key: string, field: string, by: number, ex: number): Promise<void>; // atomic counter (admin metrics)
 }
 
 export function memoryStore(): Store {
@@ -33,6 +34,10 @@ export function memoryStore(): Store {
     async hgetall<T>(k: string) {
       return clone<Record<string, T>>(live(k)?.v ?? {});
     },
+    async hincr(k, f, by, ex) {
+      const h = (live(k)?.v as Record<string, number>) ?? {};
+      data.set(k, { v: { ...h, [f]: (Number(h[f]) || 0) + by }, until: Date.now() + ex * 1000 });
+    },
   };
 }
 
@@ -47,6 +52,9 @@ function redisStore(redis: Redis): Store {
     },
     async hgetall<T>(k: string) {
       return ((await redis.hgetall(k)) ?? {}) as Record<string, T>;
+    },
+    async hincr(k, f, by, ex) {
+      await redis.multi().hincrby(k, f, by).expire(k, ex).exec();
     },
   };
 }

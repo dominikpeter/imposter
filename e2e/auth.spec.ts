@@ -184,3 +184,27 @@ test.describe("rooms: AI follows the host", () => {
     }
   });
 });
+
+test.describe("admin page", () => {
+  test("hidden from everyone but the admin", async ({ browser }) => {
+    for (const headers of [{}, SIGNED_IN]) {
+      const page = await (await browser.newContext({ ...test.info().project.use, extraHTTPHeaders: headers })).newPage();
+      const res = await page.goto("/admin");
+      expect(res?.status()).toBe(404);
+      await expect(page.getByRole("heading", { name: "Admin" })).toHaveCount(0);
+    }
+  });
+
+  test("the admin sees totals, the AI switch, rounds per day and accounts", async ({ browser }) => {
+    const page = await (await browser.newContext({ ...test.info().project.use, extraHTTPHeaders: { "x-e2e-user": "Admin" } })).newPage();
+    await page.request.post("/api/metrics"); // one finished one-phone round
+    await page.goto("/admin");
+    await expect(page.getByRole("heading", { name: "Admin" })).toBeVisible();
+    await expect(page.getByText("admin@e2e.test")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Turn AI (on|off)/ })).toBeVisible();
+    const rounds = page.getByRole("region", { name: "Totals" }).locator("div").filter({ hasText: "Rounds played" }).first();
+    expect(Number((await rounds.locator("span").nth(1).innerText()).replace(/\D/g, ""))).toBeGreaterThan(0);
+    await expect(page.getByRole("region", { name: "Rounds per day" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Accounts" })).toBeVisible();
+  });
+});

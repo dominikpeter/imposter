@@ -11,6 +11,6 @@ export async function POST(req: Request) {
   const user = await aiUser(req);
   if (!user) return Response.json({ error: "login" }, { status: 401 });
   if (!(await allowAi(`user:${user.id}`))) return Response.json({ error: "rate_limited" }, { status: 429 });
-  const text = await explainWord(word, String(body?.lang ?? "en").slice(0, 5));
+  const text = await explainWord(word, String(body?.lang ?? "en").slice(0, 5), user.id);
   return text ? Response.json({ text }) : Response.json({ error: "no_ai" }, { status: 503 });
 }

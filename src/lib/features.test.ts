@@ -55,7 +55,7 @@ test("rooms: input is clipped and cleaned (name 24 chars, settings clamped)", as
   assert.equal(v.players[0], "x".repeat(24));
   assert.equal(v.settings.imposterCount, 10);
   assert.equal(v.settings.rounds, 30);
-  assert.equal(v.settings.perPlayer, 5);
+  assert.equal(v.settings.perPlayer, 10); // words per player: up to 10
   assert.equal(v.settings.lang, "en");
   assert.equal(v.settings.cats.length, CATEGORIES.length); // unknown topics → all topics
   await assert.rejects(createRoom(db, "   ", {}), RoomError); // blank name
@@ -125,4 +125,19 @@ test("rooms: a wrong imposter guess means the crew wins", async () => {
 test("word check without AI: exact duplicates are caught, case- and space-insensitive", () => {
   const r = exactReview([{ word: "  apple ", clue: "" }, { word: "Moon", clue: "" }, { word: "moon", clue: "" }], ["Apple"]);
   assert.deepEqual(r.map((x) => x.problem), ["taken", null, "twice"]);
+});
+
+test("admin metrics: day counters add up and logins create an account row", async () => {
+  const { count, recordLogin, recordAi, dashboard } = await import("./metrics.ts");
+  const before = (await dashboard(1)).daily[0];
+  await count({ localRounds: 2, rooms: 1 });
+  await recordLogin({ id: "u-metrics", name: "Tester", email: "t@example.com", provider: "google" });
+  await recordAi("u-metrics", { inputTokens: 100, outputTokens: 20 });
+  const { daily, users } = await dashboard(1);
+  assert.equal(daily[0].localRounds - before.localRounds, 2);
+  assert.equal(daily[0].logins - before.logins, 1);
+  assert.equal(daily[0].tokensIn - before.tokensIn, 100);
+  const me = users.find((u) => u.id === "u-metrics")!;
+  assert.equal(me.aiCalls, 1);
+  assert.equal(me.tokens, 120);
 });

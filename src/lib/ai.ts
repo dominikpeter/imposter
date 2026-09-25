@@ -2,6 +2,7 @@ import { createOpenAI, type OpenAILanguageModelResponsesOptions } from "@ai-sdk/
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { exactReview, wordKey, type Draft, type Review } from "./game.ts";
+import { recordAi } from "./metrics.ts";
 
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
 // explicit base URL: don't inherit a machine-wide OPENAI_BASE_URL (e.g. a local dev proxy)
@@ -30,17 +31,19 @@ For each word, in order:
  * Exact duplicates are always caught; the AI adds spelling fixes, difficulty and same-meaning duplicates.
  * Without OPENAI_API_KEY (or if the call fails) it falls back to the exact checks only.
  */
-export async function reviewWords(draft: Draft[], taken: string[], lang: string, useAi = true): Promise<Review[]> {
+// `who`: the account the call runs on (a user id, or the room host's), for the admin usage stats
+export async function reviewWords(draft: Draft[], taken: string[], lang: string, useAi = true, who?: string): Promise<Review[]> {
   const exact = exactReview(draft, taken);
   if (!useAi || !process.env.OPENAI_API_KEY || !draft.length) return exact;
   try {
-    const { output } = await generateText({
+    const { output, usage } = await generateText({
       model: openai(MODEL),
       output: Output.object({ schema }),
       providerOptions: { openai: { reasoningEffort: "none", store: false } satisfies OpenAILanguageModelResponsesOptions },
       instructions,
       prompt: JSON.stringify({ uiLanguage: lang, TAKEN: taken, words: draft }),
     });
+    await recordAi(who, usage);
     const fixed: Draft[] = draft.map((d, i) => ({
       word: (output.results[i]?.word || d.word).trim().slice(0, 40),
       clue: (output.results[i]?.hint || d.clue).trim().slice(0, 40), // an empty AI hint never erases the writer's
@@ -60,10 +63,10 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
 }
 
 /** A short, kid-friendly explanation of a secret word for crew members who don't know it (never shown to imposters). */
-export async function explainWord(word: string, lang: string): Promise<string | null> {
+export async function explainWord(word: string, lang: string, who?: string): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
   try {
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model: openai(MODEL),
       providerOptions: { openai: { reasoningEffort: "none", store: false } satisfies OpenAILanguageModelResponsesOptions },
       maxOutputTokens: 200,
@@ -72,6 +75,7 @@ export async function explainWord(word: string, lang: string): Promise<string | 
         'Answer in the language with this code: "' + lang + '" (German: Swiss spelling, "ss" not "ß"). No lists, no markdown.',
       prompt: word,
     });
+    await recordAi(who, usage);
     return text.trim() || null;
   } catch (e) {
     console.warn("explainWord failed:", (e as Error).message);

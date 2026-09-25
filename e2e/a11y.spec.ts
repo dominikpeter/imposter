@@ -58,3 +58,15 @@ for (const scheme of ["light", "dark"] as const) {
     await audit(page, "room card");
   });
 }
+
+// every colour theme, light and dark, on the busiest screen (setup with the topic tiles)
+for (const palette of ["night", "classic", "forest", "berry", "arosa", "aarau"]) {
+  test(`colour theme ${palette}: contrast in light and dark`, async ({ page }) => {
+    await page.addInitScript((p) => localStorage.setItem("palette", p), palette);
+    for (const scheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme: scheme, reducedMotion: "reduce" });
+      await page.goto("/");
+      await audit(page, `${palette} ${scheme}`);
+    }
+  });
+}

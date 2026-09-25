@@ -12,5 +12,5 @@ export default defineConfig({
   use: { ...devices["Pixel 7"], baseURL, trace: "retain-on-failure" },
   webServer: process.env.BASE_URL
     ? undefined
-    : { command: `E2E_AUTH_BYPASS=1 NEXT_DIST_DIR=.next-e2e npx next dev -p ${PORT}`, url: baseURL, reuseExistingServer: true, timeout: 120_000 },
+    : { command: `E2E_AUTH_BYPASS=1 ADMIN_EMAIL=admin@e2e.test NEXT_DIST_DIR=.next-e2e npx next dev -p ${PORT}`, url: baseURL, reuseExistingServer: true, timeout: 120_000 },
 });

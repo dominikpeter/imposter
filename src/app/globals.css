@@ -204,6 +204,94 @@
   --c-canvas: #14061f;
   --c-surface: #200a31;
 }
+/* Arosa: coat of arms blue, sun yellow, snow white */
+:root[data-palette="arosa"] {
+  --c-primary-dark: #1a3ac4;
+  --c-primary: #2449e0;
+  --c-primary-light: #fff3a3;
+  --c-on-primary: #ffffff;
+  --c-accent: #ffd60a;
+  --c-accent-deep: #1a3ac4;
+  --c-glow: #ffd60a;
+  --c-primary-ink: #1a3ac4;
+  --c-tint: #e8edfd;
+  --c-line: #d3dcfb;
+  --c-canvas: #f3f6ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="arosa"]:not([data-theme="light"]) {
+    --c-primary-dark: #ffd60a;
+    --c-primary: #ffe45c;
+    --c-primary-light: #1a2a6e;
+    --c-on-primary: #0a1a5c;
+    --c-accent: #1a3ac4;
+    --c-accent-deep: #0a1a5c;
+    --c-glow: #ffd60a;
+    --c-primary-ink: #ffe066;
+    --c-tint: #16235e;
+    --c-line: #243275;
+    --c-canvas: #070f35;
+    --c-surface: #0e1a4a;
+  }
+}
+:root[data-palette="arosa"][data-theme="dark"] {
+  --c-primary-dark: #ffd60a;
+  --c-primary: #ffe45c;
+  --c-primary-light: #1a2a6e;
+  --c-on-primary: #0a1a5c;
+  --c-accent: #1a3ac4;
+  --c-accent-deep: #0a1a5c;
+  --c-glow: #ffd60a;
+  --c-primary-ink: #ffe066;
+  --c-tint: #16235e;
+  --c-line: #243275;
+  --c-canvas: #070f35;
+  --c-surface: #0e1a4a;
+}
+/* Aarau: coat of arms red, black eagle, white */
+:root[data-palette="aarau"] {
+  --c-primary-dark: #1a1a1a;
+  --c-primary: #333333;
+  --c-primary-light: #fbd5d7;
+  --c-on-primary: #ffffff;
+  --c-accent: #e30613;
+  --c-accent-deep: #b0000c;
+  --c-glow: #e30613;
+  --c-primary-ink: #c1121f;
+  --c-tint: #fdecec;
+  --c-line: #f5d0d2;
+  --c-canvas: #faf7f7;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="aarau"]:not([data-theme="light"]) {
+    --c-primary-dark: #ef3340;
+    --c-primary: #ff5c66;
+    --c-primary-light: #3a1113;
+    --c-on-primary: #1a0003;
+    --c-accent: #1a1a1a;
+    --c-accent-deep: #000000;
+    --c-glow: #ef3340;
+    --c-primary-ink: #ff7a82;
+    --c-tint: #2a1416;
+    --c-line: #3d2023;
+    --c-canvas: #0f0a0a;
+    --c-surface: #1a1213;
+  }
+}
+:root[data-palette="aarau"][data-theme="dark"] {
+  --c-primary-dark: #ef3340;
+  --c-primary: #ff5c66;
+  --c-primary-light: #3a1113;
+  --c-on-primary: #1a0003;
+  --c-accent: #1a1a1a;
+  --c-accent-deep: #000000;
+  --c-glow: #ef3340;
+  --c-primary-ink: #ff7a82;
+  --c-tint: #2a1416;
+  --c-line: #3d2023;
+  --c-canvas: #0f0a0a;
+  --c-surface: #1a1213;
+}
 
 @theme inline {
   --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.2);
@@ -381,6 +469,11 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }
+
+/* short screens (small phones, phones in landscape): tighter vertical rhythm so a screen fits instead of scrolling a few pixels */
+@custom-variant short (@media (max-height: 700px));
+/* phones turned sideways: optional lines give way so the card and its button fit */
+@custom-variant tiny (@media (max-height: 480px));
 
 /* design-system utilities (instead of arbitrary values in markup) */
 @utility pt-safe { padding-top: max(1.25rem, env(safe-area-inset-top)); }

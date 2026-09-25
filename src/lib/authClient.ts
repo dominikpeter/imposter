@@ -6,12 +6,13 @@ import type { AiUser } from "./auth";
 
 export const authClient = createAuthClient();
 
-export type Me = { user: AiUser | null; providers: ("google" | "github" | "microsoft")[] };
+// ai: false when the admin switched AI off for everyone
+export type Me = { user: AiUser | null; providers: ("google" | "github" | "microsoft")[]; ai: boolean };
 let cache: Promise<Me> | null = null;
 const load = () =>
   (cache ??= fetch("/api/me", { cache: "no-store" })
     .then((r) => r.json())
-    .catch(() => ({ user: null, providers: [] })));
+    .catch(() => ({ user: null, providers: [], ai: false })));
 
 /** Who is signed in (null while loading). */
 export function useMe() {

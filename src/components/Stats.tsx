@@ -7,6 +7,10 @@ import { card, ghost } from "@/lib/ui";
 import { Timeline } from "@/components/Timeline";
 
 const MEDALS = ["text-gold", "text-silver", "text-bronze"];
+// "All numbers" as a heatmap: each column shaded by its own maximum, one hue light → strong (text stays readable)
+const HEAT = ["imposter", "escaped", "correctVotes", "votesTaken", "points"] as const;
+const heat = (v: number, max: number) =>
+  v && max ? { backgroundColor: `color-mix(in oklab, var(--c-primary-ink) ${Math.round(8 + (v / max) * 30)}%, transparent)` } : undefined;
 
 /** End-of-round session stats: tiles, crew-vs-imposter split, awards, two bar charts, table view. */
 export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: Lang; onReset?: () => void }) {
@@ -25,6 +29,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
     { Icon: Siren, label: t("suspected"), p: top((p) => p.votesTaken), value: (p: PlayerStats) => `${p.votesTaken} ${t(p.votesTaken === 1 ? "vote1" : "votes")}` },
   ].filter((a) => a.p);
   const maxPts = Math.max(1, ...s.players.map((p) => p.points));
+  const colMax = Object.fromEntries(HEAT.map((k) => [k, Math.max(0, ...s.players.map((p) => p[k]))])) as Record<(typeof HEAT)[number], number>;
   const suspects = [...s.players].filter((p) => p.votesTaken > 0).sort((a, b) => b.votesTaken - a.votesTaken);
   const maxVotes = Math.max(1, ...suspects.map((p) => p.votesTaken));
 
@@ -165,8 +170,9 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
       {/* table view: every number, for screen readers and the curious */}
       <div className="rounded-2xl border border-line">
         <h3 className="px-4 pt-3 font-semibold">{t("details")}</h3>
+        <p className="px-4 text-sm text-muted">{t("heatLegend")}</p>
         <div className="overflow-x-auto px-2 pb-3">
-          <table className="w-full text-sm tabular-nums">
+          <table className="w-full border-separate border-spacing-0.5 text-sm tabular-nums">
             <thead className="text-muted">
               <tr>
                 <th className="px-1.5 py-2 text-left font-medium">{t("player")}</th>
@@ -189,11 +195,11 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
               {s.players.map((p) => (
                 <tr key={p.name} className="border-t border-line">
                   <td className="max-w-24 truncate px-1.5 py-2">{p.name}</td>
-                  <td className="px-1.5 py-2 text-right">{p.imposter}</td>
-                  <td className="px-1.5 py-2 text-right">{p.escaped}</td>
-                  <td className="px-1.5 py-2 text-right">{p.correctVotes}</td>
-                  <td className="px-1.5 py-2 text-right">{p.votesTaken}</td>
-                  <td className="px-1.5 py-2 text-right font-semibold">{p.points}</td>
+                  {HEAT.map((k) => (
+                    <td key={k} className={`rounded-md px-1.5 py-2 text-right ${k === "points" ? "font-semibold" : ""}`} style={heat(p[k], colMax[k])}>
+                      {p[k]}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

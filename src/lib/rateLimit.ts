@@ -17,10 +17,16 @@ export async function allow(key: string, perMinute: number) {
   return true;
 }
 
+// global AI switch, flipped on the admin page; every AI path goes through allowAi, so off means off everywhere
+export const AI_OFF = "config:ai-off";
+export const aiEnabled = async () => !(await db.get<boolean>(AI_OFF).catch(() => null));
+export const setAiEnabled = (on: boolean) => db.set(AI_OFF, !on, { ex: 10 * 365 * 86_400 });
+
 /** Counts one AI call for `key` (an account); false once its minute or day budget, or the global day budget, is used up. */
 export async function allowAi(key: string, perMinute = PER_MINUTE, perDay = PER_DAY, perUserDay = PER_USER_DAY) {
   // serverless instances don't share memory: without Redis a limit can't hold on Vercel, so no AI there
   if (!persistent && process.env.VERCEL) return false;
+  if (!(await aiEnabled())) return false;
   const now = Date.now();
   const minute = `rl:${key}:${Math.floor(now / 60_000)}`;
   const day = `rl:day:${Math.floor(now / 86_400_000)}`;
