@@ -165,8 +165,11 @@ export type VoteEvent = { at: number; voter: number; target: number; final?: boo
 const leansKey = (code: string, roundNo: number) => `room:${code}:leans:${roundNo}`;
 async function logVote(db: Store, code: string, roundNo: number, e: VoteEvent) {
   const key = leansKey(code, roundNo);
-  const seq = Object.keys(await db.hgetall(key)).length; // ponytail: two players at the same instant share a seq; the voter in the field keeps both
-  await db.hset(key, `${String(seq).padStart(5, "0")}:${e.voter}`, e, TTL);
+  const seq = Object.keys(await db.hgetall(key)).length; // two requests at the same instant share a seq: voter + time keep both
+  await Promise.all([
+    db.hset(key, `${String(seq).padStart(5, "0")}:${String(e.voter).padStart(2, "0")}:${e.at}`, e, TTL),
+    e.final ? null : db.hset(`${key}:now`, String(e.voter), e.target, TTL), // current pick: one small read per poll
+  ]);
 }
 async function voteLog(db: Store, code: string, roundNo: number) {
   const all = await db.hgetall<VoteEvent>(leansKey(code, roundNo));
@@ -473,8 +476,7 @@ export async function view(db: Store, code: string, pid: unknown, token: unknown
   async function leanInfo() {
     const talking = room.phase === "discuss" || room.phase === "tie";
     if (!room.settings.earlyVote || idx < 0 || !(talking || room.phase === "result")) return { myLean: null, voteLog: null };
-    const log = await voteLog(db, code, room.roundNo);
-    if (room.phase === "result") return { myLean: null, voteLog: log };
-    return { myLean: log.filter((e) => e.voter === idx && !e.final).at(-1)?.target ?? null, voteLog: null };
+    if (room.phase === "result") return { myLean: null, voteLog: await voteLog(db, code, room.roundNo) };
+    return { myLean: await db.hget<number>(`${leansKey(code, room.roundNo)}:now`, String(idx)), voteLog: null };
   }
 }
