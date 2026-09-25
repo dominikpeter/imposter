@@ -91,6 +91,8 @@ Vercel with the Upstash for Redis integration, which sets `KV_REST_API_URL` / `K
 
 Pushes to `main` deploy to production automatically (`./scripts/connect-vercel-git.sh` re-links the repo if needed).
 
+**Install / apps:** the site is an installable PWA (Settings → Install app; one-phone games work offline). Native wrappers via [Capacitor](https://capacitorjs.com) load the live site, so every deploy updates them too: `just app-android` builds a debug APK (Android SDK + JDK 21), `just app-ios` opens the Xcode project (needs full Xcode). Icons/splash come from `assets/` (`npx capacitor-assets generate`). Note: Google blocks sign-in inside app web views, so AI sign-in in the apps needs an in-app browser flow before a store release.
+
 **Admin page** (`/admin`): games per day, rooms, sign-ins, AI calls and tokens, the list of signed-in accounts, and a switch that turns AI off for everyone. Only the Google/GitHub accounts in `ADMIN_EMAIL` (comma-separated, set in Vercel) can open it; everyone else gets a 404. The numbers are Redis counters (`metrics:*`), kept for about a year.
 
 **Sign-in for AI help** (Google, GitHub, Microsoft via Better Auth): register the callback `https://whoislying.ch/api/auth/callback/<provider>` (and `http://localhost:3000/...` for local dev) with each provider, then run `just auth-setup`. It asks for the client IDs and secrets (never echoed), stores them in `.env.local` and Vercel production, and sets `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`. `just redeploy` puts them live.

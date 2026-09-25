@@ -48,6 +48,16 @@ warm-explanations:
     # Vercel hands out a placeholder for sensitive vars: Redis comes from production, the OpenAI key from .env.local
     npx tsx --env-file=.env.warm.local --env-file=.env.local scripts/warm-explanations.mts
 
+# Android app (Capacitor, loads https://whoislying.ch): debug APK in android/app/build/outputs/apk/debug
+app-android:
+    npx cap sync android
+    cd android && JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home)" ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}" ./gradlew assembleDebug
+
+# iOS app (Capacitor): needs full Xcode; opens the project to build/run/sign there
+app-ios:
+    npx cap sync ios
+    npx cap open ios
+
 # everything CI would run
 check: lint typecheck test e2e
 
