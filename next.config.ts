@@ -17,7 +17,11 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   env: { NEXT_PUBLIC_VERSION: JSON.parse(readFileSync("package.json", "utf8")).version }, // shown in Settings
   distDir: process.env.NEXT_DIST_DIR ?? ".next", // e2e builds into .next-e2e so it can run next to `just dev`
-  headers: async () => [{ source: "/:path*", headers: security }],
+  headers: async () => [
+    { source: "/:path*", headers: security },
+    // the service worker must never come from a cache, or updates would never reach installed apps
+    { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }] },
+  ],
 };
 
 export default nextConfig;

@@ -4,6 +4,7 @@ import { BookOpen, Heart, Moon, Settings, Sparkles, Sun, SunMoon, X } from "luci
 import { useRef, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { SignIn } from "@/components/SignIn";
+import { InstallApp } from "@/components/Pwa";
 import { useMe } from "@/lib/authClient";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
@@ -142,6 +143,8 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
           >
             <BookOpen className="size-5" aria-hidden /> {t("howToPlay")}
           </a>
+
+          <InstallApp lang={lang} />
 
           <footer className="flex flex-col items-center gap-1 pt-1 text-sm text-muted">
             <p className="flex items-center gap-1">

@@ -90,6 +90,12 @@ export const UI = {
   voteTimelineHelp: { en: "One column per change of mind, stacked by suspect.", fr: "Une colonne par changement d'avis, empilée par suspect.", de: "Eine Säule pro Meinungswechsel, gestapelt nach Verdächtigen." },
   talkStart: { en: "Talk starts", fr: "Début", de: "Start" },
   finalVote: { en: "Final vote", fr: "Vote final", de: "Schlussabstimmung" },
+  installApp: { en: "Install app", fr: "Installer l'app", de: "App installieren" },
+  installIos: {
+    en: "Install on iPhone: tap Share, then “Add to Home Screen”. It then opens full-screen and works offline.",
+    fr: "Installer sur iPhone : touche Partager, puis « Sur l'écran d'accueil ». L'app s'ouvre en plein écran et marche hors ligne.",
+    de: "Auf dem iPhone installieren: Teilen antippen, dann «Zum Home-Bildschirm». Die App öffnet sich dann im Vollbild und läuft offline.",
+  },
   continueConfirm: { en: "Go on without the missing players?", fr: "Continuer sans les joueurs manquants ?", de: "Ohne die fehlenden Spieler weitermachen?" },
   continueWithout: { en: "Continue without them", fr: "Continuer sans eux", de: "Ohne sie weiterspielen" },
   waitingOthers: { en: "Waiting for the others", fr: "En attente des autres", de: "Warte auf die anderen" },
