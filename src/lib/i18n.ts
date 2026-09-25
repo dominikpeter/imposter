@@ -75,6 +75,7 @@ export const UI = {
   you: { en: "you", fr: "toi", de: "du" },
   waitingHost: { en: "Waiting for the host to start…", fr: "En attente de l'hôte…", de: "Warte auf den Gastgeber…" },
   needThree: { en: "Waiting for at least 3 players", fr: "Il faut au moins 3 joueurs", de: "Mindestens 3 Spieler nötig" },
+  remove: { en: "Remove", fr: "Retirer", de: "Entfernen" },
   continueConfirm: { en: "Go on without the missing players?", fr: "Continuer sans les joueurs manquants ?", de: "Ohne die fehlenden Spieler weitermachen?" },
   continueWithout: { en: "Continue without them", fr: "Continuer sans eux", de: "Ohne sie weiterspielen" },
   waitingOthers: { en: "Waiting for the others", fr: "En attente des autres", de: "Warte auf die anderen" },

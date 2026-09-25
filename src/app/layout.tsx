@@ -6,8 +6,10 @@ import "./globals.css";
 const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://whoislying.ch"), // absolute URLs for link previews (WhatsApp, iMessage, Slack)
   title: "Imposter",
   description: "The party game where one of you is lying.",
+  openGraph: { siteName: "Imposter", type: "website", url: "/" },
   appleWebApp: { capable: true, title: "Imposter", statusBarStyle: "default" },
 };
 

@@ -308,7 +308,7 @@ export default function Home() {
   );
 
   const progress = (
-    <div className="flex items-center gap-1.5" aria-label={`${turn + 1} / ${players.length}`}>
+    <div role="img" className="flex items-center gap-1.5" aria-label={`${turn + 1} / ${players.length}`}>
       {players.map((_, i) => (
         <span
           key={i}
@@ -380,7 +380,7 @@ export default function Home() {
                     />
                     <button
                       onClick={() => editPlayers(players.filter((_, j) => j !== i))}
-                      aria-label="Remove"
+                      aria-label={t("remove")}
                       className={`size-11 rounded-full text-2xl leading-none text-divider hover:bg-canvas hover:text-ink ${press}`}
                     >
                       ×
@@ -473,8 +473,8 @@ export default function Home() {
               </label>
               <label className={`flex min-h-11 items-center justify-between gap-3 ${hint ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                 <span>
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("joker")}
+                  <span className="flex items-start gap-1.5 font-medium">
+                    <Sparkles className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("joker")}
                   </span>
                   <span className="block text-sm text-muted">{t(hint ? "jokerNeedsNoHint" : "jokerHelp")}</span>
                 </span>
@@ -483,8 +483,8 @@ export default function Home() {
               </label>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
                 <span>
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <VenetianMask className="size-4 text-primary-ink" aria-hidden /> {t("guessOption")}
+                  <span className="flex items-start gap-1.5 font-medium">
+                    <VenetianMask className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("guessOption")}
                   </span>
                   <span className="block text-sm text-muted">{t("guessOptionHelp")}</span>
                 </span>

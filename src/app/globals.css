@@ -14,13 +14,13 @@
   --c-crew: #00937d; /* chart series, validated (dataviz) on #fff */
   --c-imp: #3154bd;
   --c-ink: #0b132b;
-  --c-muted: #517197;
+  --c-muted: #4c6a8d; /* 4.8:1 on tint, 5.6:1 on white */
   --c-divider: #a5b8ce;
   --c-canvas: #eef8f8;
   --c-surface: #ffffff;
   --c-line: #cfe9e9;
   --c-tint: #def2f2; /* chips, pills */
-  --c-primary-ink: #2f7978; /* teal as text, 5:1 on white */
+  --c-primary-ink: #2c7271; /* teal as text: 4.8:1 on tint, 5.6:1 on white */
   /* chart series, 8 validated categorical slots (dataviz reference palette), independent of color theme */
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
   color-scheme: light;
@@ -83,7 +83,7 @@
   --c-accent: #7c4dff;
   --c-accent-deep: #5b2fd6;
   --c-glow: #7c4dff;
-  --c-primary-ink: #1976d2;
+  --c-primary-ink: #1565c0; /* ≥4.5:1 on its tint */
   --c-tint: #e3f0fd;
   --c-line: #d6e9fb;
   --c-canvas: #f2f7fd;

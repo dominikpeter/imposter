@@ -45,8 +45,8 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
             <span key={tile.n} className="pop text-4xl font-bold tabular-nums" style={{ animationDelay: `${500 + i * 90}ms` }}>
               {tile.n}
             </span>
-            <span className="mt-1 flex items-center gap-1.5 text-sm leading-tight text-muted">
-              {tile.dot && <span className={`size-2.5 shrink-0 rounded-full ${tile.dot}`} />}
+            <span className="mt-1 flex flex-col items-center gap-1 text-sm leading-tight text-balance text-muted">
+              <span className={`size-2.5 shrink-0 rounded-full ${tile.dot ?? ""}`} /> {/* empty for Rounds: keeps the labels aligned */}
               {tile.label}
             </span>
           </div>

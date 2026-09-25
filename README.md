@@ -6,10 +6,10 @@
 
 [**Play now → whoislying.ch**](https://whoislying.ch)
 
-<img src="docs/setup.png" width="200" alt="Setup screen" />&nbsp;
-<img src="docs/imposter.png" width="200" alt="Imposter card" />&nbsp;
-<img src="docs/lobby.png" width="200" alt="Online room with QR code" />&nbsp;
-<img src="docs/result.png" width="200" alt="Result screen" />
+<img src="docs/manual/01-setup.png" width="200" alt="Setup screen" />&nbsp;
+<img src="docs/manual/05-imposter.png" width="200" alt="Imposter card" />&nbsp;
+<img src="docs/manual/16-lobby.png" width="200" alt="Online room with QR code" />&nbsp;
+<img src="docs/manual/08-result.png" width="200" alt="Result screen" />
 
 </div>
 
@@ -37,7 +37,7 @@
 - **Settings:** light / dark / auto, four color themes (Night, Classic, Forest, Berry) and three languages.
 - **Built for phones:** big tap targets, safe areas, reduced-motion support, and you can add it to your home screen. A reload or accidental Back resumes the game where you left off.
 
-<p align="center"><img src="docs/stats.png" width="320" alt="Game stats" /></p>
+<p align="center"><img src="docs/manual/09-stats.png" width="320" alt="Game stats" /></p>
 
 ## Tech
 

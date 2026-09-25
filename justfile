@@ -35,6 +35,10 @@ test:
 e2e *args:
     npx playwright test {{args}}
 
+# retake the screenshots in docs/manual (real OpenAI for the AI ones if .env.local has a key)
+manual-shots:
+    MANUAL_SHOTS=1 npx playwright test e2e/manual.spec.ts --workers=1
+
 # everything CI would run
 check: lint typecheck test e2e
 
