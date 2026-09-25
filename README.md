@@ -64,11 +64,14 @@ src/
 ## Development
 
 ```bash
-npm install
-npm run dev          # http://localhost:3000, online rooms use an in-memory store
-npm test             # unit tests
-npm run e2e          # Playwright end-to-end tests (starts the dev server)
+just setup           # dependencies, git hooks (prek), Playwright browser
+just dev             # http://localhost:3000, online rooms use an in-memory store
+just test            # unit tests
+just e2e             # Playwright end-to-end tests (starts the dev server)
+just check           # everything before a release
 ```
+
+`just` lists all recipes (see also AGENTS.md).
 
 ### Online rooms with real Redis locally (like on Vercel)
 
@@ -85,3 +88,7 @@ BASE_URL=http://localhost:3100 npm run e2e
 ### Deploying
 
 Vercel with the Upstash for Redis integration, which sets `KV_REST_API_URL` / `KV_REST_API_TOKEN`, plus `OPENAI_API_KEY` for AI help. Without Redis, the one-phone game works, online rooms answer "not available yet", and AI stays off: its rate limit needs shared storage. Without an OpenAI key, word checks fall back to exact duplicates only.
+
+Pushes to `main` deploy to production automatically (`./scripts/connect-vercel-git.sh` re-links the repo if needed).
+
+**Sign-in for AI help** (Google, GitHub, Microsoft via Better Auth): register the callback `https://whoislying.ch/api/auth/callback/<provider>` (and `http://localhost:3000/...` for local dev) with each provider, then run `just auth-setup`. It asks for the client IDs and secrets (never echoed), stores them in `.env.local` and Vercel production, and sets `BETTER_AUTH_SECRET` / `BETTER_AUTH_URL`. `just redeploy` puts them live.

@@ -45,3 +45,11 @@ build:
 # run all git hooks on every file
 hooks:
     prek run --all-files
+
+# OAuth sign-in keys for AI features; prompts for secrets, never echoes them
+auth-setup:
+    bash scripts/setup-auth.sh
+
+# rebuild the current production deployment, e.g. after changing env vars (pushes to main deploy on their own)
+redeploy:
+    vercel redeploy "$(vercel ls imposter --environment production 2>/dev/null | grep -m1 -oE 'https://imposter-[a-z0-9]+-[a-z0-9-]+\.vercel\.app')" --target production

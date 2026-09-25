@@ -22,6 +22,8 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | E2E (Playwright) | `just e2e` · one spec: `just e2e layout` |
 | Everything before a release | `just check` |
 | Run all git hooks | `just hooks` |
+| Sign-in keys (Google/GitHub/Microsoft) → .env.local + Vercel | `just auth-setup`, then `just redeploy` |
+| Deploy | push to `main` (auto) · `just redeploy` after env changes |
 
 ## Standards
 
