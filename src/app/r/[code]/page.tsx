@@ -54,10 +54,12 @@ export default function Room() {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const L: Lang = v?.settings.lang ?? lang; // the host picks one language for the whole room
+  const L: Lang = lang; // every player keeps their own app language
+  const W: Lang = v?.settings.lang ?? lang; // the host picks the language of the secret words
   const t = (k: keyof typeof UI) => UI[k][L];
   const f = (k: keyof typeof UI, name: string) => t(k).replace("{name}", name);
   const tx = (x: Text) => (typeof x === "string" ? x : x[L]);
+  const tw = (x: Text) => (typeof x === "string" ? x : x[W]); // words and word hints
   const setLang = (l: Lang) => {
     setLangState(l);
     writeSaved({ lang: l });
@@ -87,8 +89,8 @@ export default function Room() {
   }, [refresh]);
 
   useEffect(() => {
-    document.documentElement.lang = v?.settings.lang ?? lang;
-  }, [lang, v?.settings.lang]);
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   useEffect(() => {
     if (!url) return;
@@ -123,7 +125,7 @@ export default function Room() {
     setBusy(true);
     try {
       const confirm = JSON.stringify(draft) === confirmable;
-      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang: L, confirm });
+      const r = await api<{ reviews?: Review[] }>(`/${code}`, { ...id, type: "words", words: draft, lang: W, confirm });
       if (r.reviews) {
         const { fixed, notes } = reviewNotes(draft, r.reviews);
         setDraft(fixed);
@@ -198,13 +200,13 @@ export default function Room() {
             {t("clueLabel")}: {tx(v.card.clue)}
           </p>
         )}
-        {v.card.jokerHint && <JokerHint label={t("jokerHint")} hint={tx(v.card.jokerHint)} />}
+        {v.card.jokerHint && <JokerHint label={t("jokerHint")} hint={tw(v.card.jokerHint)} />}
         <p className="mt-4 text-white/80">{t("blend")}</p>
       </button>
     ) : (
       <button onClick={() => setShown(false)} className={`${card} flip w-full py-14`}>
         <p className="text-lg text-muted">{tx(v.card.clue) || t("yourWord")}</p>
-        <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tx(v.card.word)}</p>
+        <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tw(v.card.word)}</p>
       </button>
     ));
 
@@ -219,7 +221,7 @@ export default function Room() {
           <span className="text-2xl leading-none">×</span>
           <span className="font-mono font-bold tracking-widest text-ink">{code}</span>
         </button>
-        <TopControls lang={L} setLang={setLang} lockedNote={v ? t("roomLang") : undefined} />
+        <TopControls lang={L} setLang={setLang} />
       </header>
 
       {errMsg && (
@@ -341,7 +343,7 @@ export default function Room() {
         <div key="reveal" className="flex flex-1 flex-col justify-center gap-6 text-center">
           <p className="enter text-lg text-muted">{t("keepSecret")}</p>
           {theCard()}
-          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={L} />}
+          {shown && v.card && !v.card.imposter && <ExplainWord word={tw(v.card.word)} lang={L} />}
           {!v.iReady ? (
             <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter anim-delay-200`}>
               <Check className="size-5 shrink-0" aria-hidden /> {t("ready")}
@@ -376,7 +378,7 @@ export default function Room() {
             <span className="flex items-center gap-2"><Eye className="size-5 shrink-0" aria-hidden /> {t("myCard")}</span>
           </button>
           {shown && theCard()}
-          {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={L} />}
+          {shown && v.card && !v.card.imposter && <ExplainWord word={tw(v.card.word)} lang={L} />}
           <div className="flex w-full flex-col gap-2">
             {v.isHost ? (
               <>
@@ -480,7 +482,7 @@ export default function Room() {
             names={names}
             imposters={v.result.imposters}
             accused={v.result.accused}
-            word={v.result.word}
+            word={tw(v.result.word)}
             guess={v.guess}
             joker={v.settings.joker}
             lang={L}

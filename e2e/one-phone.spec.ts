@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { CATEGORIES } from "../src/lib/i18n";
 
 const PLAYERS = ["Lisa", "Nora", "Tim", "Beni", "Domi"]; // app defaults
 
@@ -131,6 +132,17 @@ test("languages switch everywhere", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
   await setLanguage(page, "Français");
   await expect(page.getByRole("button", { name: "Commencer" })).toBeVisible();
+});
+
+test("word language: English app, German words", async ({ page }) => {
+  const german = new Set(CATEGORIES.flatMap((c) => c.words.map((w) => w.de)));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Deutsch", exact: true }).click(); // word language, not the app language
+  await page.getByRole("button", { name: "Start game" }).click();
+  const words = (await revealAll(page, 5)).filter((w): w is string => w !== null);
+  expect(words.length).toBeGreaterThan(0);
+  for (const w of words) expect(german, `"${w}" is not a German pack word`).toContain(w);
+  await expect(page.locator("html")).toHaveAttribute("lang", "en"); // the app itself stays English
 });
 
 test("no horizontal scrolling on a small phone", async ({ page }) => {

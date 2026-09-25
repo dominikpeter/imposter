@@ -6,7 +6,7 @@ import { stats, type PlayerStats, type RoundLog } from "@/lib/stats";
 import { card, ghost } from "@/lib/ui";
 import { Timeline } from "@/components/Timeline";
 
-const MEDALS = ["text-[#d4a017]", "text-[#9aa4b2]", "text-[#b87333]"]; // gold, silver, bronze
+const MEDALS = ["text-gold", "text-silver", "text-bronze"];
 
 /** End-of-round session stats: tiles, crew-vs-imposter split, awards, two bar charts, table view. */
 export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: Lang; onReset?: () => void }) {

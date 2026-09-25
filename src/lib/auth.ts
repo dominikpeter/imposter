@@ -27,7 +27,14 @@ export const providers = Object.keys(socialProviders) as ("google" | "github" | 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
-  trustedOrigins: ["https://whoislying.ch", "https://www.whoislying.ch", "https://imposter-orcin-five.vercel.app", "http://localhost:3000"],
+  trustedOrigins: [
+    "https://whoislying.ch",
+    "https://www.whoislying.ch",
+    "https://imposter-orcin-five.vercel.app",
+    ...(env.NODE_ENV === "development" ? ["http://localhost:3000"] : []), // never trust plain http in production
+  ],
+  // ponytail: Better Auth's own rate limit uses memory storage here (no DB), which resets per serverless instance.
+  // OAuth-only sign-in has no password to brute-force; move it to Redis via rateLimit.customStorage if that changes.
   socialProviders,
   session: {
     expiresIn: 60 * 60 * 24 * 30,

@@ -207,6 +207,10 @@
 
 @theme inline {
   --ease-spring: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  /* leaderboard medals: same in light and dark */
+  --color-gold: #d4a017;
+  --color-silver: #9aa4b2;
+  --color-bronze: #b87333;
   --color-primary-dark: var(--c-primary-dark);
   --color-primary: var(--c-primary);
   --color-primary-light: var(--c-primary-light);

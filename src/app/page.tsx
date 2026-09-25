@@ -1,10 +1,10 @@
 "use client";
 
-import { CirclePlus, Eye, Sparkles, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { CirclePlus, Eye, Languages, Sparkles, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { CATEGORIES, DEFAULT_CATS, UI, type Lang } from "@/lib/i18n";
+import { CATEGORIES, DEFAULT_CATS, LANGS, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { Hero } from "@/components/Hero";
 import { TopControls } from "@/components/TopControls";
@@ -30,7 +30,7 @@ type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
   accused: number | null; play: Play; myName: string; history: RoundLog[]; joker: boolean; jokers: string[]; queue: number[]; lost: number[];
-  rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess;
+  rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess; wordLang: Lang | "";
 }>;
 const KEY = SAVE_KEY;
 const saved: Saved = (() => {
@@ -45,6 +45,8 @@ const noop = () => () => {};
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>(saved.lang ?? "en");
+  const [wordLang, setWordLang] = useState<Lang | "">(saved.wordLang ?? ""); // "" = same as the app
+  const W = wordLang || lang; // language of the secret words
   const [players, setPlayers] = useState(saved.players ?? ["Lisa", "Nora", "Tim", "Beni", "Domi"]);
   const [imposterCount, setImposterCount] = useState(saved.imposterCount ?? 1);
   const [mode, setMode] = useState<Mode>(saved.mode ?? "packs");
@@ -90,16 +92,17 @@ export default function Home() {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess }),
+        JSON.stringify({ lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang }),
       );
     } catch {}
-  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess]);
+  }, [lang, players, imposterCount, mode, cats, perPlayer, hint, pool, used, writing, phase, round, turn, votes, accused, play, myName, history, joker, jokers, queue, lost, rounds, guessOpt, spoken, wordRound, guess, wordLang]);
 
   // server + hydration render nothing, so restored state never mismatches the server HTML
   const hydrated = useSyncExternalStore(noop, () => true, () => false);
 
   const t = (k: keyof typeof UI) => UI[k][lang];
   const tx = (v: Text) => (typeof v === "string" ? v : v[lang]);
+  const tw = (v: Text) => (typeof v === "string" ? v : v[W]); // words and word hints
   // ponytail: up to half the table can be imposters; raise if a "chaos" mode ever wants more
   // online the player count is unknown until start; the server caps it at half the table
   const maxImposters = play === "phones" ? 5 : Math.max(1, Math.floor(players.length / 2));
@@ -153,7 +156,7 @@ export default function Home() {
     }
   };
   const createRoom = () =>
-    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai, rounds, guess: guessOpt, lang } });
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai, rounds, guess: guessOpt, lang: W } });
   const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
   const joining = play === "phones" && online === "join";
 
@@ -182,7 +185,7 @@ export default function Home() {
     const reviews: Review[] =
       (await fetch("/api/words/check", {
         method: "POST",
-        body: JSON.stringify({ words: draft, taken, lang, ai: ai && JSON.stringify(draft) !== confirmable }),
+        body: JSON.stringify({ words: draft, taken, lang: W, ai: ai && JSON.stringify(draft) !== confirmable }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)) ?? exactReview(draft, taken); // offline → exact checks only
@@ -485,6 +488,20 @@ export default function Home() {
                 mode,
                 setMode,
               )}
+              <div className="flex flex-col gap-2">
+                <div>
+                  <h3 className="flex items-center gap-1.5 font-medium">
+                    <Languages className="size-4 text-primary-ink" aria-hidden /> {t("wordLang")}
+                  </h3>
+                  <p className="text-sm text-muted">{t("wordLangHelp")}</p>
+                </div>
+                {segmented(
+                  [{ id: "" as Lang | "", label: t("auto"), title: t("auto") }, ...LANGS.map((l) => ({ id: l.id as Lang | "", label: l.id.toUpperCase(), title: l.label }))],
+                  wordLang,
+                  setWordLang,
+                  "sm",
+                )}
+              </div>
               {mode === "packs" ? (
                 <div key="packs" className="enter flex flex-col gap-2">
                   <div className="flex w-full items-baseline justify-between">
@@ -579,16 +596,16 @@ export default function Home() {
                       {t("clueLabel")}: {tx(round.clue)}
                     </p>
                   )}
-                  {round.jokered?.includes(turn) && <JokerHint label={t("jokerHint")} hint={tx(wordHint(round))} />}
+                  {round.jokered?.includes(turn) && <JokerHint label={t("jokerHint")} hint={tw(wordHint(round))} />}
                   <p className="mt-4 text-white/80">{t("blend")}</p>
                 </div>
               ) : (
                 <div className={`${card} flip w-full py-16`}>
                   <p className="text-lg text-muted">{tx(round.clue) || t("yourWord")}</p>
-                  <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tx(round.word)}</p>
+                  <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink">{tw(round.word)}</p>
                 </div>
               )}
-              {!round.imposters.includes(turn) && <ExplainWord word={tx(round.word)} lang={lang} />}
+              {!round.imposters.includes(turn) && <ExplainWord word={tw(round.word)} lang={lang} />}
               <button onClick={next} className={`${btn} enter anim-delay-250`}>
                 {t("hideNext")}
               </button>
@@ -711,7 +728,7 @@ export default function Home() {
 
       {phase === "result" && round && (
         <div key="result" className="flex flex-1 flex-col justify-center gap-3 text-center">
-          <Verdict names={names} imposters={round.imposters} accused={accused} word={round.word} guess={guess} joker={joker} lang={lang} />
+          <Verdict names={names} imposters={round.imposters} accused={accused} word={tw(round.word)} guess={guess} joker={joker} lang={lang} />
           <div className="enter flex flex-col gap-3 anim-delay-340">
             {history.length >= rounds ? (
               <>

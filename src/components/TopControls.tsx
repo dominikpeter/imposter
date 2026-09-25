@@ -18,7 +18,7 @@ const round = `grid size-11 place-items-center rounded-full border border-line b
 const pillBtn = `grid size-10 place-items-center rounded-full text-ink/80 hover:bg-tint hover:text-ink ${press}`;
 
 /** Header right side: quick light/dark toggle + settings sheet (language, appearance, colors). */
-export function TopControls({ lang, setLang, lockedNote }: { lang: Lang; setLang: (l: Lang) => void; lockedNote?: string }) {
+export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
   const t = (k: keyof typeof UI) => UI[k][lang];
   const theme = useTheme();
   const palette = usePalette();
@@ -56,15 +56,11 @@ export function TopControls({ lang, setLang, lockedNote }: { lang: Lang; setLang
 
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">{t("language")}</h3>
-            {lockedNote ? (
-              <p className="text-sm text-muted">{lockedNote}</p>
-            ) : (
-              segmented(
-                LANGS.map((l) => ({ id: l.id, label: l.label, title: l.label })),
-                lang,
-                setLang,
-                "sm",
-              )
+            {segmented(
+              LANGS.map((l) => ({ id: l.id, label: l.label, title: l.label })),
+              lang,
+              setLang,
+              "sm",
             )}
           </section>
 

@@ -24,7 +24,7 @@ export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: 
     <section className={card}>
       <h2 className="mb-2 text-lg font-semibold">{t("gameSettings")}</h2>
       <ul className="divide-y divide-line">
-        {row(<Globe className={i} aria-hidden />, t("language"), LANGS.find((l) => l.id === s.lang)?.label)}
+        {row(<Globe className={i} aria-hidden />, t("wordLang"), LANGS.find((l) => l.id === s.lang)?.label)}
         {row(<Users className={i} aria-hidden />, t("imposters"), s.imposterCount)}
         {row(<ListOrdered className={i} aria-hidden />, t("rounds"), s.rounds)}
         {row(<Lightbulb className={i} aria-hidden />, t("hint"), on(s.hint))}

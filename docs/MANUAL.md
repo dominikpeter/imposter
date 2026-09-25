@@ -110,6 +110,7 @@ The card shows who the imposter was and what the word was. Tap **Play again** fo
 | **Words** | **Word packs** (1,080 ready-made words) or **Our own words** ([section 5](#5-your-own-words-and-ai-help)). |
 | **Rounds** | 1–30 rounds per game. After the last round the game shows the winner and offers **New game**. |
 | **Imposter may guess the word** | A caught imposter gets one guess at the secret word. Right guess = the imposters win anyway. |
+| **Word language** | Language of the secret words: **Auto** (same as the app), **EN**, **FR** or **DE**. The app itself stays in each player's language, so a German-speaking group can play with English words. |
 | **Topics** | 27 topics, from Food, Animals and Switzerland to Space, including **Nerd** (tech, gaming, sci-fi). All are on by default. The first 8 show right away (A–Z); **More topics** opens the rest. Pick any mix, or **All topics**. |
 
 <img src="manual/02-topics.png" width="260" alt="Topics" />
@@ -218,7 +219,7 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 - After looking at their card, everyone taps **I'm ready**. When all players are ready, the discussion starts by itself.
 - **Turns are guided:** the phone of the player whose turn it is says **Your turn!**. They say one word and tap **Done**; the next player is shown on everyone's screen. After everyone has spoken, the host picks **Another round of words** or **Vote**.
 - The **host** moves the game on: *Vote* → *Play again*. Everyone else sees *"The host continues"*.
-- The **host's language** is the room's language, so everyone sees the same words.
+- The host's **word language** applies to the whole room, so everyone gets the same word. Each phone keeps its own app language, and the lobby shows the word language under *Game settings*.
 - If the caught imposter may guess, their phone shows a field for the word while the others wait.
 - **Votes** and **own words** are entered on each phone at the same time. The screen shows how many players are still missing.
 - Stats and jokers work the same as on one phone.
@@ -233,7 +234,7 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 
 The **sun/moon** button at the top switches between light and dark mode. The **gear** opens Settings:
 
-- **Language:** English, Français, Deutsch. In a room, the host's language applies to everyone.
+- **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.
 - **AI help:** on or off. To use it, **sign in** with Google, GitHub or Microsoft (buttons right below). Playing never needs an account; we only use the sign-in to keep the AI from being abused.
 - **Colors:** Night, Classic, Forest or Berry.
