@@ -4,6 +4,7 @@ import { BookOpen, Heart, Moon, Settings, Sparkles, Sun, SunMoon, X } from "luci
 import { useRef, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { SignIn } from "@/components/SignIn";
+import { useMe } from "@/lib/authClient";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
 const dark = "(prefers-color-scheme: dark)";
@@ -26,6 +27,7 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
   const isDark = theme === "dark" || (theme === "auto" && systemDark);
   const sheet = useRef<HTMLDialogElement>(null);
   const ai = useAi();
+  const me = useMe();
 
   return (
     <div className="flex items-center gap-0.5 rounded-full border border-line/70 bg-surface/60 p-0.5 shadow-sm backdrop-blur">
@@ -82,17 +84,31 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
             )}
           </section>
 
-          <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
-            <span>
-              <span className="flex items-center gap-1.5 font-semibold">
-                <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("aiHelp")}
-              </span>
-              <span className="block text-sm text-muted">{t("aiHelpDesc")}</span>
-            </span>
-            <input type="checkbox" checked={ai} onChange={(e) => aiStore.set(e.target.checked ? "on" : "off")} className="peer sr-only" />
-            <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
-          </label>
-          {ai && <SignIn lang={lang} />}
+          {/* AI is for signed-in players only: signed out, this is just the way in (hidden when no login is configured) */}
+          {me?.user ? (
+            <>
+              <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
+                <span>
+                  <span className="flex items-center gap-1.5 font-semibold">
+                    <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("aiHelp")}
+                  </span>
+                  <span className="block text-sm text-muted">{t("aiHelpDesc")}</span>
+                </span>
+                <input type="checkbox" checked={ai} onChange={(e) => aiStore.set(e.target.checked ? "on" : "off")} className="peer sr-only" />
+                <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
+              </label>
+              <SignIn lang={lang} />
+            </>
+          ) : (
+            !!me?.providers.length && (
+              <section className="flex flex-col gap-2">
+                <h3 className="flex items-center gap-1.5 font-semibold">
+                  <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("aiHelp")}
+                </h3>
+                <SignIn lang={lang} />
+              </section>
+            )
+          )}
 
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">{t("colors")}</h3>

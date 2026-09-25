@@ -2,7 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 // mobile-first app → test on a phone viewport; runs against `next dev` (in-memory rooms, no Redis needed)
 // or against a deployment: BASE_URL=https://… npm run e2e
-const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
+// own port: `reuseExistingServer` must never pick up another app's dev server on :3000
+const PORT = 3218;
+const baseURL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
@@ -10,5 +12,5 @@ export default defineConfig({
   use: { ...devices["Pixel 7"], baseURL, trace: "retain-on-failure" },
   webServer: process.env.BASE_URL
     ? undefined
-    : { command: "E2E_AUTH_BYPASS=1 npm run dev", url: baseURL, reuseExistingServer: true, timeout: 120_000 },
+    : { command: `E2E_AUTH_BYPASS=1 npx next dev -p ${PORT}`, url: baseURL, reuseExistingServer: true, timeout: 120_000 },
 });

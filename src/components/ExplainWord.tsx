@@ -6,22 +6,26 @@ import { UI, type Lang } from "@/lib/i18n";
 import { ghost, useAi } from "@/lib/ui";
 import { useMe } from "@/lib/authClient";
 
-/** "Explain with AI" under a crew member's word; loads in the background, never blocks the game. */
-export function ExplainWord({ word, lang }: { word: string; lang: Lang }) {
+/**
+ * "Explain with AI" under a crew member's word; loads in the background, never blocks the game.
+ * One phone: needs this player's account. In a room, `explain` asks the room, whose AI runs on the signed-in host.
+ */
+export function ExplainWord({ word, lang, explain }: { word: string; lang: Lang; explain?: () => Promise<string | null> }) {
   const ai = useAi();
   const me = useMe();
   const [state, setState] = useState<{ key: string; text?: string; loading?: boolean; failed?: boolean }>({ key: "" });
   const key = `${lang}:${word}`;
-  if (!ai || !me?.user) return null; // AI help needs an account
+  if (!explain && (!ai || !me?.user)) return null; // AI help needs an account (or a signed-in room host)
   const t = (k: keyof typeof UI) => UI[k][lang];
   const cur = state.key === key ? state : { key }; // new word or language → start fresh
 
   const load = async () => {
     setState({ key, loading: true });
     try {
-      const r = await fetch("/api/words/explain", { method: "POST", body: JSON.stringify({ word, lang }) });
-      const d = r.ok ? await r.json() : null;
-      setState(d?.text ? { key, text: d.text } : { key, failed: true });
+      const text = explain
+        ? await explain()
+        : await fetch("/api/words/explain", { method: "POST", body: JSON.stringify({ word, lang }) }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.text);
+      setState(text ? { key, text } : { key, failed: true });
     } catch {
       setState({ key, failed: true });
     }

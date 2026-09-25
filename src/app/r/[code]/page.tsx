@@ -121,6 +121,9 @@ export default function Room() {
     }
   };
 
+  // in a room, AI follows the room (host signed in, AI on), not the player's own account; the server looks the word up itself
+  const explain = () => api<{ text: string | null }>(`/${code}`, { ...id, type: "explain", lang: L }).then((d) => d.text, () => null);
+
   const submitWords = async () => {
     setBusy(true);
     try {
@@ -350,7 +353,7 @@ export default function Room() {
         <div key="reveal" className="flex flex-1 flex-col justify-center gap-6 text-center">
           <p className="enter text-lg text-muted">{t("keepSecret")}</p>
           {theCard()}
-          {shown && v.card && !v.card.imposter && <ExplainWord word={tw(v.card.word)} lang={L} />}
+          {shown && v.card && !v.card.imposter && v.settings.ai && <ExplainWord word={tw(v.card.word)} lang={L} explain={explain} />}
           {!v.iReady ? (
             <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter anim-delay-200`}>
               <Check className="size-5 shrink-0" aria-hidden /> {t("ready")}
@@ -385,7 +388,7 @@ export default function Room() {
             <span className="flex items-center gap-2"><Eye className="size-5 shrink-0" aria-hidden /> {t("myCard")}</span>
           </button>
           {shown && theCard()}
-          {shown && v.card && !v.card.imposter && <ExplainWord word={tw(v.card.word)} lang={L} />}
+          {shown && v.card && !v.card.imposter && v.settings.ai && <ExplainWord word={tw(v.card.word)} lang={L} explain={explain} />}
           <div className="flex w-full flex-col gap-2">
             {v.isHost ? (
               <>

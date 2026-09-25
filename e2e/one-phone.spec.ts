@@ -46,7 +46,7 @@ test("full round: one imposter, same word for the crew, vote catches the imposte
   await voteAll(page, PLAYERS.map((_, i) => PLAYERS[i === imp ? (imp + 1) % PLAYERS.length : imp]));
 
   await expect(page.getByText("Caught!")).toBeVisible();
-  await expect(page.getByText(seen.find(Boolean)!, { exact: true })).toBeVisible();
+  await expect(page.getByTestId("result-word")).toHaveText(seen.find(Boolean)!); // by test id: a word like "Forest" is also a colour theme name
 
   // end-of-round stats: 1 round, crew won, every crew member scored 1 point
   const stats = page.getByRole("region", { name: "Game stats" });

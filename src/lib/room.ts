@@ -1,7 +1,7 @@
 import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, uniqueName, wordHint, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
-import { reviewWords } from "./ai.ts";
+import { explainWord, reviewWords } from "./ai.ts";
 import { allowAi } from "./rateLimit.ts";
 import type { Draft, Review } from "./game.ts";
 import type { RoundLog } from "./stats.ts";
@@ -155,6 +155,7 @@ function nextRound(room: Room, members: Member[]) {
 export type Action =
   | { type: "start" | "newGame" | "discuss" | "startVote" | "skipVote" | "ready" | "spoke" | "moreWords" | "force" }
   | { type: "guess"; text: string }
+  | { type: "explain"; lang?: string }
   | { type: "words"; words: Draft[]; lang?: string; confirm?: boolean }
   | { type: "vote"; target: number };
 
@@ -294,6 +295,16 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       if (Object.keys(all).length < room.ids.length) return;
       closeVote(all);
       break;
+    }
+    case "explain": {
+      // "Explain with AI" for every crew member of a room whose host is signed in (runs on the host's account).
+      // The word comes from the room, never from the client, so imposters and other rounds can't be asked about.
+      const r = room.round;
+      need(!!r && room.settings.ai && idx >= 0 && !r.imposters.includes(idx) && !["lobby", "write", "result"].includes(room.phase));
+      if (!(await allowAi(`user:${room.aiUser ?? `room:${code}`}`))) throw new RoomError("rate_limited");
+      const lang = LANGS.find((l) => l.id === a.lang)?.id ?? room.settings.lang; // explain in the player's app language
+      const w = r!.word;
+      return { text: await explainWord(typeof w === "string" ? w : w[room.settings.lang], lang) };
     }
     case "force": {
       // a phone dropped out: the host carries on without the missing players instead of waiting forever

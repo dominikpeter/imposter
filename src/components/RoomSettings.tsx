@@ -30,7 +30,8 @@ export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: 
         {row(<Lightbulb className={i} aria-hidden />, t("hint"), on(s.hint))}
         {row(<Sparkles className={i} aria-hidden />, t("joker"), on(s.joker))}
         {row(<VenetianMask className={i} aria-hidden />, t("guessOption"), on(s.guess))}
-        {row(<WandSparkles className={i} aria-hidden />, t("aiHelp"), on(s.ai))}
+        {/* AI runs on the host's account: only listed when the host is signed in */}
+        {s.ai && row(<WandSparkles className={i} aria-hidden />, t("aiHelp"), on(s.ai))}
         {s.mode === "custom" && row(<PenLine className={i} aria-hidden />, t("ourWords"), `${s.perPlayer} × ${t("word")}`)}
       </ul>
       {s.mode === "packs" && (

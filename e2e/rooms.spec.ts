@@ -69,7 +69,7 @@ test("every phone: create, join by link, private cards, vote, result on all phon
 
   for (const p of phones) {
     await expect(p.getByText("Caught!")).toBeVisible();
-    await expect(p.getByText(cards.find(Boolean)!, { exact: true })).toBeVisible();
+    await expect(p.getByTestId("result-word")).toHaveText(cards.find(Boolean)!);
   }
   await expect(host.getByRole("button", { name: "Play again" })).toBeVisible();
   await expect(nora.getByText("The host continues")).toBeVisible();

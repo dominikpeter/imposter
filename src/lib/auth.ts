@@ -31,7 +31,7 @@ export const auth = betterAuth({
     "https://whoislying.ch",
     "https://www.whoislying.ch",
     "https://imposter-orcin-five.vercel.app",
-    ...(env.NODE_ENV === "development" ? ["http://localhost:3000"] : []), // never trust plain http in production
+    ...(env.NODE_ENV === "development" ? ["http://localhost:*"] : []), // any local port (e2e runs on its own); never plain http in production
   ],
   // ponytail: Better Auth's own rate limit uses memory storage here (no DB), which resets per serverless instance.
   // OAuth-only sign-in has no password to brute-force; move it to Redis via rateLimit.customStorage if that changes.

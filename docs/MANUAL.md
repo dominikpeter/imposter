@@ -159,7 +159,9 @@ Choose **Our own words** and set **Words per player** (1–5). Before the round,
 
 **Don't know a word?** Crew members can tap **Explain with AI** under their word to get a short explanation. The imposter doesn't get this button.
 
-Without AI (switched off, not signed in, or offline), exact duplicates are still caught.
+Without AI (switched off, not signed in, or offline), exact duplicates are still caught. When you're not signed in, the AI buttons don't appear at all.
+
+**In a room, AI follows the host:** if the host is signed in (with AI help on), every player in the room gets the word checks and **Explain with AI**, without signing in themselves. The lobby shows *AI help* under *Game settings*. If the host isn't signed in, nobody in that room gets AI, not even a signed-in guest.
 
 <br clear="right"/>
 
@@ -237,7 +239,7 @@ The **sun/moon** button at the top switches between light and dark mode. The **g
 
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.
-- **AI help:** on or off. To use it, **sign in** with Google, GitHub or Microsoft (buttons right below). Playing never needs an account; we only use the sign-in to keep the AI from being abused.
+- **AI help:** sign in with Google, GitHub or Microsoft to use it; once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
 - **Colors:** Night, Classic, Forest or Berry.
 
 Your choices are remembered on your phone.
