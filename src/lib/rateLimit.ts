@@ -1,5 +1,4 @@
 import { db, persistent } from "./store.ts";
-import { later } from "./metrics.ts";
 
 const PER_MINUTE = 60; // per account
 const PER_USER_DAY = 200; // per account and day: one person can't use up everyone's budget
@@ -32,15 +31,14 @@ export async function allowAi(key: string, perMinute = PER_MINUTE, perDay = PER_
   const day = `rl:day:${Math.floor(now / 86_400_000)}`;
   const userDay = `rl:uday:${key}:${Math.floor(now / 86_400_000)}`;
   // ponytail: read-then-write counters, a burst of parallel requests can slip a few past the limit
-  // one parallel round of reads (incl. the global switch); the counter writes happen after the response
+  // one parallel round of reads (incl. the global switch); the writes start right away but nobody waits for them
+  // (deferring them past the AI call would let a burst of parallel requests slip through the limits)
   const [off, m, d, u] = await Promise.all([db.get<boolean>(AI_OFF), db.get<number>(minute), db.get<number>(day), db.get<number>(userDay)]);
   if (off || (m ?? 0) >= perMinute || (d ?? 0) >= perDay || (u ?? 0) >= perUserDay) return false;
-  later(() =>
-    Promise.all([
-      db.set(minute, (m ?? 0) + 1, { ex: 60 }),
-      db.set(day, (d ?? 0) + 1, { ex: 2 * 86_400 }),
-      db.set(userDay, (u ?? 0) + 1, { ex: 2 * 86_400 }),
-    ]),
-  );
+  void Promise.all([
+    db.set(minute, (m ?? 0) + 1, { ex: 60 }),
+    db.set(day, (d ?? 0) + 1, { ex: 2 * 86_400 }),
+    db.set(userDay, (u ?? 0) + 1, { ex: 2 * 86_400 }),
+  ]).catch(() => {});
   return true;
 }

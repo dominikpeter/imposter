@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { NextConfig } from "next";
 
 // ponytail: no script-src CSP; Next's inline bootstrap scripts need per-request nonces (dynamic rendering). Add if we ever render user HTML.
@@ -14,6 +15,7 @@ const security = [
 const nextConfig: NextConfig = {
   devIndicators: false, // no dev-mode badge: it overlaps the bottom buttons on a phone
   poweredByHeader: false,
+  env: { NEXT_PUBLIC_VERSION: JSON.parse(readFileSync("package.json", "utf8")).version }, // shown in Settings
   distDir: process.env.NEXT_DIST_DIR ?? ".next", // e2e builds into .next-e2e so it can run next to `just dev`
   headers: async () => [{ source: "/:path*", headers: security }],
 };

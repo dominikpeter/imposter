@@ -9,8 +9,13 @@ import { Timeline } from "@/components/Timeline";
 const MEDALS = ["text-gold", "text-silver", "text-bronze"];
 // "All numbers" as a heatmap: each column shaded by its own maximum, one hue light → strong (text stays readable)
 const HEAT = ["imposter", "escaped", "correctVotes", "votesTaken", "points"] as const;
+// the column's top value is a solid cell (button colours, readable text); the rest ramp from faint to 45 %
 const heat = (v: number, max: number) =>
-  v && max ? { backgroundColor: `color-mix(in oklab, var(--c-primary-ink) ${Math.round(8 + (v / max) * 30)}%, transparent)` } : undefined;
+  !v || !max
+    ? undefined
+    : v === max
+      ? { backgroundColor: "var(--c-primary-dark)", color: "var(--c-on-primary)" }
+      : { backgroundColor: `color-mix(in oklab, var(--c-primary-dark) ${Math.round(12 + (v / max) * 33)}%, var(--c-surface))` };
 
 /** End-of-round session stats: tiles, crew-vs-imposter split, awards, two bar charts, table view. */
 export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: Lang; onReset?: () => void }) {
@@ -204,6 +209,19 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
               ))}
             </tbody>
           </table>
+          {/* what the column icons mean */}
+          <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 px-1.5 text-sm text-muted sm:grid-cols-2">
+            {[
+              { Icon: VenetianMask, label: t("timesImposter") },
+              { Icon: Footprints, label: t("legendEscaped") },
+              { Icon: CircleCheck, label: t("legendHits") },
+              { Icon: Siren, label: t("legendVotes") },
+            ].map(({ Icon, label }) => (
+              <li key={label} className="flex items-center gap-2">
+                <Icon className="size-4 shrink-0" aria-hidden /> {label}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 

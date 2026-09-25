@@ -161,6 +161,7 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
               </svg>
               {t("sourceOnGithub")}
             </a>
+            <span className="tabular-nums">v{process.env.NEXT_PUBLIC_VERSION}</span>
           </footer>
         </div>
       </dialog>

@@ -115,6 +115,9 @@ test("quit asks first, then returns to setup", async ({ page }) => {
 test("settings: color theme and dark mode stick after reload", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Settings" }).click();
+  await expect(page.getByText(/^v\d+\.\d+\.\d+$/)).toBeVisible(); // app version in the footer
+  await page.getByRole("button", { name: "Close" }).click();
+  await page.getByRole("button", { name: "Settings" }).click();
   await page.getByRole("button", { name: /Forest/ }).click();
   await page.getByRole("dialog").getByRole("button", { name: /Dark/ }).click();
   await page.getByRole("button", { name: "Close" }).click();

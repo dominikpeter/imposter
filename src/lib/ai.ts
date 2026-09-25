@@ -30,13 +30,25 @@ sameAs: the TAKEN entry meaning the same thing (synonym, translation, plural, va
 // instantly instead of waiting ~1 s for the model again. Keyed by the exact input, short-lived.
 const reviewKey = (draft: Draft[], taken: string[], lang: string) =>
   `review:${createHash("sha1").update(JSON.stringify([draft, taken, lang])).digest("base64url")}`;
-export const cachedReview = (draft: Draft[], taken: string[], lang: string) =>
-  db.get<Review[]>(reviewKey(draft, taken, lang)).catch(() => null);
+export async function cachedReview(draft: Draft[], taken: string[], lang: string) {
+  const key = reviewKey(draft, taken, lang);
+  try {
+    // a prefetch for the same input still running (Done tapped at ~1 s): wait for it instead of paying twice
+    for (let i = 0; i < 20; i++) {
+      const [hit, pending] = await Promise.all([db.get<Review[]>(key), db.get<boolean>(`${key}:pending`)]);
+      if (hit || !pending) return hit;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  } catch {}
+  return null;
+}
 
 // `who`: the account the call runs on (a user id, or the room host's), for the admin usage stats
 export async function reviewWords(draft: Draft[], taken: string[], lang: string, useAi = true, who?: string): Promise<Review[]> {
   const exact = exactReview(draft, taken);
   if (!useAi || !process.env.OPENAI_API_KEY || !draft.length) return exact;
+  const key = reviewKey(draft, taken, lang);
+  void db.set(`${key}:pending`, true, { ex: 10 }).catch(() => {});
   try {
     const { output, usage } = await generateText({
       model: openai(MODEL),
@@ -58,7 +70,7 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
       if (same >= 0) return { ...r, problem: "taken", taken: same };
       return ai?.tooHard ? { ...r, problem: "too_hard" } : r;
     });
-    later(() => db.set(reviewKey(draft, taken, lang), result, { ex: 600 }));
+    await db.set(key, result, { ex: 600 }).catch(() => {}); // before answering: a Done right after finds it
     return result;
   } catch (e) {
     console.warn("reviewWords: AI check failed, exact checks only:", (e as Error).message);
@@ -74,19 +86,19 @@ export const cachedExplanation = (word: string, lang: string) => db.get<string>(
 /** Fill the cache ahead of time (scripts/warm-explanations.mts): true if a new explanation was stored. */
 export async function warmExplanation(word: string, lang: string) {
   if (await cachedExplanation(word, lang)) return false;
-  const text = await explainWord(word, lang);
+  const text = await explainWord(word, lang, undefined, false); // batch: nobody waits, standard tier is cheaper
   if (text) await db.set(explainKey(word, lang), text, { ex: 90 * 86_400 });
   return !!text;
 }
 
 /** A short, kid-friendly explanation of a secret word for crew members who don't know it (never shown to imposters). */
-export async function explainWord(word: string, lang: string, who?: string): Promise<string | null> {
+export async function explainWord(word: string, lang: string, who?: string, fast = true): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
   try {
     const { text, usage } = await generateText({
       model: openai(MODEL),
       // priority processing: measured ~0.8 s instead of 1.6–2.7 s; a call is ~100 tokens, so the premium is tiny
-      providerOptions: { openai: { reasoningEffort: "none", store: false, serviceTier: "priority" } satisfies OpenAILanguageModelResponsesOptions },
+      providerOptions: { openai: { reasoningEffort: "none", store: false, ...(fast ? { serviceTier: "priority" } : {}) } satisfies OpenAILanguageModelResponsesOptions },
       maxOutputTokens: 80,
       instructions:
         "Explain the given word in 1-2 short, simple sentences (at most 30 words) for a party game player who doesn't know it. " +

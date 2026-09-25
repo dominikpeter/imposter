@@ -9,6 +9,8 @@ export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? undefined : 3,
+  timeout: process.env.CI ? 30_000 : 60_000, // local runs share the laptop with other work // shared dev laptops: more parallel browsers starve one dev server
   use: { ...devices["Pixel 7"], baseURL, trace: "retain-on-failure" },
   webServer: process.env.BASE_URL
     ? undefined

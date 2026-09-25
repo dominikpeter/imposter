@@ -130,9 +130,9 @@ After every round, **Game stats** shows the whole session so far:
 - **Leaderboard** with points:
   - **+1** for voting for an actual imposter
   - **+2** for surviving a vote as the imposter
-- **Points per round:** a line per player showing how the points added up.
+- **Points per round:** one bar per player, built from the rounds that scored (lighter = earlier rounds), so you see how each total came together.
 - **Times imposter:** how often each player got the imposter card.
-- **All numbers:** the full table below the charts, shaded like a heatmap: the stronger the colour, the higher the value in that column.
+- **All numbers:** the full table below the charts, shaded like a heatmap: the stronger the colour, the higher the value in that column. The top value of each column is a solid cell, and a legend under the table explains the icons.
 
 **Reset stats** starts a fresh session.
 
