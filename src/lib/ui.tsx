@@ -44,7 +44,7 @@ export const themeStore = pref<Theme>("theme", "auto", THEMES);
 export const paletteStore = pref<Palette>("palette", "night", PALETTES.map((p) => p.id));
 export const aiStore = pref<"on" | "off">("ai", "on", ["on", "off"]); // AI word check + explain button
 
-export const press = "transition duration-200 ease-spring active:scale-[0.97]";
+export const press = "transition duration-200 ease-spring active:scale-97";
 export const btn = `flex min-h-14 w-full items-center justify-center rounded-full bg-primary-dark px-6 text-lg font-semibold text-on-primary hover:bg-primary disabled:opacity-40 disabled:active:scale-100 ${press}`;
 export const ghost = `min-h-11 rounded-full px-4 font-medium text-primary-ink hover:bg-tint ${press}`;
 export const card = "rounded-3xl border border-line bg-surface p-5";

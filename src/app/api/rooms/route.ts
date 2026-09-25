@@ -1,3 +1,4 @@
+import { aiUser } from "@/lib/auth";
 import { createRoom } from "@/lib/room";
 import { handle } from "./handle";
 
@@ -5,6 +6,8 @@ import { handle } from "./handle";
 export async function POST(req: Request) {
   return handle(async (db) => {
     const body = await req.json();
-    return createRoom(db, body?.name, body?.settings ?? {});
+    // AI help in a room runs on the host's account: only when the host is signed in
+    const user = await aiUser(req);
+    return createRoom(db, body?.name, { ...(body?.settings ?? {}), ai: !!user && body?.settings?.ai !== false }, user?.id);
   });
 }

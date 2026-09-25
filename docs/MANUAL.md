@@ -69,11 +69,11 @@ Remember what you saw, tap **Hide & pass on**, and hand the phone to the next pl
 ### Step 4: Discuss
 <img src="manual/06-discuss.png" width="260" align="right" alt="Discuss" />
 
-The app picks who **starts**. Going round the table, everyone says **one word** about the secret. The phone can lie on the table during this part.
+The app picks who **starts** and guides the turns: the screen shows whose turn it is and who's next. Everyone says **one word** about the secret, then taps **Done** to hand over. The phone can lie on the table during this part.
 
 Example (secret word *Beach*): Lisa: "sand", Nora: "towel", Tim (the imposter, clue *Places*): "sunny"… Beni: "waves", Domi: "holiday".
 
-Do a second round of words if nobody's sure yet. When you're ready, tap **Vote**.
+Tap **Another round of words** if nobody's sure yet. When you're ready, tap **Vote**.
 
 <br clear="right"/>
 
@@ -108,7 +108,9 @@ The card shows who the imposter was and what the word was. Tap **Play again** fo
 | **Imposter gets a clue** | The imposter sees the topic, or the writer's hint for your own words. Turn it off for a harder game. |
 | **Joker mode** | See [section 6](#6-joker-mode). Only available when the clue is off. |
 | **Words** | **Word packs** (1,080 ready-made words) or **Our own words** ([section 5](#5-your-own-words-and-ai-help)). |
-| **Topics** | 27 topics, from Food, Animals and Switzerland to Space. **Nerd** (tech, gaming, sci-fi) is optional: not selected by default. Pick any mix, or **All topics**. |
+| **Rounds** | 1–30 rounds per game. After the last round the game shows the winner and offers **New game**. |
+| **Imposter may guess the word** | A caught imposter gets one guess at the secret word. Right guess = the imposters win anyway. |
+| **Topics** | 27 topics, from Food, Animals and Switzerland to Space, including **Nerd** (tech, gaming, sci-fi). All are on by default. The first 8 show right away (A–Z); **More topics** opens the rest. Pick any mix, or **All topics**. |
 
 <img src="manual/02-topics.png" width="260" alt="Topics" />
 
@@ -127,7 +129,9 @@ After every round, **Game stats** shows the whole session so far:
 - **Leaderboard** with points:
   - **+1** for voting for an actual imposter
   - **+2** for surviving a vote as the imposter
-- **All numbers** opens the full table.
+- **Points per round:** a line per player showing how the points added up.
+- **Times imposter:** how often each player got the imposter card.
+- **All numbers:** the full table, always visible below the charts.
 
 **Reset stats** starts a fresh session.
 
@@ -144,7 +148,7 @@ Choose **Our own words** and set **Words per player** (1–5). Before the round,
 
 <img src="manual/12-autocorrect.png" width="240" align="right" alt="Autocorrect" />
 
-**AI help** (on by default) checks every word when you tap **Done**:
+**AI help** (on by default, needs sign-in, see [section 8](#8-settings)) checks every word when you tap **Done**:
 
 - **Typos are autocorrected**, for example *Bananna* → *Banana*. Check the correction and tap Done again.
 - **Too hard?** Very obscure or technical words are rejected. Pick one most people know.
@@ -154,7 +158,7 @@ Choose **Our own words** and set **Words per player** (1–5). Before the round,
 
 **Don't know a word?** Crew members can tap **Explain with AI** under their word to get a short explanation. The imposter doesn't get this button.
 
-Without AI (switched off, or offline), exact duplicates are still caught.
+Without AI (switched off, not signed in, or offline), exact duplicates are still caught.
 
 <br clear="right"/>
 
@@ -181,7 +185,7 @@ Turn off **Imposter gets a clue**, then turn on **Joker mode**.
 ### Create a room (the host)
 <img src="manual/14-create.png" width="240" align="right" alt="Create room" />
 
-1. Tap **Every phone**, enter **your name**, and choose **Create new room**.
+1. Tap **Every phone** (*Mehrere Handys* in German), enter **your name**, and choose **Create new room**.
 2. Pick the settings (imposters, topics, own words…) as usual.
 3. Tap **Create room**.
 
@@ -211,7 +215,11 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 <img src="manual/17-room-card.png" width="240" align="right" alt="Card in a room" />
 
 - Everyone taps **Tap to reveal** on their own phone. Tap the card again to hide it, and use **My card** later to peek again.
-- The **host** moves the game on: *Everyone ready? Discuss* → *Vote* → *Play again*. Everyone else sees *"The host continues"*.
+- After looking at their card, everyone taps **I'm ready**. When all players are ready, the discussion starts by itself.
+- **Turns are guided:** the phone of the player whose turn it is says **Your turn!**. They say one word and tap **Done**; the next player is shown on everyone's screen. After everyone has spoken, the host picks **Another round of words** or **Vote**.
+- The **host** moves the game on: *Vote* → *Play again*. Everyone else sees *"The host continues"*.
+- The **host's language** is the room's language, so everyone sees the same words.
+- If the caught imposter may guess, their phone shows a field for the word while the others wait.
 - **Votes** and **own words** are entered on each phone at the same time. The screen shows how many players are still missing.
 - Stats and jokers work the same as on one phone.
 
@@ -225,9 +233,9 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 
 The **sun/moon** button at the top switches between light and dark mode. The **gear** opens Settings:
 
-- **Language:** English, Français, Deutsch. In rooms, every phone chooses its own.
+- **Language:** English, Français, Deutsch. In a room, the host's language applies to everyone.
 - **Appearance:** Auto (follows your phone), Light or Dark.
-- **AI help:** on or off.
+- **AI help:** on or off. To use it, **sign in** with Google, GitHub or Microsoft (buttons right below). Playing never needs an account; we only use the sign-in to keep the AI from being abused.
 - **Colors:** Night, Classic, Forest or Berry.
 
 Your choices are remembered on your phone.
@@ -259,5 +267,5 @@ Your choices are remembered on your phone.
 | We tapped the logo or want to stop. | Use **× Quit round**. It asks first, and a joker spent on the unfinished round is given back. |
 | "Online rooms aren't available yet" | The server has no room storage configured. Play on one phone meanwhile. |
 | The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the 5-character code. |
-| The AI didn't correct anything | AI help may be switched off in Settings, or the AI limit (120 checks per minute, 1,000 per day) was reached. Exact duplicates are still caught. |
+| The AI didn't correct anything | AI help may be off, you may not be signed in, or a limit was reached (60 checks per minute and 200 per day per account, 1,000 per day overall). Exact duplicates are still caught. |
 | A word appeared that we already had | Pack words only repeat once every word in the chosen topics has been played. |

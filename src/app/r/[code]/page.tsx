@@ -182,7 +182,7 @@ export default function Room() {
       <button
         onClick={() => setShown(true)}
         aria-label={t("tapReveal")}
-        className={`card-back enter grid aspect-[4/5] w-full max-w-64 place-items-center self-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary ${press}`}
+        className={`card-back enter grid aspect-card w-full max-w-64 place-items-center self-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary ${press}`}
       >
         <span className="rounded-2xl bg-surface/95 px-6 py-5">
           <Eye className="mx-auto size-12" strokeWidth={1.75} aria-hidden />
@@ -209,7 +209,7 @@ export default function Room() {
     ));
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-safe pb-safe">
       <header className="mb-6 flex items-center justify-between gap-3">
         <button
           onClick={() => (!joined || v?.phase === "lobby" || confirm(t("leaveConfirm"))) && router.push("/")}
@@ -238,7 +238,7 @@ export default function Room() {
         <div key="join" className="enter flex flex-1 flex-col justify-center gap-4 text-center">
           <p className="flex items-center justify-center gap-1.5 text-muted"><Crown className="size-4" aria-hidden /> {hostName}</p>
           <h1 className="text-4xl font-bold tracking-tight">{t("joinTitle")}</h1>
-          <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary-ink">{code}</p>
+          <p className="font-mono text-3xl font-bold tracking-code text-primary-ink">{code}</p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -280,7 +280,7 @@ export default function Room() {
               // eslint-disable-next-line @next/next/no-img-element -- local data: URL, nothing to optimise
               <img src={qr} alt={`QR ${code}`} width={220} height={220} className="pop rounded-2xl bg-white p-2" />
             )}
-            <p className="font-mono text-4xl font-bold tracking-[0.3em] text-primary-ink">{code}</p>
+            <p className="font-mono text-4xl font-bold tracking-code text-primary-ink">{code}</p>
             <button onClick={share} className={`${ghost} border border-line`}>
               <span className="flex items-center gap-2">{copied ? <Check className="size-5 shrink-0" aria-hidden /> : <Share2 className="size-5 shrink-0" aria-hidden />}{t(copied ? "copied" : "share")}</span>
             </button>
@@ -303,7 +303,7 @@ export default function Room() {
             </ul>
           </section>
           <RoomSettings settings={v.settings} lang={L} />
-          <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-safe">
             {v.isHost ? (
               <button onClick={() => send({ type: "start" })} disabled={busy || names.length < 3} className={`${btn} shadow-lg shadow-primary-dark/25`}>
                 {names.length < 3 ? t("needThree") : <><Rocket className="size-5 shrink-0" aria-hidden />{t("start")}</>}
@@ -343,7 +343,7 @@ export default function Room() {
           {theCard()}
           {shown && v.card && !v.card.imposter && <ExplainWord word={tx(v.card.word)} lang={L} />}
           {!v.iReady ? (
-            <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter [animation-delay:200ms]`}>
+            <button onClick={() => send({ type: "ready" })} disabled={busy || !shown} className={`${btn} enter anim-delay-200`}>
               <Check className="size-5 shrink-0" aria-hidden /> {t("ready")}
             </button>
           ) : (
@@ -485,7 +485,7 @@ export default function Room() {
             joker={v.settings.joker}
             lang={L}
           />
-          <div className="enter mt-6 flex flex-col gap-3 [animation-delay:340ms]">
+          <div className="enter mt-6 flex flex-col gap-3 anim-delay-340">
             {v.gameOver && (
               <>
                 <p className="pop text-3xl font-bold tracking-tight">{t("gameOver")}</p>

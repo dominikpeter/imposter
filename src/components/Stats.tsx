@@ -29,7 +29,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
   const maxVotes = Math.max(1, ...suspects.map((p) => p.votesTaken));
 
   return (
-    <section aria-label={t("stats")} className={`${card} enter mt-4 flex flex-col gap-6 text-left [animation-delay:450ms]`}>
+    <section aria-label={t("stats")} className={`${card} enter mt-4 flex flex-col gap-6 text-left anim-delay-450`}>
       <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
         <ChartColumn className="size-6 text-primary-ink" aria-hidden /> {t("stats")}
       </h2>
@@ -56,10 +56,10 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
       {/* crew vs imposters: one split bar, legend + direct labels */}
       {decided > 0 && (
         <div>
-          <div className="flex h-4 gap-[2px] overflow-hidden rounded-full" role="img" aria-label={`${t("crew")} ${s.crewWins} · ${t("imposters")} ${s.imposterWins}`}>
+          <div className="flex h-4 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={`${t("crew")} ${s.crewWins} · ${t("imposters")} ${s.imposterWins}`}>
             {s.crewWins > 0 && <div className="bar-grow rounded-l-full bg-crew" style={{ flexGrow: s.crewWins }} title={`${t("crew")}: ${s.crewWins}`} />}
             {s.imposterWins > 0 && (
-              <div className="bar-grow rounded-r-full bg-imp [animation-delay:120ms]" style={{ flexGrow: s.imposterWins }} title={`${t("imposters")}: ${s.imposterWins}`} />
+              <div className="bar-grow rounded-r-full bg-imp anim-delay-120" style={{ flexGrow: s.imposterWins }} title={`${t("imposters")}: ${s.imposterWins}`} />
             )}
           </div>
           <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-sm">
@@ -93,11 +93,11 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
         <p className="mb-3 text-sm text-muted">{t("pointsHelp")}</p>
         <ol className="flex flex-col gap-2">
           {s.players.map((p, i) => (
-            <li key={p.name} className="grid grid-cols-[1.75rem_1fr_auto] items-center gap-x-2" title={`${p.name}: ${p.points} ${t("pts")}`}>
-              <span className="grid place-items-center">
+            <li key={p.name} className="flex items-center gap-2" title={`${p.name}: ${p.points} ${t("pts")}`}>
+              <span className="grid w-7 shrink-0 place-items-center">
                 {MEDALS[i] ? <Medal className={`size-5 ${MEDALS[i]}`} aria-label={`#${i + 1}`} /> : <span className="text-sm text-muted">{i + 1}</span>}
               </span>
-              <span className="flex min-w-0 flex-col gap-1">
+              <span className="flex min-w-0 flex-1 flex-col gap-1">
                 <span className="truncate font-medium">{p.name}</span>
                 <span className="h-2.5 rounded-full bg-tint">
                   <span
@@ -106,7 +106,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
                   />
                 </span>
               </span>
-              <span className="w-12 text-right text-sm font-semibold tabular-nums">
+              <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums">
                 {p.points} <span className="font-normal text-muted">{t(p.points === 1 ? "pt" : "pts")}</span>
               </span>
             </li>
@@ -126,14 +126,14 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
             {[...s.players]
               .sort((a, b) => b.imposter - a.imposter)
               .map((p, i) => (
-                <li key={p.name} className="grid grid-cols-[1fr_auto] items-end gap-x-2" title={`${p.name}: ${p.imposter}`}>
-                  <span className="flex min-w-0 flex-col gap-1">
+                <li key={p.name} className="flex items-end gap-2" title={`${p.name}: ${p.imposter}`}>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="truncate font-medium">{p.name}</span>
                     <span className="h-2.5 rounded-full bg-tint">
                       <span className="bar-grow block h-full rounded-full bg-imp" style={{ width: `${(p.imposter / Math.max(1, ...s.players.map((x) => x.imposter))) * 100}%`, animationDelay: `${750 + i * 70}ms` }} />
                     </span>
                   </span>
-                  <span className="w-8 text-right text-sm font-semibold tabular-nums">{p.imposter}</span>
+                  <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums">{p.imposter}</span>
                 </li>
               ))}
           </ol>
@@ -148,14 +148,14 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
           </h3>
           <ol className="flex flex-col gap-2">
             {suspects.map((p, i) => (
-              <li key={p.name} className="grid grid-cols-[1fr_auto] items-end gap-x-2" title={`${p.name}: ${p.votesTaken} ${t("votes")}`}>
-                <span className="flex min-w-0 flex-col gap-1">
+              <li key={p.name} className="flex items-end gap-2" title={`${p.name}: ${p.votesTaken} ${t("votes")}`}>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="truncate font-medium">{p.name}</span>
                   <span className="h-2.5 rounded-full bg-tint">
                     <span className="bar-grow block h-full rounded-full bg-imp" style={{ width: `${(p.votesTaken / maxVotes) * 100}%`, animationDelay: `${800 + i * 70}ms` }} />
                   </span>
                 </span>
-                <span className="w-8 text-right text-sm font-semibold tabular-nums">{p.votesTaken}</span>
+                <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums">{p.votesTaken}</span>
               </li>
             ))}
           </ol>

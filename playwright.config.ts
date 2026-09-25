@@ -10,5 +10,5 @@ export default defineConfig({
   use: { ...devices["Pixel 7"], baseURL, trace: "retain-on-failure" },
   webServer: process.env.BASE_URL
     ? undefined
-    : { command: "npm run dev", url: baseURL, reuseExistingServer: true, timeout: 120_000 },
+    : { command: "E2E_AUTH_BYPASS=1 npm run dev", url: baseURL, reuseExistingServer: true, timeout: 120_000 },
 });

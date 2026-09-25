@@ -36,6 +36,7 @@ type Room = {
   guess?: { text: string; correct: boolean } | null; // caught imposter's guess (guess option)
   history?: RoundLog[]; // finished rounds, for the stats screen (optional: rooms created before stats)
   jokers?: string[]; // member ids holding a joker
+  aiUser?: string; // host's account: AI calls in this room count against it
 };
 
 export class RoomError extends Error {
@@ -85,14 +86,14 @@ async function addMember(db: Store, code: string, name: string) {
   return m;
 }
 
-export async function createRoom(db: Store, hostName: unknown, settings: Partial<Settings>) {
+export async function createRoom(db: Store, hostName: unknown, settings: Partial<Settings>, aiUser?: string) {
   const name = cleanName(hostName);
   if (!name) throw new RoomError("bad_request");
   for (let attempt = 0; attempt < 10; attempt++) {
     const code = Array.from({ length: CODE_LENGTH }, () => CODE_CHARS[pick(CODE_CHARS.length)]).join("");
     const room: Room = {
       code, hostId: "", settings: cleanSettings(settings), phase: "lobby", ids: [], round: null,
-      pool: [], used: [], accused: null, writeNo: 0, voteNo: 0, roundNo: 0,
+      pool: [], used: [], accused: null, writeNo: 0, voteNo: 0, roundNo: 0, aiUser,
     };
     if (!(await db.set(k(code).room, room, { ex: TTL, nx: true }))) continue; // code taken, roll again
     const host = await addMember(db, code, name);
@@ -211,7 +212,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       need(room.phase === "guess" && idx === room.accused);
       const text = String(a.text ?? "").trim().slice(0, 40);
       const taken = answers(room.round!.word);
-      const useAi = !!text && room.settings.ai && (await allowAi(`room:${code}`));
+      const useAi = !!text && room.settings.ai && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`));
       const correct = !!text && (await reviewWords([{ word: text, clue: "" }], taken, room.settings.lang, useAi))[0]?.problem === "taken";
       room.guess = text ? { text, correct } : null;
       const votes = await db.hgetall<number>(`room:${code}:votes:${room.voteNo}`);
@@ -247,7 +248,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
 
       // autocorrect / too hard / duplicates against everyone's words so far
       const written = room.ids.flatMap((_, p) => (all[p] ?? []).map((w) => ({ p, w })));
-      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm && (await allowAi(`room:${code}`)))).map((r) =>
+      const reviews: Review[] = (await reviewWords(clean, written.map((x) => x.w.word), String(a.lang ?? "en"), room.settings.ai && !a.confirm && (await allowAi(`user:${room.aiUser ?? `room:${code}`}`)))).map((r) =>
         r.problem === "taken" && written[r.taken].p === idx ? { ...r, problem: "twice" } : r,
       );
       const changed = reviews.some((r, i) => r.problem || r.word !== clean[i].word.trim() || r.clue !== clean[i].clue.trim());

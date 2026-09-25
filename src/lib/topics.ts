@@ -3,8 +3,7 @@ import type { Lang } from "./i18n.ts";
 type T = Record<Lang, string>;
 const w = (en: string, fr: string, de: string): T => ({ en, fr, de });
 
-// optional topics are not selected by default (players opt in)
-export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[]; optional?: boolean }[] = [
+export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[] }[] = [
   {
     id: "music", icon: "Music",
     name: w("Music", "Musique", "Musik"),
@@ -86,7 +85,7 @@ export const MORE_TOPICS: { id: string; icon: string; name: T; words: T[]; optio
     ],
   },
   {
-    id: "nerd", icon: "Glasses", optional: true,
+    id: "nerd", icon: "Glasses",
     name: w("Nerd", "Geek", "Nerd"),
     words: [
       w("Algorithm", "Algorithme", "Algorithmus"), w("Pixel", "Pixel", "Pixel"), w("Router", "Routeur", "Router"),

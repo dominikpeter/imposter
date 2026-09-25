@@ -10,6 +10,7 @@
   --c-accent: #1e3475; /* imposter moments */
   --c-accent-deep: #0b132b;
   --c-glow: #5bc0be;
+  --c-danger: #d93036; /* errors, the heart */
   --c-crew: #00937d; /* chart series, validated (dataviz) on #fff */
   --c-imp: #3154bd;
   --c-ink: #0b132b;
@@ -35,6 +36,7 @@
     --c-accent: #1e3475;
     --c-accent-deep: #070c1b;
     --c-glow: #6fffe9;
+    --c-danger: #ff6b6b;
     --c-crew: #00937d; /* validated on #1c2541 */
     --c-imp: #6f89da;
     --c-ink: #e2fffb;
@@ -57,6 +59,7 @@
   --c-accent: #1e3475;
   --c-accent-deep: #070c1b;
   --c-glow: #6fffe9;
+  --c-danger: #ff6b6b;
   --c-crew: #00937d;
   --c-imp: #6f89da;
   --c-ink: #e2fffb;
@@ -210,6 +213,10 @@
   --color-on-primary: var(--c-on-primary);
   --color-glow: var(--c-glow);
   --color-crew: var(--c-crew);
+  --color-danger: var(--c-danger);
+  --aspect-card: 4 / 5; /* face-down card */
+  --tracking-code: 0.3em; /* room codes */
+  --shadow-viewfinder: 0 0 0 100vmax rgb(0 0 0 / 0.45); /* dims everything around the QR viewfinder */
   --color-imp: var(--c-imp);
   --color-accent: var(--c-accent);
   --color-accent-deep: var(--c-accent-deep);
@@ -287,14 +294,14 @@ input:checked + .switch::after { transform: translateX(1.25rem); }
   from { opacity: 0; transform: translateY(14px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
-.enter { animation: enter 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.enter { animation: enter 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--delay, 0s); }
 
 @keyframes pop {
   from { opacity: 0; transform: scale(0.5); }
   60% { transform: scale(1.15); }
   to { opacity: 1; transform: none; }
 }
-.pop { animation: pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.pop { animation: pop 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; animation-delay: var(--delay, 0s); }
 
 /* card turning face-up */
 @keyframes flip {
@@ -302,7 +309,7 @@ input:checked + .switch::after { transform: translateX(1.25rem); }
   60% { opacity: 1; }
   to { opacity: 1; transform: perspective(900px) none; }
 }
-.flip { animation: flip 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.flip { animation: flip 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--delay, 0s); }
 
 /* one-shot accent glow behind the imposter card (opacity only) */
 .glow::before {
@@ -345,10 +352,20 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
   from { transform: scaleX(0); }
   to { transform: none; }
 }
-.bar-grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.bar-grow { transform-origin: left; animation: grow 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--delay, 0s); }
 
 @media (prefers-reduced-motion: reduce) {
   .enter, .pop, .flip, .shake, .bar-grow, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }
+
+/* design-system utilities (instead of arbitrary values in markup) */
+@utility pt-safe { padding-top: max(1.25rem, env(safe-area-inset-top)); }
+@utility pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+@utility top-safe { top: max(1rem, env(safe-area-inset-top)); }
+/* staggered entrances: anim-delay-200 = 200ms */
+/* sets --delay, read by .enter/.pop/.flip/.bar-grow (their shorthand would otherwise reset animation-delay) */
+@utility anim-delay-* { --delay: calc(--value(integer) * 1ms); }
+/* topic tiles: as many ~83px columns as fit (2 at 320px, 3 on most phones, 4 on large ones) */
+@utility grid-cols-tiles { grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); }

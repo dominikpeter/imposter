@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/check-manual.sh --claude",
+            "statusMessage": "Checking the user manual is up to date"
+          }
+        ]
+      }
+    ]
+  }
+}

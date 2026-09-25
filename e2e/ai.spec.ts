@@ -5,6 +5,8 @@ import { existsSync, readFileSync } from "node:fs";
 const hasKey = existsSync(".env.local") && /^OPENAI_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
 test.skip(!hasKey, "no OPENAI_API_KEY in .env.local");
 test.setTimeout(120_000);
+// signed-in test user (dev-server-only bypass, see aiUser in src/lib/auth.ts); AI features need an account
+test.use({ extraHTTPHeaders: { "x-e2e-user": "Tester" } });
 const AI = { timeout: 30_000 };
 
 async function write(page: Page, word: string) {
@@ -64,7 +66,7 @@ test("own words: autocorrect, too hard, duplicate cancels both, then AI explains
 });
 
 async function phone(browser: Browser) {
-  return (await browser.newContext({ ...test.info().project.use })).newPage();
+  return (await browser.newContext({ ...test.info().project.use, extraHTTPHeaders: { "x-e2e-user": "Tester" } })).newPage();
 }
 
 test("rooms: two phones write the same word → the first writer is asked for a new one", async ({ browser }) => {
@@ -97,4 +99,15 @@ test("rooms: two phones write the same word → the first writer is asked for a 
   await write(tim, "Castle");
   await write(host, "Guitar");
   for (const p of [host, nora, tim]) await expect(p.getByText("Keep your card secret!")).toBeVisible(AI);
+});
+
+test("signed out: no AI explain button, AI word check needs an account", async ({ browser }) => {
+  const ctx = await browser.newContext({ ...test.info().project.use, extraHTTPHeaders: {} }); // no test user header
+  const page = await ctx.newPage();
+  const me = await (await page.request.get("/api/me")).json();
+  expect(me.user).toBeNull();
+  const r = await page.request.post("/api/words/explain", { data: { word: "Moon", lang: "en" } });
+  expect(r.status()).toBe(401);
+  const check = await (await page.request.post("/api/words/check", { data: { words: [{ word: "Bananna", clue: "" }], taken: [], lang: "en" } })).json();
+  expect(check[0].word).toBe("Bananna"); // exact checks only, no AI autocorrect
 });

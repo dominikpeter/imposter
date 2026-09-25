@@ -3,6 +3,7 @@
 import { BookOpen, Heart, Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
 import { useRef, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
+import { SignIn } from "@/components/SignIn";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
 const dark = "(prefers-color-scheme: dark)";
@@ -43,7 +44,7 @@ export function TopControls({ lang, setLang, lockedNote }: { lang: Lang; setLang
         onClick={(e) => e.target === sheet.current && sheet.current.close()} // tap outside closes
         className="sheet mx-auto mt-auto mb-0 w-full max-w-md rounded-t-3xl bg-surface p-0 text-ink backdrop:bg-black/50 sm:mb-auto sm:rounded-3xl"
       >
-        <div className="flex flex-col gap-5 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="flex flex-col gap-5 p-5 pb-safe">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
               <Settings className="size-6" aria-hidden /> {t("settings")}
@@ -95,6 +96,7 @@ export function TopControls({ lang, setLang, lockedNote }: { lang: Lang; setLang
             <input type="checkbox" checked={ai} onChange={(e) => aiStore.set(e.target.checked ? "on" : "off")} className="peer sr-only" />
             <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />
           </label>
+          {ai && <SignIn lang={lang} />}
 
           <section className="flex flex-col gap-2">
             <h3 className="font-semibold">{t("colors")}</h3>
@@ -130,7 +132,7 @@ export function TopControls({ lang, setLang, lockedNote }: { lang: Lang; setLang
           <footer className="flex flex-col items-center gap-1 pt-1 text-sm text-muted">
             <p className="flex items-center gap-1">
               {t("madeWith").split("{heart}")[0]}
-              <Heart className="size-4 fill-red-500 text-red-500" aria-label="love" />
+              <Heart className="size-4 fill-danger text-danger" aria-label="love" />
               {t("madeWith").split("{heart}")[1]}
             </p>
             <a

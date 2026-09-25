@@ -4,13 +4,15 @@ import { Lightbulb, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { ghost, useAi } from "@/lib/ui";
+import { useMe } from "@/lib/authClient";
 
 /** "Explain with AI" under a crew member's word; loads in the background, never blocks the game. */
 export function ExplainWord({ word, lang }: { word: string; lang: Lang }) {
   const ai = useAi();
+  const me = useMe();
   const [state, setState] = useState<{ key: string; text?: string; loading?: boolean; failed?: boolean }>({ key: "" });
   const key = `${lang}:${word}`;
-  if (!ai) return null;
+  if (!ai || !me?.user) return null; // AI help needs an account
   const t = (k: keyof typeof UI) => UI[k][lang];
   const cur = state.key === key ? state : { key }; // new word or language → start fresh
 

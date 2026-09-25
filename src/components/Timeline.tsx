@@ -22,7 +22,7 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
         {ticks.map((v) => (
           <g key={v}>
             <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="stroke-line" strokeWidth={1} />
-            <text x={PAD.l - 6} y={y(v) + 4} textAnchor="end" className="fill-muted text-[12px]">
+            <text x={PAD.l - 6} y={y(v) + 4} textAnchor="end" className="fill-muted text-xs">
               {v}
             </text>
           </g>
@@ -30,7 +30,7 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
         {Array.from({ length: rounds }, (_, r) => r + 1)
           .filter((r) => rounds <= 10 || r % Math.ceil(rounds / 10) === 0 || r === rounds)
           .map((r) => (
-            <text key={r} x={x(r)} y={H - 6} textAnchor="middle" className="fill-muted text-[12px]">
+            <text key={r} x={x(r)} y={H - 6} textAnchor="middle" className="fill-muted text-xs">
               {r}
             </text>
           ))}
@@ -52,7 +52,7 @@ export function Timeline({ timeline, names, lang }: { timeline: Record<string, n
           </g>
         ))}
         {ends.map(({ i, y: ly }) => (
-          <text key={shown[i]} x={x(rounds) + 8} y={ly + 4} className="fill-ink text-[12px] font-semibold">
+          <text key={shown[i]} x={x(rounds) + 8} y={ly + 4} className="fill-ink text-xs font-semibold">
             {shown[i].length > 8 ? `${shown[i].slice(0, 7)}…` : shown[i]} {series[i][rounds]}
           </text>
         ))}

@@ -278,7 +278,7 @@ export default function Home() {
       <button
         onClick={() => setShown(true)}
         aria-label={action}
-        className={`card-back enter mt-2 grid aspect-[4/5] w-full max-w-64 place-items-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary [animation-delay:80ms] ${press}`}
+        className={`card-back enter mt-2 grid aspect-card w-full max-w-64 place-items-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary anim-delay-80 ${press}`}
       >
         <span className="rounded-2xl bg-surface/95 px-6 py-5">
           {(() => { const Icon = phase === "write" ? PenLine : phase === "vote" ? Vote : Eye; return <Icon className="mx-auto size-12" strokeWidth={1.75} aria-hidden />; })()}
@@ -308,7 +308,7 @@ export default function Home() {
   if (!hydrated) return <main className="flex-1" />;
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-safe pb-safe">
       <header className="mb-6 flex items-center justify-between gap-3">
         {phase === "setup" || phase === "result" ? (
           <div>
@@ -403,7 +403,7 @@ export default function Home() {
                     aria-label={t("roomCode")}
                     placeholder={t("roomCode")}
                     onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
-                    className={`${field} min-w-0 flex-1 text-center font-mono text-2xl font-bold tracking-[0.4em] uppercase placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:normal-case`}
+                    className={`${field} min-w-0 flex-1 text-center font-mono text-2xl font-bold tracking-code uppercase placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:normal-case`}
                   />
                   <ScanCode
                     labels={{ scan: t("scan"), pointCamera: t("pointCamera"), noCamera: t("noCamera"), close: t("close") }}
@@ -414,7 +414,7 @@ export default function Home() {
                   />
                 </div>
               )}
-              {error && <p className="text-sm font-medium text-red-500" role="alert">{error}</p>}
+              {error && <p className="text-sm font-medium text-danger" role="alert">{error}</p>}
             </section>
           )}
 
@@ -509,7 +509,7 @@ export default function Home() {
             </>
           )}
 
-          <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="sticky bottom-0 z-20 -mx-4 mt-auto bg-gradient-to-t from-canvas from-70% to-transparent px-4 pt-6 pb-safe">
             {play === "pass" ? (
               <button onClick={start} disabled={!canStart} className={`${btn} shadow-lg shadow-primary-dark/25`}>
                 {canStart ? t("start") : players.length < 3 ? t("minPlayers") : t("pickTopic")}
@@ -581,7 +581,7 @@ export default function Home() {
                 </div>
               )}
               {!round.imposters.includes(turn) && <ExplainWord word={tx(round.word)} lang={lang} />}
-              <button onClick={next} className={`${btn} enter [animation-delay:250ms]`}>
+              <button onClick={next} className={`${btn} enter anim-delay-250`}>
                 {t("hideNext")}
               </button>
             </>
@@ -665,8 +665,8 @@ export default function Home() {
         <div key="tie" className="flex flex-1 flex-col items-center justify-center gap-5 text-center">
           <Scale className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
           <h2 className="enter text-4xl font-bold tracking-tight">{t("tie")}</h2>
-          <p className="enter max-w-xs text-muted [animation-delay:80ms]">{t("tieHelp")}</p>
-          <ul className="enter flex w-full flex-col gap-2 [animation-delay:140ms]">
+          <p className="enter max-w-xs text-muted anim-delay-80">{t("tieHelp")}</p>
+          <ul className="enter flex w-full flex-col gap-2 anim-delay-140">
             {tally(votes, players.length)
               .counts.map((c, i) => ({ c, i }))
               .filter((x) => x.c > 0)
@@ -680,7 +680,7 @@ export default function Home() {
                 </li>
               ))}
           </ul>
-          <button onClick={() => setPhase("discuss")} className={`${btn} enter mt-4 [animation-delay:220ms]`}>
+          <button onClick={() => setPhase("discuss")} className={`${btn} enter mt-4 anim-delay-220`}>
             <MessagesSquare className="size-5 shrink-0" aria-hidden /> {t("discussAgain")}
           </button>
         </div>
@@ -704,7 +704,7 @@ export default function Home() {
       {phase === "result" && round && (
         <div key="result" className="flex flex-1 flex-col justify-center gap-3 text-center">
           <Verdict names={names} imposters={round.imposters} accused={accused} word={round.word} guess={guess} joker={joker} lang={lang} />
-          <div className="enter flex flex-col gap-3 [animation-delay:340ms]">
+          <div className="enter flex flex-col gap-3 anim-delay-340">
             {history.length >= rounds ? (
               <>
                 <p className="pop mt-4 text-3xl font-bold tracking-tight">{t("gameOver")}</p>

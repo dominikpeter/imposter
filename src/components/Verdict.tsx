@@ -45,7 +45,7 @@ export function Verdict(p: { names: string[]; imposters: number[]; accused: numb
         <p className="text-lg text-white/80">{t(imposters.length > 1 ? "impostersWere" : "imposterWas")}</p>
         <p className="mt-1 text-4xl font-bold tracking-tight break-words">{new Intl.ListFormat(p.lang).format(imposters.map((i) => names[i]))}</p>
       </div>
-      <div className={`${card} enter [animation-delay:200ms]`}>
+      <div className={`${card} enter anim-delay-200`}>
         <p className="text-muted">{t("theWord")}</p>
         <p className="mt-1 text-3xl font-bold tracking-tight break-words text-primary-ink">{typeof p.word === "string" ? p.word : p.word[p.lang]}</p>
       </div>

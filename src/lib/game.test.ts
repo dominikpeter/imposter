@@ -79,9 +79,9 @@ test("the draw is fair: every player is imposter and starter about equally often
   for (let r = 0; r < 1000; r++) assert.equal(new Set(newRound(n, 2, secret).imposters).size, 2);
 });
 
-test("Nerd is opt-in: not in the default topics, but playable when chosen", async () => {
+test("every topic is selected by default, Nerd included", async () => {
   const { DEFAULT_CATS } = await import("./i18n.ts");
-  assert.ok(!DEFAULT_CATS.includes("nerd"));
-  assert.equal(DEFAULT_CATS.length, CATEGORIES.length - 1);
+  assert.equal(DEFAULT_CATS.length, CATEGORIES.length);
+  assert.ok(DEFAULT_CATS.includes("nerd"));
   assert.match(packSecret(["nerd"], new Set()).key, /^nerd:/);
 });

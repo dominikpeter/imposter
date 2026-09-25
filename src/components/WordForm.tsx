@@ -36,7 +36,7 @@ export function WordForm(p: {
       {p.draft.map((d, i) => {
         const note = p.notes[i];
         return (
-          <div key={i} className={`${card} flex flex-col gap-2 p-3 ${note && note !== "corrected" ? "ring-2 ring-red-400" : ""}`}>
+          <div key={i} className={`${card} flex flex-col gap-2 p-3 ${note && note !== "corrected" ? "ring-2 ring-danger" : ""}`}>
             <input
               required
               autoFocus={i === 0}
@@ -57,7 +57,7 @@ export function WordForm(p: {
               className={`${field} border-divider/30 text-base`}
             />
             {note && (
-              <p role="status" className={`pop flex items-start gap-1.5 px-1 text-sm font-medium ${note === "corrected" ? "text-primary-ink" : "text-red-500"}`}>
+              <p role="status" className={`pop flex items-start gap-1.5 px-1 text-sm font-medium ${note === "corrected" ? "text-primary-ink" : "text-danger"}`}>
                 {note === "corrected" ? <WandSparkles className="mt-0.5 size-4 shrink-0" aria-hidden /> : <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />}
                 {t(NOTE[note])}
               </p>

@@ -56,7 +56,7 @@ export const UI = {
   votes: { en: "votes", fr: "votes", de: "Stimmen" },
   voteOne: { en: "vote", fr: "vote", de: "Stimme" },
   onePhone: { en: "One phone", fr: "Un téléphone", de: "Ein Handy" },
-  everyPhone: { en: "Every phone", fr: "Chacun son tél.", de: "Jedes Handy" },
+  everyPhone: { en: "Every phone", fr: "Chacun son tél.", de: "Mehrere Handys" },
   phonesHelp: {
     en: "Everyone plays on their own phone. Create a room, the others join with the code or QR.",
     fr: "Chacun joue sur son téléphone. Crée une salle, les autres rejoignent avec le code ou le QR.",
@@ -199,6 +199,17 @@ export const UI = {
   errTooMany: { en: "Too many tries. Wait a minute, then try again.", fr: "Trop d'essais. Attends une minute, puis réessaie.", de: "Zu viele Versuche. Warte eine Minute und versuch es nochmal." },
   madeWith: { en: "Made with {heart} by Dominik", fr: "Fait avec {heart} par Dominik", de: "Gemacht mit {heart} von Dominik" },
   sourceOnGithub: { en: "Source code on GitHub", fr: "Code source sur GitHub", de: "Quellcode auf GitHub" },
+  signedInAs: { en: "Signed in as {name}", fr: "Connecté en tant que {name}", de: "Angemeldet als {name}" },
+  signOut: { en: "Sign out", fr: "Déconnexion", de: "Abmelden" },
+  continueWith: { en: "Continue with {name}", fr: "Continuer avec {name}", de: "Weiter mit {name}" },
+  aiLoginNote: {
+    en: "Sign in to use AI help. Playing works without an account.",
+    fr: "Connecte-toi pour utiliser l'aide IA. On peut jouer sans compte.",
+    de: "Melde dich an, um die KI-Hilfe zu nutzen. Spielen geht auch ohne Konto.",
+  },
+  noLogin: { en: "AI login isn't set up yet.", fr: "La connexion pour l'IA n'est pas encore configurée.", de: "Die Anmeldung für die KI ist noch nicht eingerichtet." },
+  moreTopics: { en: "More topics (+{name})", fr: "Plus de thèmes (+{name})", de: "Mehr Themen (+{name})" },
+  lessTopics: { en: "Show less", fr: "Afficher moins", de: "Weniger anzeigen" },
   errOffline: { en: "Connection problem, retrying…", fr: "Problème de connexion, nouvel essai…", de: "Verbindungsproblem, versuche erneut…" },
   quit: { en: "Quit round", fr: "Quitter la manche", de: "Runde beenden" },
   quitConfirm: { en: "Quit this round?", fr: "Quitter cette manche ?", de: "Diese Runde beenden?" },
@@ -366,5 +377,5 @@ export const CATEGORIES = [
   ...NEW_TOPICS,
 ];
 
-// topics selected in a fresh game: everything except opt-in ones (e.g. Nerd)
-export const DEFAULT_CATS = CATEGORIES.filter((c) => !("optional" in c && c.optional)).map((c) => c.id);
+// topics selected in a fresh game: all of them
+export const DEFAULT_CATS = CATEGORIES.map((c) => c.id);

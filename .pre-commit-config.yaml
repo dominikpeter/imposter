@@ -1,0 +1,28 @@
+# Git hooks via prek (https://github.com/j178/prek). Install once: `just setup`
+default_install_hook_types: [pre-commit, commit-msg, pre-push]
+default_stages: [pre-commit]
+repos:
+  - repo: local
+    hooks:
+      - id: lint
+        name: eslint (incl. shadcn design rules)
+        entry: npx eslint --max-warnings 0
+        language: system
+        files: \.(ts|tsx|mjs)$
+      - id: typecheck
+        name: tsc
+        entry: npx tsc --noEmit
+        language: system
+        pass_filenames: false
+        files: \.(ts|tsx)$
+      - id: manual
+        name: user manual updated
+        entry: scripts/check-manual.sh
+        language: system
+        stages: [commit-msg]
+      - id: unit
+        name: unit tests
+        entry: npm test
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
