@@ -4,6 +4,14 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+project=$(jq -r .projectName .vercel/project.json)
+
+# `vercel git connect` also fails when the repo is already linked, so check first
+linked=$(vercel api "/v9/projects/$project" 2>/dev/null | jq -r '.link | select(.type == "github") | "\(.org)/\(.repo)"')
+if [ "$linked" = "$repo" ]; then
+  echo "Already connected: pushes to main deploy $repo to production."
+  exit 0
+fi
 
 if ! vercel git connect "https://github.com/$repo" --yes; then
   echo
