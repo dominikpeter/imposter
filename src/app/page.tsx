@@ -87,7 +87,8 @@ export default function Home() {
   const [checking, setChecking] = useState(false);
   const [confirmable, setConfirmable] = useState(""); // corrected draft shown to the player; sending it unchanged = accepted
   const me = useMe();
-  const ai = useAi() && !!me?.user; // AI only for signed-in players (and only when their switch is on)
+  const aiPref = useAi();
+  const ai = aiPref && !!me?.user; // AI only for signed-in players (and only when their switch is on)
   const [myName, setMyName] = useState(saved.myName ?? "");
   const [code, setCode] = useState("");
   const [online, setOnline] = useState<"create" | "join">("create");
@@ -164,7 +165,8 @@ export default function Home() {
     }
   };
   const createRoom = () =>
-    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai, rounds, guess: guessOpt, lang: W } });
+    // the switch as set: the server turns AI on only for a real session (me may not have loaded yet)
+    goOnline("", { name: myName, settings: { imposterCount, mode, cats, perPlayer, hint, joker, ai: aiPref, rounds, guess: guessOpt, lang: W } });
   const joinByCode = (c = code) => goOnline(`/${c}`, { type: "join", name: myName });
   const joining = play === "phones" && online === "join";
 
@@ -203,7 +205,7 @@ export default function Home() {
       ? exactReview(draft, taken)
       : (await fetch("/api/words/check", {
         method: "POST",
-        body: JSON.stringify({ words: draft, taken, lang: W, ai: ai && JSON.stringify(draft) !== confirmable }),
+        body: JSON.stringify({ words: draft, taken, lang: W, ai: JSON.stringify(draft) !== confirmable }),
       })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null)) ?? exactReview(draft, taken); // offline → exact checks only
