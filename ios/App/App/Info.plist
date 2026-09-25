@@ -66,5 +66,10 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- lets WKWebView run the site's service worker (offline one-phone game) for whoislying.ch -->
+	<key>WKAppBoundDomains</key>
+	<array>
+		<string>whoislying.ch</string>
+	</array>
 </dict>
 </plist>

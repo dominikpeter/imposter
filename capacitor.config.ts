@@ -9,6 +9,8 @@ const config: CapacitorConfig = {
   webDir: "capacitor/www",
   server: { url: "https://whoislying.ch", cleartext: false },
   backgroundColor: "#0b132b",
+  // iOS runs service workers only for app-bound domains (WKAppBoundDomains in ios/App/App/Info.plist)
+  ios: { limitsNavigationsToAppBoundDomains: true },
 };
 
 export default config;

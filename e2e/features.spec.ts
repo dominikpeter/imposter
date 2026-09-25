@@ -352,7 +352,7 @@ test("rooms: 20 players at most; late joiners are turned away once the game star
   const guest = await phoneAs(browser, addr, host.code);
   await guest.getByPlaceholder("Your name").fill("Late");
   await guest.getByRole("button", { name: "Join" }).click();
-  await expect(guest.getByRole("alert").filter({ hasText: /\S/ })).toHaveText("This room is full.");
+  await expect(guest.getByRole("alert").filter({ hasText: /\S/ })).toHaveText("This room is full.", { timeout: 15_000 }); // after 20 joins; slow on a busy machine
 
   // started: joining is refused even with room to spare
   const small = await roomOf(request, {});

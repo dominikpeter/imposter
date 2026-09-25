@@ -274,5 +274,6 @@ Your choices are remembered on your phone.
 | The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the 5-character code. |
 | The AI didn't correct anything | AI help may be off, you may not be signed in, or a limit was reached (60 checks per minute and 200 per day per account, 1,000 per day overall). Exact duplicates are still caught. |
 | Can I put it on my home screen like an app? | Yes. Android and computers: **Settings → Install app**. iPhone: Safari → Share → **Add to Home Screen** (Settings shows the steps). It opens full-screen with the mask icon, and **the one-phone game then works offline**: handy at a party with bad reception. Rooms and AI help still need a connection. |
+| Is there an app in the stores? | Not yet. Installing from Settings gives you the same game as an app. Android and iPhone app builds exist (Capacitor) and load the same site, so they always have the latest version. |
 | Two players have the same name | The app adds a number (*Tim*, *Tim 2*) so stats and jokers stay apart. |
 | A word appeared that we already had | Pack words only repeat once every word in the chosen topics has been played. |

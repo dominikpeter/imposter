@@ -10,7 +10,7 @@ export function ServiceWorker() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     if (process.env.NODE_ENV !== "production") return;
-    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    navigator.serviceWorker.register(`/sw.js?v=${process.env.NEXT_PUBLIC_VERSION}`, { scope: "/" }).catch(() => {}); // new version → new worker + fresh cache
   }, []);
   return null;
 }
