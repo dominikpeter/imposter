@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { CATEGORIES, LANGS, UI, type Lang } from "@/lib/i18n";
 import type { Settings } from "@/lib/room";
+import { useMe } from "@/lib/authClient";
 import { card } from "@/lib/ui";
 
 /** Lobby card: the host's choices, so every player knows the rules and topics before the game starts. */
 export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: Lang }) {
   const t = (k: keyof typeof UI) => UI[k][lang];
+  const me = useMe(); // the admin can switch AI off for everyone
   const row = (icon: ReactNode, label: string, value: ReactNode) => (
     <li className="flex items-center justify-between gap-3 py-1.5">
       <span className="flex items-center gap-2 text-muted">
@@ -31,7 +33,7 @@ export function RoomSettings({ settings: s, lang }: { settings: Settings; lang: 
         {row(<Spade className={i} aria-hidden />, t("joker"), on(s.joker))}
         {row(<VenetianMask className={i} aria-hidden />, t("guessOption"), on(s.guess))}
         {/* AI runs on the host's account: only listed when the host is signed in */}
-        {s.ai && row(<WandSparkles className={i} aria-hidden />, t("aiHelp"), on(s.ai))}
+        {s.ai && me?.ai !== false && row(<WandSparkles className={i} aria-hidden />, t("aiHelp"), on(s.ai))}
         {s.mode === "custom" && row(<PenLine className={i} aria-hidden />, t("ourWords"), `${s.perPlayer} × ${t("word")}`)}
       </ul>
       {s.mode === "packs" && (

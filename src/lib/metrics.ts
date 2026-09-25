@@ -4,7 +4,10 @@ import { db } from "./store.ts";
 // signed-in user. Recording never breaks the game: every write swallows its own errors.
 const TTL = 400 * 86_400; // a bit over a year of history
 const USERS = "metrics:users";
-const dayKey = (d: Date) => `metrics:day:${d.toISOString().slice(0, 10)}`;
+// days in Swiss time, as the owner reads the chart (UTC would move late-evening games to the wrong day)
+const zurichDay = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Zurich" }); // en-CA formats as YYYY-MM-DD
+const day = (d: Date) => zurichDay.format(d);
+const dayKey = (d: Date) => `metrics:day:${day(d)}`;
 
 export const METRICS = ["logins", "rooms", "roomRounds", "localRounds", "aiCalls", "tokensIn", "tokensOut"] as const;
 export type Metric = (typeof METRICS)[number];
@@ -22,8 +25,7 @@ export async function count(counts: Partial<Record<Metric, number>>) {
 // The day counters above are atomic, so totals stay exact. Per-field hashes per user if this ever matters.
 async function updateUser(id: string, change: (u: UserRow | null) => UserRow | null) {
   try {
-    const rows = await db.hgetall<UserRow>(USERS);
-    const next = change(rows[id] ?? null);
+    const next = change(await db.hget<UserRow>(USERS, id));
     if (next) await db.hset(USERS, id, next, TTL);
   } catch {}
 }
@@ -52,7 +54,7 @@ export async function dashboard(days = 30) {
   const dates = Array.from({ length: days }, (_, i) => new Date(Date.now() - (days - 1 - i) * 86_400_000));
   const rows = await Promise.all(dates.map((d) => db.hgetall<number>(dayKey(d))));
   const daily = dates.map((d, i) => ({
-    date: d.toISOString().slice(0, 10),
+    date: day(d),
     ...Object.fromEntries(METRICS.map((m) => [m, Number(rows[i][m]) || 0])),
   })) as ({ date: string } & Record<Metric, number>)[];
   const users = Object.values(await db.hgetall<UserRow>(USERS)).sort((a, b) => b.last - a.last);

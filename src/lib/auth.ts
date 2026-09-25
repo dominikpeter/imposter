@@ -55,7 +55,7 @@ export const auth = betterAuth({
   },
 });
 
-export type AiUser = { id: string; name: string; email: string };
+export type AiUser = { id: string; name: string; email: string; verified: boolean };
 
 /**
  * The signed-in user allowed to use AI, or null. E2E bypass: header `x-e2e-user`, honoured only by the dev
@@ -63,10 +63,10 @@ export type AiUser = { id: string; name: string; email: string };
  */
 export async function aiUser(req: { headers: Headers }): Promise<AiUser | null> {
   const bypass = env.NODE_ENV === "development" && env.E2E_AUTH_BYPASS === "1" && req.headers.get("x-e2e-user");
-  if (bypass) return { id: `e2e:${bypass}`, name: bypass, email: `${bypass.toLowerCase()}@e2e.test` };
+  if (bypass) return { id: `e2e:${bypass}`, name: bypass, email: `${bypass.toLowerCase()}@e2e.test`, verified: true };
   try {
     const s = await auth.api.getSession({ headers: req.headers });
-    return s ? { id: s.user.id, name: s.user.name || s.user.email, email: s.user.email } : null;
+    return s ? { id: s.user.id, name: s.user.name || s.user.email, email: s.user.email, verified: !!s.user.emailVerified } : null;
   } catch {
     return null;
   }
@@ -75,5 +75,6 @@ export async function aiUser(req: { headers: Headers }): Promise<AiUser | null> 
 /** Admin page access: signed-in accounts listed in ADMIN_EMAIL (comma-separated, set in Vercel; not in the repo). */
 export function isAdmin(user: AiUser | null) {
   const allowed = (env.ADMIN_EMAIL ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean);
-  return !!user?.email && allowed.includes(user.email.toLowerCase());
+  // only an address the provider verified: an unverified email could be anyone's
+  return !!user?.email && user.verified && allowed.includes(user.email.toLowerCase());
 }

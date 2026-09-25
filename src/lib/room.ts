@@ -166,13 +166,14 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
   const host = me.id === room.hostId;
   const idx = room.ids.indexOf(me.id);
   // round over: jokers for imposters who got away (or guessed the word), history for the stats
+  let roundDone = false; // counted for the admin stats once the room is saved
   const finish = (votes: number[] | null, guessed = false) => {
     const names = room.ids.map((id) => members.find((m) => m.id === id)?.name ?? "?");
     const r = room.round!;
     if (room.settings.joker && room.accused !== null) room.jokers = earnJokers(r.imposters, guessed ? -1 : room.accused, room.ids, room.jokers ?? []);
     room.history = [...(room.history ?? []), { names, imposters: r.imposters, accused: room.accused, votes, word: r.word, guessed }];
     room.phase = "result";
-    void count({ roomRounds: 1 }); // admin stats; never blocks or fails the game
+    roundDone = true;
   };
   const gameOver = (room.history?.length ?? 0) >= room.settings.rounds;
   const need = (ok: boolean) => {
@@ -331,6 +332,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       throw new RoomError("bad_request");
   }
   await save(db, room);
+  if (roundDone) await count({ roomRounds: 1 }); // awaited: a serverless function may stop right after responding
 }
 
 export type View = {

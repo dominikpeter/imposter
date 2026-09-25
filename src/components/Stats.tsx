@@ -193,7 +193,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
             </thead>
             <tbody>
               {s.players.map((p) => (
-                <tr key={p.name} className="border-t border-line">
+                <tr key={p.name}>
                   <td className="max-w-24 truncate px-1.5 py-2">{p.name}</td>
                   {HEAT.map((k) => (
                     <td key={k} className={`rounded-md px-1.5 py-2 text-right ${k === "points" ? "font-semibold" : ""}`} style={heat(p[k], colMax[k])}>
