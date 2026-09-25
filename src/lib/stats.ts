@@ -45,3 +45,9 @@ export function stats(history: RoundLog[]) {
   const players = [...by.values()].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
   return { rounds: history.length, crewWins, imposterWins, players, timeline };
 }
+
+/** Everyone tied on the most points (a draw names them all). */
+export function winners(history: RoundLog[]) {
+  const ps = stats(history).players;
+  return ps.filter((p) => p.points === ps[0]?.points).map((p) => p.name);
+}

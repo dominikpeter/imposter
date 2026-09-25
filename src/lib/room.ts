@@ -1,4 +1,4 @@
-import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, wordHint, type Round, type Secret, type Text } from "./game.ts";
+import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, uniqueName, wordHint, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import { reviewWords } from "./ai.ts";
@@ -110,7 +110,7 @@ export async function joinRoom(db: Store, code: string, name: unknown) {
   const { room, members } = await load(db, code);
   if (room.phase !== "lobby") throw new RoomError("started");
   if (members.length >= MAX_PLAYERS) throw new RoomError("full");
-  const m = await addMember(db, code, n);
+  const m = await addMember(db, code, uniqueName(n, members.map((x) => x.name)));
   return { code, pid: m.id, token: m.token };
 }
 
@@ -153,7 +153,7 @@ function nextRound(room: Room, members: Member[]) {
 }
 
 export type Action =
-  | { type: "start" | "newGame" | "discuss" | "startVote" | "skipVote" | "ready" | "spoke" | "moreWords" }
+  | { type: "start" | "newGame" | "discuss" | "startVote" | "skipVote" | "ready" | "spoke" | "moreWords" | "force" }
   | { type: "guess"; text: string }
   | { type: "words"; words: Draft[]; lang?: string; confirm?: boolean }
   | { type: "vote"; target: number };
@@ -174,6 +174,17 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
   const gameOver = (room.history?.length ?? 0) >= room.settings.rounds;
   const need = (ok: boolean) => {
     if (!ok) throw new RoomError("forbidden");
+  };
+  // all ballots in (or the host closes the vote): tie → talk again, caught imposter may guess, else result
+  const closeVote = (all: Record<string, number>) => {
+    // ponytail: two last voters racing both compute the same tally from the same votes, so the double write is harmless
+    const { accused } = tally(Object.values(all).map(Number), room.ids.length);
+    if (accused === null) room.phase = "tie";
+    else {
+      room.accused = accused;
+      if (room.settings.guess && room.round!.imposters.includes(accused)) room.phase = "guess";
+      else finish(room.ids.map((_, i) => Number(all[i])));
+    }
   };
 
   switch (a.type) {
@@ -281,15 +292,26 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
       await db.hset(key, String(idx), target, TTL);
       const all = await db.hgetall<number>(key);
       if (Object.keys(all).length < room.ids.length) return;
-      // ponytail: two last voters racing both compute the same tally from the same votes, so the double write is harmless
-      const { accused } = tally(Object.values(all).map(Number), room.ids.length);
-      if (accused === null) room.phase = "tie";
-      else {
-        room.accused = accused;
-        // caught + guess option: the imposter gets one guess before the result
-        if (room.settings.guess && room.round!.imposters.includes(accused)) room.phase = "guess";
-        else finish(room.ids.map((_, i) => Number(all[i])));
-      }
+      closeVote(all);
+      break;
+    }
+    case "force": {
+      // a phone dropped out: the host carries on without the missing players instead of waiting forever
+      need(host);
+      if (room.phase === "vote") {
+        const all = await db.hgetall<number>(`room:${code}:votes:${room.voteNo}`);
+        need(Object.keys(all).length > 0);
+        closeVote(all);
+      } else if (room.phase === "guess") {
+        room.guess = null; // no guess counts as a wrong one
+        const votes = await db.hgetall<number>(`room:${code}:votes:${room.voteNo}`);
+        finish(room.ids.map((_, i) => Number(votes[i])));
+      } else if (room.phase === "write") {
+        const now = await db.hgetall<Draft[]>(`room:${code}:words:${room.writeNo}`);
+        room.pool = room.ids.reduce<Secret[]>((p, _, i) => mergeWritten(p, now[i] ?? [], i), []);
+        need(room.pool.length > 0);
+        nextRound(room, members);
+      } else need(false);
       break;
     }
     default:

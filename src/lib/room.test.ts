@@ -176,3 +176,24 @@ test("room codes have 5 characters without lookalikes", async () => {
   const db = store();
   for (let i = 0; i < 20; i++) assert.match((await createRoom(db, "Lisa", {})).code, /^[A-HJ-NP-Z2-9]{5}$/);
 });
+
+test("host can continue when a phone drops out (vote, own words)", async () => {
+  const { as, see } = await setup("packs");
+  await as(0, { type: "start" });
+  await as(0, { type: "discuss" });
+  await as(0, { type: "startVote" });
+  await assert.rejects(as(0, { type: "force" }), RoomError); // nothing to count yet
+  for (const [voter, target] of [[0, 3], [1, 3], [2, 3]]) await as(voter, { type: "vote", target }); // seat 3 never votes
+  await assert.rejects(as(1, { type: "force" }), RoomError); // only the host
+  await as(0, { type: "force" });
+  const v = await see(0);
+  assert.equal(v.phase, "result");
+  assert.equal(v.result?.accused, 3);
+
+  const w = await setup("custom");
+  await w.as(0, { type: "start" });
+  assert.equal((await w.see(0)).phase, "write");
+  for (const i of [0, 1]) await w.as(i, { type: "words", words: [{ word: `Word${i}`, clue: "" }], confirm: true });
+  await w.as(0, { type: "force" }); // seats 2 and 3 never write
+  assert.equal((await w.see(0)).phase, "reveal");
+});

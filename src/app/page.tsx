@@ -8,7 +8,7 @@ import { CATEGORIES, DEFAULT_CATS, LANGS, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { Hero } from "@/components/Hero";
 import { TopControls } from "@/components/TopControls";
-import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
+import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, uniqueNames, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { TurnGuide } from "@/components/TurnGuide";
 import { GuessForm } from "@/components/GuessForm";
@@ -16,7 +16,7 @@ import { Verdict, type Guess } from "@/components/Verdict";
 import { ExplainWord } from "@/components/ExplainWord";
 import { JokerHint } from "@/components/Joker";
 import { tally } from "@/lib/vote";
-import { stats, type RoundLog } from "@/lib/stats";
+import { type RoundLog, winners } from "@/lib/stats";
 import { Stats } from "@/components/Stats";
 import { api, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, heading, press, segmented, stepper, useAi } from "@/lib/ui";
@@ -25,7 +25,7 @@ type Phase = "setup" | "write" | "reveal" | "discuss" | "vote" | "tie" | "guess"
 type Mode = "packs" | "custom";
 type Play = "pass" | "phones";
 
-// everything needed to resume after a reload / accidental back; read once on the client (server gets {})
+// everything needed to resume after a reload / accidental back (server gets {})
 type Saved = Partial<{
   lang: Lang; players: string[]; imposterCount: number; mode: Mode; cats: string[]; perPlayer: number; hint: boolean;
   pool: Secret[]; used: string[]; writing: Secret[]; phase: Phase; round: Round | null; turn: number; votes: number[];
@@ -33,17 +33,20 @@ type Saved = Partial<{
   rounds: number; guessOpt: boolean; spoken: number; wordRound: number; guess: Guess; wordLang: Lang | "";
 }>;
 const KEY = SAVE_KEY;
-const saved: Saved = (() => {
+// read on every mount, not once per page load: the room page also writes KEY (language, name) and navigates back here
+const readSaved = (): Saved => {
   try {
     return JSON.parse(localStorage.getItem(KEY) ?? "{}") ?? {};
   } catch {
     return {};
   }
-})();
+};
+const written = (w: Secret[], p: number) => w.filter((s) => s.authors.includes(p)).length; // words player p has in w
 const blank = (n: number) => Array.from({ length: n }, () => ({ word: "", clue: "" }));
 const noop = () => () => {};
 
 export default function Home() {
+  const [saved] = useState(readSaved);
   const [lang, setLang] = useState<Lang>(saved.lang ?? "en");
   const [wordLang, setWordLang] = useState<Lang | "">(saved.wordLang ?? ""); // "" = same as the app
   const W = wordLang || lang; // language of the secret words
@@ -57,7 +60,10 @@ export default function Home() {
   const [pool, setPool] = useState<Secret[]>(saved.pool ?? []);
   const [used, setUsed] = useState<string[]>(saved.used ?? []);
   const [writing, setWriting] = useState<Secret[]>(saved.writing ?? []);
-  const [draft, setDraft] = useState(() => blank(saved.perPlayer ?? 2));
+  // resuming mid-write: a writer sent back after a clash only owes the words they lost
+  const [draft, setDraft] = useState(() =>
+    blank(Math.max(1, (saved.perPlayer ?? 2) - (saved.phase === "write" ? written(saved.writing ?? [], saved.turn ?? 0) : 0))),
+  );
   const [hint, setHint] = useState(saved.hint ?? true);
   const [round, setRound] = useState<Round | null>(saved.round ?? null);
   const [phase, setPhase] = useState<Phase>(saved.round || saved.phase === "write" ? (saved.phase ?? "setup") : "setup");
@@ -161,6 +167,7 @@ export default function Home() {
   const joining = play === "phones" && online === "join";
 
   const start = () => {
+    if (new Set(players.map((p) => p.toLowerCase())).size < players.length) setPlayers(uniqueNames(players));
     if (mode === "packs") {
       const s = packSecret(cats, new Set(used));
       setUsed(used.includes(s.key) ? [s.key] : [...used, s.key]); // already used = every word was played, start over
@@ -178,7 +185,6 @@ export default function Home() {
   };
 
   // words stay in `writing` until everyone is done, so quitting halfway never leaves a partial pool
-  const written = (w: Secret[], p: number) => w.filter((s) => s.authors.includes(p)).length;
   const submitWords = async () => {
     setChecking(true);
     const taken = writing.map((s) => s.word as string);
@@ -733,7 +739,7 @@ export default function Home() {
             {history.length >= rounds ? (
               <>
                 <p className="pop mt-4 text-3xl font-bold tracking-tight">{t("gameOver")}</p>
-                <p className="text-lg text-primary-ink">{t("winsGame").replace("{name}", stats(history).players[0]?.name ?? "")}</p>
+                <p className="text-lg text-primary-ink">{((w) => t(w.length > 1 ? "winGameTie" : "winsGame").replace("{name}", new Intl.ListFormat(lang).format(w)))(winners(history))}</p>
                 <button
                   onClick={() => {
                     setHistory([]);

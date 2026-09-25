@@ -222,6 +222,7 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 - The host's **word language** applies to the whole room, so everyone gets the same word. Each phone keeps its own app language, and the lobby shows the word language under *Game settings*.
 - If the caught imposter may guess, their phone shows a field for the word while the others wait.
 - **Votes** and **own words** are entered on each phone at the same time. The screen shows how many players are still missing.
+- **A phone dropped out?** While waiting for votes, words or the imposter's guess, the host can tap **Continue without them**: the game counts what's there and moves on.
 - Stats and jokers work the same as on one phone.
 
 <br clear="right"/>
@@ -269,4 +270,5 @@ Your choices are remembered on your phone.
 | "Online rooms aren't available yet" | The server has no room storage configured. Play on one phone meanwhile. |
 | The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the 5-character code. |
 | The AI didn't correct anything | AI help may be off, you may not be signed in, or a limit was reached (60 checks per minute and 200 per day per account, 1,000 per day overall). Exact duplicates are still caught. |
+| Two players have the same name | The app adds a number (*Tim*, *Tim 2*) so stats and jokers stay apart. |
 | A word appeared that we already had | Pack words only repeat once every word in the chosen topics has been played. |

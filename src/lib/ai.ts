@@ -43,7 +43,7 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
     });
     const fixed: Draft[] = draft.map((d, i) => ({
       word: (output.results[i]?.word || d.word).trim().slice(0, 40),
-      clue: (output.results[i]?.hint ?? d.clue).trim().slice(0, 40),
+      clue: (output.results[i]?.hint || d.clue).trim().slice(0, 40), // an empty AI hint never erases the writer's
     }));
     // exact checks again on the corrected words (a fix can turn into a duplicate)
     return exactReview(fixed, taken).map((r, i) => {

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { earnJokers, exactReview, mergeWritten, reviewNotes, newRound, packSecret, spendJokers, wordHint } from "./game.ts";
+import { earnJokers, exactReview, mergeWritten, reviewNotes, newRound, packSecret, spendJokers, uniqueNames, wordHint } from "./game.ts";
 import { CATEGORIES } from "./i18n.ts";
 
 test("pack words never repeat until the topic is exhausted", () => {
@@ -84,4 +84,8 @@ test("every topic is selected by default, Nerd included", async () => {
   assert.equal(DEFAULT_CATS.length, CATEGORIES.length);
   assert.ok(DEFAULT_CATS.includes("nerd"));
   assert.match(packSecret(["nerd"], new Set()).key, /^nerd:/);
+});
+
+test("duplicate names get a number", () => {
+  assert.deepEqual(uniqueNames(["Tim", "Nora", "tim", "Tim"]), ["Tim", "Nora", "tim 2", "Tim 3"]);
 });

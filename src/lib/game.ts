@@ -9,6 +9,15 @@ export type Round = Secret & { imposters: number[]; starter: number; jokered?: n
 // crypto RNG: who is imposter and room codes must not be predictable from earlier outputs (modulo bias ~n/2^32, negligible)
 export const pick = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
 
+// stats and jokers are keyed by name, so two "Tim"s become "Tim" and "Tim 2"
+export function uniqueName(name: string, taken: string[]) {
+  const t = new Set(taken.map((x) => x.toLowerCase()));
+  let n = name;
+  for (let i = 2; t.has(n.toLowerCase()); i++) n = `${name} ${i}`;
+  return n;
+}
+export const uniqueNames = (names: string[]) => names.reduce<string[]>((a, n) => [...a, uniqueName(n, a)], []);
+
 export function shuffle<T>(a: T[]): T[] {
   const r = [...a];
   for (let i = r.length - 1; i > 0; i--) {

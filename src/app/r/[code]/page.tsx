@@ -15,7 +15,7 @@ import { TurnGuide } from "@/components/TurnGuide";
 import { GuessForm } from "@/components/GuessForm";
 import { Verdict } from "@/components/Verdict";
 import { RoomSettings } from "@/components/RoomSettings";
-import { stats } from "@/lib/stats";
+import { winners } from "@/lib/stats";
 import { JokerHint } from "@/components/Joker";
 import { api, loadIdentity, SAVE_KEY, saveIdentity, type Identity } from "@/lib/roomClient";
 import { btn, card, field, ghost, press } from "@/lib/ui";
@@ -177,6 +177,12 @@ export default function Room() {
     </p>
   );
   const progressText = v ? `${t("waitingOthers")} · ${v.done}/${names.length}` : "";
+  // a phone dropped out: only the host can move the room on without it
+  const force = v?.isHost && (
+    <button onClick={() => send({ type: "force" })} disabled={busy} className={`${ghost} text-muted`}>
+      {t("continueWithout")}
+    </button>
+  );
 
   const theCard = () =>
     v?.card &&
@@ -323,6 +329,7 @@ export default function Room() {
             <div className="enter flex flex-col items-center gap-4 text-center">
               <CircleCheck className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
               {waiting(progressText)}
+              {force}
             </div>
           ) : (
             <WordForm
@@ -407,6 +414,7 @@ export default function Room() {
             <div className="enter flex flex-col items-center gap-4">
               <Vote className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
               {waiting(progressText)}
+              {force}
             </div>
           ) : (
             <div className="enter flex flex-col gap-4">
@@ -471,6 +479,7 @@ export default function Room() {
             <>
               <VenetianMask className="pop size-16 text-primary-ink" strokeWidth={1.5} aria-hidden />
               {waiting(f("isGuessing", names[v.accused]))}
+              {force}
             </>
           )}
         </div>
@@ -491,7 +500,7 @@ export default function Room() {
             {v.gameOver && (
               <>
                 <p className="pop text-3xl font-bold tracking-tight">{t("gameOver")}</p>
-                <p className="text-lg text-primary-ink">{f("winsGame", stats(v.history).players[0]?.name ?? "")}</p>
+                <p className="text-lg text-primary-ink">{((w) => f(w.length > 1 ? "winGameTie" : "winsGame", new Intl.ListFormat(L).format(w)))(winners(v.history))}</p>
               </>
             )}
             {v.isHost ? (

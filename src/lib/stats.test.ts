@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { stats, type RoundLog } from "./stats.ts";
+import { stats, winners, type RoundLog } from "./stats.ts";
 
 const names = ["Lisa", "Nora", "Tim"];
 
@@ -35,4 +35,9 @@ test("a caught imposter who guesses the word escapes; timeline is cumulative", (
     { Lisa: 1, Nora: 2, Tim: 1 },
     { Lisa: 2, Nora: 3, Tim: 1 },
   ]);
+});
+
+test("a draw names every leader", () => {
+  const r = (accused: number) => ({ names: ["A", "B", "C"], imposters: [0], accused, votes: [1, 0, 0], word: "x" });
+  assert.deepEqual(winners([r(0)]), ["B", "C"]); // both caught the imposter: 1 point each
 });
