@@ -69,11 +69,12 @@ function cleanSettings(s: Partial<Settings>): Settings {
 }
 
 async function load(db: Store, code: string) {
-  const room = await db.get<Room>(k(code).room);
+  // both reads at once: every poll and every action starts here
+  const [room, all] = await Promise.all([db.get<Room>(k(code).room), db.hgetall<Member>(k(code).members)]);
   if (!room) throw new RoomError("not_found");
   // host first, then join order; same-millisecond joins broken by id so every read agrees
   const first = (m: Member) => (m.id === room.hostId ? 0 : 1);
-  const members = Object.values(await db.hgetall<Member>(k(code).members)).sort(
+  const members = Object.values(all).sort(
     (a, b) => first(a) - first(b) || a.at - b.at || a.id.localeCompare(b.id),
   );
   return { room, members };
