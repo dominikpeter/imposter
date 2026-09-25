@@ -4,7 +4,7 @@
 
 **One of you is lying.** A party game for your phone, in English, French and German.
 
-[**Play now → imposter-orcin-five.vercel.app**](https://imposter-orcin-five.vercel.app)
+[**Play now → whoislying.ch**](https://whoislying.ch)
 
 <img src="docs/setup.png" width="200" alt="Setup screen" />&nbsp;
 <img src="docs/imposter.png" width="200" alt="Imposter card" />&nbsp;

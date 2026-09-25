@@ -197,6 +197,8 @@ export const UI = {
   timesImposter: { en: "Times imposter", fr: "Fois imposteur", de: "Mal Hochstapler" },
   pointsTimeline: { en: "Points per round", fr: "Points par manche", de: "Punkte pro Runde" },
   errTooMany: { en: "Too many tries. Wait a minute, then try again.", fr: "Trop d'essais. Attends une minute, puis réessaie.", de: "Zu viele Versuche. Warte eine Minute und versuch es nochmal." },
+  madeWith: { en: "Made with {heart} by Dominik", fr: "Fait avec {heart} par Dominik", de: "Gemacht mit {heart} von Dominik" },
+  sourceOnGithub: { en: "Source code on GitHub", fr: "Code source sur GitHub", de: "Quellcode auf GitHub" },
   errOffline: { en: "Connection problem, retrying…", fr: "Problème de connexion, nouvel essai…", de: "Verbindungsproblem, versuche erneut…" },
   quit: { en: "Quit round", fr: "Quitter la manche", de: "Runde beenden" },
   quitConfirm: { en: "Quit this round?", fr: "Quitter cette manche ?", de: "Diese Runde beenden?" },

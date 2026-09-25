@@ -1,6 +1,6 @@
 # Imposter: user manual
 
-**Play:** [imposter-orcin-five.vercel.app](https://imposter-orcin-five.vercel.app). Works in any phone browser. Tip: add it to your home screen.
+**Play:** [whoislying.ch](https://whoislying.ch). Works in any phone browser. Tip: add it to your home screen.
 
 **Contents**
 1. [The idea in 30 seconds](#1-the-idea-in-30-seconds)
