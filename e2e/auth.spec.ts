@@ -108,6 +108,32 @@ test.describe("signed out", () => {
     await page.getByRole("button", { name: `Continue with ${NAME[p]}` }).click();
     await page.waitForURL((u) => u.host === OAUTH_HOST[p]);
   });
+
+  // the e2e dev server mails nothing and always issues the code 123456 (E2E_AUTH_BYPASS)
+  test("email sign-in: code by mail, wrong code refused, right code signs in, sign out", async ({ page }) => {
+    const email = `mail${Date.now()}@e2e.test`;
+    await page.goto("/");
+    await openSettings(page);
+    await page.getByRole("textbox", { name: "Your email" }).fill(email);
+    await page.getByRole("button", { name: "Email me a code" }).click();
+    await expect(page.getByText(`We sent a 6-digit code to ${email}.`)).toBeVisible();
+
+    const code = page.getByRole("textbox", { name: "6-digit code" });
+    await code.fill("000000");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByText("That code didn't work.", { exact: false })).toBeVisible();
+
+    await code.fill("123456");
+    await page.getByRole("button", { name: "Sign in" }).click(); // reloads the page signed in
+    await openSettings(page);
+    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
+    await expect(aiSwitch(page)).toBeVisible();
+    expect((await (await page.request.get("/api/me")).json()).user.email).toBe(email);
+
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await openSettings(page);
+    await expect(page.getByRole("button", { name: "Email me a code" })).toBeVisible();
+  });
 });
 
 test.describe("signed in", () => {

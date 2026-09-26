@@ -66,8 +66,8 @@ function redisStore(redis: Redis): Store {
 }
 
 // Vercel's Upstash integration sets KV_REST_API_*; plain Upstash uses UPSTASH_REDIS_REST_*
-const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+export const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+export const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
 
 export const persistent = !!(url && token);
 

@@ -1,6 +1,9 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { createAuthMiddleware } from "better-auth/api";
+import { emailOTP } from "better-auth/plugins";
+import { Redis } from "@upstash/redis";
+import { url as redisUrl, token as redisToken } from "./store.ts";
 import { later, recordLogin } from "./metrics.ts";
 
 // Login only unlocks the AI features (the game itself needs no account). No database: the session is an
@@ -26,6 +29,41 @@ const socialProviders = Object.fromEntries(
 );
 export const providers = Object.keys(socialProviders) as ("google" | "github" | "microsoft")[];
 
+// Email sign-in: a 6-digit code by mail (Resend). The e2e dev server uses a fixed code instead of mailing.
+const e2e = env.NODE_ENV === "development" && env.E2E_AUTH_BYPASS === "1";
+export const emailLogin = !!env.RESEND_API_KEY || e2e;
+async function mailCode(email: string, otp: string) {
+  if (!env.RESEND_API_KEY) return;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: env.RESEND_FROM ?? "Imposter <onboarding@resend.dev>", // resend.dev only reaches the Resend account owner: set RESEND_FROM on a verified domain
+      to: email,
+      subject: `${otp} is your Imposter code`,
+      text: `Your sign-in code: ${otp}\n\nIt works for 5 minutes. If you didn't ask for it, ignore this mail.`,
+    }),
+  });
+  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+}
+
+// The code must survive between two requests that may hit different serverless instances, so it lives in
+// Redis (Better Auth "secondary storage"; this also moves sessions and its own rate limits there).
+// Raw strings: Better Auth stores JSON text itself, Upstash's auto-parsing would hand it objects.
+const redis = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken, automaticDeserialization: false }) : null;
+const secondaryStorage = redis
+  ? {
+      get: (k: string) => redis.get<string>(`auth:${k}`),
+      set: async (k: string, v: string, ttl?: number) => void (await (ttl ? redis.set(`auth:${k}`, v, { ex: ttl }) : redis.set(`auth:${k}`, v))),
+      delete: async (k: string) => void (await redis.del(`auth:${k}`)),
+      getAndDelete: (k: string) => redis.getdel<string>(`auth:${k}`),
+      async increment(k: string, ttl: number) {
+        const [n] = await redis.multi().incr(`auth:${k}`).expire(`auth:${k}`, ttl, "NX").exec<[number, number]>(); // TTL only when new
+        return n;
+      },
+    }
+  : undefined;
+
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
@@ -35,22 +73,35 @@ export const auth = betterAuth({
     "https://imposter-orcin-five.vercel.app",
     ...(env.NODE_ENV === "development" ? ["http://localhost:*"] : []), // any local port (e2e runs on its own); never plain http in production
   ],
-  // ponytail: Better Auth's own rate limit uses memory storage here (no DB), which resets per serverless instance.
-  // OAuth-only sign-in has no password to brute-force; move it to Redis via rateLimit.customStorage if that changes.
   socialProviders,
+  secondaryStorage, // without Redis (local dev) everything stays in this one process's memory
+  // email codes can be guessed: Better Auth's rate limit lives in Redis too (per IP), plus 3 tries per code
+  rateLimit: { enabled: true, storage: secondaryStorage ? "secondary-storage" : "memory" },
   session: {
     expiresIn: 60 * 60 * 24 * 30,
-    cookieCache: { enabled: true, maxAge: 60 * 60 * 24 * 30, strategy: "jwe", refreshCache: true },
+    cookieCache: { enabled: true, maxAge: 60 * 60 * 24 * 30, strategy: "jwe", refreshCache: !secondaryStorage },
   },
   // we only need who you are, not your provider tokens: keeps the cookie small
   account: { storeStateStrategy: "cookie", storeAccountCookie: false },
-  plugins: [nextCookies()],
-  // every completed sign-in (/callback/<provider>) lands in the admin stats
+  plugins: [
+    ...(emailLogin
+      ? [
+          emailOTP({
+            allowedAttempts: 3,
+            generateOTP: e2e ? () => "123456" : undefined,
+            sendVerificationOTP: ({ email, otp, type }) => (type === "sign-in" ? mailCode(email, otp) : Promise.resolve()),
+          }),
+        ]
+      : []),
+    nextCookies(), // last: sets the cookies of the plugins before it
+  ],
+  // every completed sign-in (/callback/<provider>, /sign-in/email-otp) lands in the admin stats
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
       const s = ctx.context.newSession;
-      if (!s || !ctx.path.startsWith("/callback/")) return;
-      later(() => recordLogin({ id: s.user.id, name: s.user.name ?? "", email: s.user.email ?? "", provider: ctx.path.split("/")[2] ?? "" }));
+      const provider = ctx.path.startsWith("/callback/") ? ctx.path.split("/")[2] : ctx.path === "/sign-in/email-otp" ? "email" : null;
+      if (!s || !provider) return;
+      later(() => recordLogin({ id: s.user.id, name: s.user.name ?? "", email: s.user.email ?? "", provider }));
     }),
   },
 });

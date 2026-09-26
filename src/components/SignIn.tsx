@@ -1,10 +1,11 @@
 "use client";
 /* eslint-disable shadcn/no-raw-colors -- Google/Microsoft logos must keep their official brand colors */
 
-import { LogOut } from "lucide-react";
-import { signIn, signOut, useMe, type Me } from "@/lib/authClient";
+import { LoaderCircle, LogOut, Mail } from "lucide-react";
+import { useState } from "react";
+import { sendCode, signIn, signInWithCode, signOut, useMe, type Me } from "@/lib/authClient";
 import { UI, type Lang } from "@/lib/i18n";
-import { ghost, press } from "@/lib/ui";
+import { field, ghost, press } from "@/lib/ui";
 
 // brand marks (lucide has no brand icons)
 const LOGO: Record<Me["providers"][number], React.ReactNode> = {
@@ -31,6 +32,77 @@ const LOGO: Record<Me["providers"][number], React.ReactNode> = {
   ),
 };
 const NAME = { google: "Google", github: "GitHub", microsoft: "Microsoft" };
+const outline = `flex min-h-12 items-center justify-center gap-3 rounded-full border border-line bg-surface font-semibold disabled:opacity-40 ${press}`;
+
+/** Email sign-in: address → mailed 6-digit code → signed in. */
+function EmailSignIn({ t }: { t: (k: keyof typeof UI) => string }) {
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<keyof typeof UI | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      if (!sent) {
+        if (await sendCode(email.trim())) setSent(true);
+        else setError("emailFailed");
+      } else if (!(await signInWithCode(email.trim(), code))) setError("codeWrong");
+    } catch {
+      setError("emailFailed");
+    }
+    setBusy(false);
+  };
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-2">
+      {sent ? (
+        <>
+          <p className="text-sm text-muted">{t("codeSent").replace("{email}", email.trim())}</p>
+          <input
+            autoFocus
+            required
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            aria-label={t("codeLabel")}
+            placeholder="123456"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            className={`${field} text-center text-xl font-semibold tracking-widest`}
+          />
+        </>
+      ) : (
+        <input
+          type="email"
+          required
+          autoComplete="email"
+          aria-label={t("emailLabel")}
+          placeholder={t("emailLabel")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={field}
+        />
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-imp">
+          {t(error)}
+        </p>
+      )}
+      <button disabled={busy} className={outline}>
+        {busy ? <LoaderCircle className="size-5 animate-spin" aria-hidden /> : <Mail className="size-5" aria-hidden />}
+        {t(sent ? "codeSignIn" : "emailSend")}
+      </button>
+      {sent && (
+        <button type="button" onClick={() => (setSent(false), setCode(""), setError(null))} className={`${ghost} text-sm text-muted`}>
+          {t("emailChange")}
+        </button>
+      )}
+    </form>
+  );
+}
 
 /** Settings: sign in (for AI help) with the configured providers, or who is signed in + sign out. */
 export function SignIn({ lang }: { lang: Lang }) {
@@ -48,16 +120,17 @@ export function SignIn({ lang }: { lang: Lang }) {
     );
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-sm text-muted">{me.providers.length ? t("aiLoginNote") : t("noLogin")}</p>
+      <p className="text-sm text-muted">{me.providers.length || me.email ? t("aiLoginNote") : t("noLogin")}</p>
       {me.providers.map((p) => (
         <button
           key={p}
           onClick={() => signIn(p)}
-          className={`flex min-h-12 items-center justify-center gap-3 rounded-full border border-line bg-surface font-semibold ${press}`}
+          className={outline}
         >
           {LOGO[p]} {t("continueWith").replace("{name}", NAME[p])}
         </button>
       ))}
+      {me.email && <EmailSignIn t={t} />}
     </div>
   );
 }

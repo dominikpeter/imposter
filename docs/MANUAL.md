@@ -240,7 +240,7 @@ The **sun/moon** button at the top switches between light and dark mode. The **g
 
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.
-- **AI help:** sign in with Google, GitHub or Microsoft to use it; once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
+- **AI help:** sign in with Google, GitHub or Microsoft, or with your email (type it in, tap **Email me a code**, enter the 6-digit code from the mail; it works for 5 minutes) to use it; once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
 - **Colors:** Night, Classic, Forest, Berry, Arosa (blue and sun yellow) or Aarau (red and black).
 
 Your choices are remembered on your phone.
