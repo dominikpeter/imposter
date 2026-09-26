@@ -354,11 +354,12 @@ export default function Home() {
         <TopControlsSpace />
       </header>
       <TopControls lang={lang} setLang={setLang} />
+      <InstallBanner lang={lang} />
 
       {phase === "setup" && (
         <div key="setup" className="enter flex flex-1 flex-col gap-4">
           <div className="-mt-4 mb-2 text-center">
-            <Hero lang={W} />
+            <Hero lang={lang} /> {/* decorative flavor word: matches the app's own language, not the (possibly different) word language */}
             <h1 className="mt-3 text-5xl font-bold tracking-tight text-primary-ink">Imposter</h1>
             <p className="mt-1 text-lg text-muted">{t("tagline")}</p>
           </div>
@@ -786,7 +787,6 @@ export default function Home() {
           <Stats history={history} lang={lang} onReset={() => { setHistory([]); setJokers([]); }} /* a fresh start: jokers belong to the old session too */ />
         </div>
       )}
-      <InstallBanner lang={lang} />
     </main>
   );
 }

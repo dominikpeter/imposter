@@ -66,9 +66,10 @@ const isPhone = () =>
   !(matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true);
 
 /**
- * Proactive, dismissible "add to home screen" banner for phones that haven't installed the app.
+ * Proactive "add to home screen" banner for phones that haven't installed the app. Shown once ever (per
+ * browser): as soon as it appears it is marked seen, whether the player taps Add, Not now, or just plays on.
  * Android/Chrome: an Add button that fires the native install prompt. iPhone: the Share → Add to Home Screen hint.
- * Hidden once installed, once dismissed (remembered per browser), and on desktop.
+ * Hidden once installed, once seen, and on desktop.
  */
 export function InstallBanner({ lang }: { lang: Lang }) {
   const t = (k: keyof typeof UI) => UI[k][lang];
@@ -77,21 +78,33 @@ export function InstallBanner({ lang }: { lang: Lang }) {
   const [ios] = useState(() => typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent));
 
   useEffect(() => {
-    let dismissed = false;
+    let seen = false;
     try {
-      dismissed = localStorage.getItem(DISMISS_KEY) === "1";
-    } catch {} // private mode / blocked storage: just treat as not dismissed
-    if (dismissed || !isPhone()) return;
+      seen = localStorage.getItem(DISMISS_KEY) === "1";
+    } catch {} // private mode / blocked storage: just treat as not seen yet
+    if (seen || !isPhone()) return;
+    const markSeen = () => {
+      try {
+        localStorage.setItem(DISMISS_KEY, "1");
+      } catch {}
+    };
     const onPrompt = (e: Event) => {
       e.preventDefault();
       setPrompt(e as InstallEvent);
       setShow(true);
+      markSeen(); // shown once: even closing the tab or moving on must not bring it back next time
     };
     addEventListener("beforeinstallprompt", onPrompt);
     const onInstalled = () => setShow(false);
     addEventListener("appinstalled", onInstalled);
     // iOS fires no beforeinstallprompt: show the Share hint on its own (Safari only — Chrome iOS can't add to home screen)
-    const t0 = ios && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent) ? setTimeout(() => setShow(true), 1200) : undefined;
+    const t0 =
+      ios && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent)
+        ? setTimeout(() => {
+            setShow(true);
+            markSeen();
+          }, 1200)
+        : undefined;
     return () => {
       removeEventListener("beforeinstallprompt", onPrompt);
       removeEventListener("appinstalled", onInstalled);
@@ -106,9 +119,11 @@ export function InstallBanner({ lang }: { lang: Lang }) {
     } catch {}
   };
   if (!show) return null;
+  // in normal flow, right below the header: a fixed bottom sheet would sit on top of (and hide) each
+  // screen's own sticky bottom action bar (e.g. "Start game"); here it only ever pushes content down
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md p-3 pb-safe" role="dialog" aria-label={t("installBannerTitle")}>
-      <div className="enter flex items-start gap-3 rounded-3xl border border-line bg-surface p-4 shadow-lg">
+    <div className="enter mb-4" role="dialog" aria-label={t("installBannerTitle")}>
+      <div className="flex items-start gap-3 rounded-3xl border border-line bg-surface p-4 shadow-lg">
         {/* eslint-disable-next-line @next/next/no-img-element -- tiny static PWA icon, no optimization needed */}
         <img src="/icon-192.png" alt="" className="size-12 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
