@@ -1,0 +1,81 @@
+name: CI
+
+# Lint, typecheck, unit tests, e2e on every push and PR. A version tag (v*, pushed by `just release`) then deploys to
+# Vercel and starts the iOS build: the one path to production, so every release is tested exactly as it ships.
+# Mirrors `just check` / `just e2e`, so CI runs the same thing a laptop does.
+# One-time: `just vercel-ci-setup` (Vercel token + ids as secrets, sets VERCEL_CI_READY); until then the deploy skips.
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: extractions/setup-just@v3
+      - run: npm ci
+      - run: just lint typecheck test version-check
+        env: { GH_TOKEN: "${{ github.token }}" } # version-check compares against the latest GitHub release
+
+  e2e:
+    needs: check
+    # pinned: Playwright's --with-deps can lag a brand-new Ubuntu image; bump once it supports the next one
+    runs-on: ubuntu-24.04
+    env:
+      # throwaway secret for the test servers only (dev + the production build the PWA tests run); no AI key, so the
+      # real-AI specs skip themselves, and coffee/email run in their e2e modes (no Stripe, no mail)
+      BETTER_AUTH_SECRET: ci-test-servers-only-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - uses: extractions/setup-just@v3
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: just e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: test-results/, retention-days: 7 }
+
+  deploy:
+    needs: e2e
+    if: startsWith(github.ref, 'refs/tags/v') && vars.VERCEL_CI_READY == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Deploy to Vercel (production)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          npx vercel build --prod --token="$VERCEL_TOKEN"
+          npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+  ios:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      # ios-release.yml builds on its own macOS runner (signed + TestFlight once IOS_SIGNING_READY is set, an unsigned
+      # build that proves the native project before that); this only starts it after a successful deploy.
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh workflow run ios-release.yml --repo "$GITHUB_REPOSITORY" --ref main

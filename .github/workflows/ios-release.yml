@@ -1,18 +1,18 @@
 name: iOS release (TestFlight)
 
 # Builds and uploads the Capacitor iOS app to TestFlight on GitHub's own macOS runner (Xcode included) —
-# nothing to install locally. Manual trigger only: this costs macOS build minutes and touches App Store Connect.
+# nothing to install locally. Started by ci.yml after each release deploy, or by hand ("Run workflow").
 #
 # One-time setup (Apple Developer Program membership required, https://developer.apple.com/programs/):
 #   1. App Store Connect → Users and Access → Integrations → App Store Connect API → generate a team key with the
 #      "Admin" role (cloud-managed distribution signing needs it; an "App Manager" key can't create the
 #      distribution certificate). Note the Key ID and Issuer ID, and download the .p8 file (shown only once).
 #   2. Apple Developer → Membership → find your 10-character Team ID.
-#   3. In this repo: Settings → Secrets and variables → Actions, add:
-#        APP_STORE_CONNECT_KEY_ID       the Key ID from step 1
-#        APP_STORE_CONNECT_ISSUER_ID    the Issuer ID from step 1
-#        APP_STORE_CONNECT_API_KEY_P8   the full contents of the downloaded .p8 file
-#        APPLE_TEAM_ID                  the Team ID from step 2
+#   3. Store them as GitHub secrets (each typed hidden, straight into `gh secret set`):
+#        just secret-gh APP_STORE_CONNECT_KEY_ID       the Key ID from step 1
+#        just secret-gh APP_STORE_CONNECT_ISSUER_ID    the Issuer ID from step 1
+#        just secret-gh APP_STORE_CONNECT_API_KEY_P8   the full contents of the downloaded .p8 file
+#        just secret-gh APPLE_TEAM_ID                  the Team ID from step 2
 #   4. In App Store Connect, create the app (bundle id ch.whoislying.imposter) once by hand — the very first
 #      app record can't be created by API. After that this workflow can upload every build.
 #   5. Xcode Cloud/manual signing isn't used: -allowProvisioningUpdates lets xcodebuild fetch or create the
@@ -22,7 +22,9 @@ name: iOS release (TestFlight)
 # Versions: the build number is the run number, the marketing version is package.json's version (the same as
 # the Android workflow), both passed as build settings, so nothing in ios/ needs editing per release.
 #
-# Until the secrets above exist, "Run workflow" fails fast with a clear message instead of a cryptic build error.
+#   6. Set the repository variable IOS_SIGNING_READY=true: `gh variable set IOS_SIGNING_READY --body true`.
+# Until then every run builds unsigned (proving the native project is sound) and skips signing and the upload,
+# so it's safe to run, and to start after every release, before the Apple side is ready.
 
 on:
   workflow_dispatch:
@@ -41,22 +43,6 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
     steps:
-      - name: Check required secrets are set
-        run: |
-          missing=()
-          for name in APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8 APPLE_TEAM_ID; do
-            [ -z "${!name}" ] && missing+=("$name")
-          done
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing secrets: ${missing[*]}. See the setup steps at the top of .github/workflows/ios-release.yml."
-            exit 1
-          fi
-        env:
-          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
@@ -69,7 +55,14 @@ jobs:
       - name: Sync the native iOS project (Capacitor)
         run: npx cap sync ios
 
+      - name: Build only, unsigned (no Apple signing set up yet — proves the native project builds)
+        if: vars.IOS_SIGNING_READY != 'true'
+        run: |
+          xcodebuild build -project ios/App/App.xcodeproj -scheme App -configuration Release \
+            -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+
       - name: Install the App Store Connect API key
+        if: vars.IOS_SIGNING_READY == 'true'
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
@@ -78,6 +71,7 @@ jobs:
           echo "$APP_STORE_CONNECT_API_KEY_P8" > "$HOME/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
 
       - name: Archive
+        if: vars.IOS_SIGNING_READY == 'true'
         # Capacitor's Swift Package Manager project: App.xcodeproj, no CocoaPods workspace.
         # App Store Connect rejects a re-used build number (the run number always goes up) and closes a
         # marketing version once it is released (package.json's version moves on with every web release).
@@ -102,6 +96,7 @@ jobs:
             MARKETING_VERSION="$version"
 
       - name: Write the export options
+        if: vars.IOS_SIGNING_READY == 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -118,6 +113,7 @@ jobs:
           PLIST
 
       - name: Export the .ipa
+        if: vars.IOS_SIGNING_READY == 'true'
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -132,6 +128,7 @@ jobs:
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Upload to TestFlight
+        if: vars.IOS_SIGNING_READY == 'true'
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -144,5 +141,5 @@ jobs:
             --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
 
       - name: Clean up the signing key
-        if: always()
+        if: always() && vars.IOS_SIGNING_READY == 'true'
         run: rm -rf ~/private_keys

@@ -88,7 +88,8 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           export ANDROID_VERSION_CODE=$((100 + GITHUB_RUN_NUMBER))
-          export ANDROID_VERSION_NAME=$(node -p "require('./package.json').version")
+          ANDROID_VERSION_NAME=$(node -p "require('./package.json').version")
+          export ANDROID_VERSION_NAME
           cd android
           ./gradlew bundleRelease --no-daemon
 

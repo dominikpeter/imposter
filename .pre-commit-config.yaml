@@ -26,3 +26,10 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-push]
+      - id: version
+        name: version in Settings matches GitHub release
+        entry: scripts/check-version.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

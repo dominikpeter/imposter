@@ -61,6 +61,21 @@ app-ios:
 # everything CI would run
 check: lint typecheck test e2e
 
+# the version in Settings (package.json) matches the release tag and isn't behind GitHub's latest release
+version-check:
+    bash scripts/check-version.sh
+
+# The pushed v-tag makes .github/workflows/ci.yml check again, deploy to Vercel and start the iOS build, so a release
+# deploys exactly once, from CI (not from here, not from Vercel's own git hook).
+# full release: checks, bump, tag, push, GitHub release. `just release 1.13.0 "notes"`
+release version notes: check
+    npm version {{version}} --no-git-tag-version --allow-same-version
+    git add package.json package-lock.json && git commit -m "chore: release v{{version}} [skip-manual]" || true
+    git tag v{{version}}
+    just version-check
+    git push && git push --tags
+    gh release create v{{version}} --title "v{{version}}" --notes {{quote(notes)}}
+
 # production build
 build:
     npm run build
@@ -80,6 +95,14 @@ email-setup:
 # any secret, typed hidden → .env.local + Vercel production, e.g. `just secret OPENAI_API_KEY`
 secret NAME:
     bash scripts/set-secret.sh {{NAME}}
+
+# a GitHub Actions secret (store builds, CI deploy), typed hidden → `gh secret set`, e.g. `just secret-gh APPLE_TEAM_ID`
+secret-gh NAME:
+    bash scripts/secret-gh.sh {{NAME}}
+
+# one-time: Vercel token + ids as GitHub secrets, so ci.yml deploys each release tag (asks for the token hidden)
+vercel-ci-setup:
+    bash scripts/setup-vercel-ci.sh
 
 # "Buy me a coffee" keys (Stripe restricted key + webhook secret) → .env.local + Vercel
 stripe-setup:

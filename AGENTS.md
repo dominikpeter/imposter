@@ -20,12 +20,16 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | Types | `just typecheck` |
 | Unit tests | `just test` |
 | E2E (Playwright) | `just e2e` · one spec: `just e2e layout` |
-| Everything before a release | `just check` |
+| Everything before a release | `just check` (CI runs the same on every push and PR: `.github/workflows/ci.yml`) |
+| Release (bump, tag, GitHub release; CI then deploys it to Vercel and starts the iOS build) | `just release 1.13.0 "notes"` |
+| Settings version = GitHub release | `just version-check` (also a pre-push hook and in CI) |
 | Run all git hooks | `just hooks` |
 | Sign-in keys (Google/GitHub/Microsoft) → .env.local + Vercel | `just auth-setup`, then `just redeploy` |
 | Email sign-in key (Resend) → .env.local + Vercel | `just email-setup`, then `just redeploy` |
 | "Buy me a coffee" (Stripe key + webhook secret) → .env.local + Vercel | `just stripe-setup`, then `just redeploy` |
 | Any other secret (typed hidden) → .env.local + Vercel | `just secret NAME`, then `just redeploy` |
+| A GitHub Actions secret (store builds, CI) (typed hidden) | `just secret-gh NAME` |
+| One-time: let CI deploy to Vercel (token + ids as GitHub secrets) | `just vercel-ci-setup` |
 | Deploy | push to `main` (auto) · `just redeploy` after env changes |
 | Store apps: local debug build | `just app-android` (APK) · `just app-ios` (opens Xcode) |
 | Store apps: signed release, built and uploaded by CI | GitHub → Actions → "iOS release" / "Android release" → Run workflow (needs one-time secrets, see each workflow file) |
