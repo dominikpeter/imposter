@@ -46,11 +46,14 @@ export function stats(history: RoundLog[]) {
           p.escaped++;
           p.points += 2;
         }
-      } else if (isBallot(r.votes?.[i])) {
-        p.crewVotes++;
-        if (r.imposters.includes(r.votes[i])) {
-          p.correctVotes++;
-          p.points++;
+      } else {
+        const ballot = r.votes?.[i];
+        if (isBallot(ballot)) {
+          p.crewVotes++;
+          if (r.imposters.includes(ballot)) {
+            p.correctVotes++;
+            p.points++;
+          }
         }
       }
       r.votes?.forEach((v, j) => {
