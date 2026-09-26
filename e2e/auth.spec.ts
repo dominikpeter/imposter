@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto";
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 
 // Sign-in gates every AI feature. The dev server treats the `x-e2e-user` header as a signed-in account
@@ -128,7 +129,11 @@ test.describe("signed out", () => {
     await openSettings(page);
     await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
     await expect(aiSwitch(page)).toBeVisible();
-    expect((await (await page.request.get("/api/me")).json()).user.email).toBe(email);
+    const { user } = (await (await page.request.get("/api/me")).json()) as { user: { id: string; email: string } };
+    expect(user.email).toBe(email);
+    // same account id on every sign-in and server instance: keyed hash of the email (stableId in src/lib/auth.ts)
+    const env = process.env.BETTER_AUTH_SECRET ? process.env : (process.loadEnvFile(".env.local"), process.env);
+    expect(user.id).toBe(createHmac("sha256", env.BETTER_AUTH_SECRET ?? "dev").update(email).digest("base64url").slice(0, 32));
 
     await page.getByRole("button", { name: "Sign out" }).click();
     await openSettings(page);

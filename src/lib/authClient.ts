@@ -31,7 +31,8 @@ export function useMe() {
 
 export const signIn = async (provider: Me["providers"][number]) => (await client()).signIn.social({ provider, callbackURL: location.pathname });
 /** Mail a sign-in code; true when sent. */
-export const sendCode = async (email: string) => !(await (await client()).emailOtp.sendVerificationOtp({ email, type: "sign-in" })).error;
+export const sendCode = async (email: string, lang: string) =>
+  !(await (await client()).emailOtp.sendVerificationOtp({ email, type: "sign-in" }, { headers: { "x-lang": lang } })).error; // mail in the app's language
 /** Sign in with the mailed code; true when it matched (the page reloads signed in). */
 export const signInWithCode = async (email: string, otp: string) => {
   if ((await (await client()).signIn.emailOtp({ email, otp })).error) return false;

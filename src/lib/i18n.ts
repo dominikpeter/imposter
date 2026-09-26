@@ -252,6 +252,12 @@ export const UI = {
   codeSignIn: { en: "Sign in", fr: "Se connecter", de: "Anmelden" },
   codeWrong: { en: "That code didn't work. Check it or ask for a new one.", fr: "Ce code ne marche pas. Vérifie-le ou demandes-en un nouveau.", de: "Der Code passt nicht. Prüfe ihn oder fordere einen neuen an." },
   emailFailed: { en: "Couldn't send the code. Try again in a minute.", fr: "Impossible d'envoyer le code. Réessaie dans une minute.", de: "Code konnte nicht gesendet werden. Versuch es in einer Minute nochmal." },
+  mailSubject: { en: "{code} is your Imposter code", fr: "{code} est ton code Imposter", de: "{code} ist dein Imposter-Code" },
+  mailBody: {
+    en: "Your sign-in code: {code}\n\nIt works for 5 minutes. If you didn't ask for it, ignore this mail.",
+    fr: "Ton code de connexion : {code}\n\nIl est valable 5 minutes. Si tu ne l'as pas demandé, ignore ce mail.",
+    de: "Dein Anmeldecode: {code}\n\nEr gilt 5 Minuten. Falls du ihn nicht angefordert hast, ignoriere diese Mail.",
+  },
   emailChange: { en: "Use another email", fr: "Utiliser un autre e-mail", de: "Andere E-Mail verwenden" },
   noLogin: { en: "AI login isn't set up yet.", fr: "La connexion pour l'IA n'est pas encore configurée.", de: "Die Anmeldung für die KI ist noch nicht eingerichtet." },
   moreTopics: { en: "More topics (+{name})", fr: "Plus de thèmes (+{name})", de: "Mehr Themen (+{name})" },

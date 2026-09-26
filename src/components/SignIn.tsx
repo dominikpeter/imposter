@@ -35,7 +35,7 @@ const NAME = { google: "Google", github: "GitHub", microsoft: "Microsoft" };
 const outline = `flex min-h-12 items-center justify-center gap-3 rounded-full border border-line bg-surface font-semibold disabled:opacity-40 ${press}`;
 
 /** Email sign-in: address → mailed 6-digit code → signed in. */
-function EmailSignIn({ t }: { t: (k: keyof typeof UI) => string }) {
+function EmailSignIn({ t, lang }: { t: (k: keyof typeof UI) => string; lang: Lang }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -47,7 +47,7 @@ function EmailSignIn({ t }: { t: (k: keyof typeof UI) => string }) {
     setError(null);
     try {
       if (!sent) {
-        if (await sendCode(email.trim())) setSent(true);
+        if (await sendCode(email.trim(), lang)) setSent(true);
         else setError("emailFailed");
       } else if (!(await signInWithCode(email.trim(), code))) setError("codeWrong");
     } catch {
@@ -130,7 +130,7 @@ export function SignIn({ lang }: { lang: Lang }) {
           {LOGO[p]} {t("continueWith").replace("{name}", NAME[p])}
         </button>
       ))}
-      {me.email && <EmailSignIn t={t} />}
+      {me.email && <EmailSignIn t={t} lang={lang} />}
     </div>
   );
 }
