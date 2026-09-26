@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const s = event.data.object;
     // TWINT/bank methods can complete unpaid and settle later (async_payment_succeeded): count only paid ones,
     // and each session once (Stripe retries, and both events can arrive for one session)
-    if (s.payment_status === "paid" && (await db.set(`stripe:paid:${s.id}`, 1, { ex: 30 * 86_400, nx: true })))
+    if (s.metadata?.app === "imposter" && s.payment_status === "paid" && (await db.set(`stripe:paid:${s.id}`, 1, { ex: 30 * 86_400, nx: true })))
       await count({ coffees: 1, coffeeRappen: s.amount_total ?? 0 });
   }
   return Response.json({ received: true });

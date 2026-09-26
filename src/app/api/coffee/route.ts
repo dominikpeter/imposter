@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     success_url: `${back}?coffee=thanks`,
     cancel_url: back,
     integration_identifier: "imposter_coffee_qxbrtmwk",
+    metadata: { app: "imposter" }, // the Stripe account is shared with Zettelispiil: the webhook counts only these
   });
   return Response.json({ url: session.url });
 }

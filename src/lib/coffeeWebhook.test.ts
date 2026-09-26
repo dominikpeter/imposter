@@ -9,8 +9,8 @@ import { dashboard } from "./metrics.ts";
 process.env.STRIPE_SECRET_KEY = "sk_test_unit";
 process.env.STRIPE_WEBHOOK_SECRET = "whsec_unit";
 
-const event = (type: string, id: string, payment_status: string) =>
-  JSON.stringify({ id: `evt_${Math.random()}`, object: "event", type, data: { object: { id, object: "checkout.session", payment_status, amount_total: 500 } } });
+const event = (type: string, id: string, payment_status: string, app = "imposter") =>
+  JSON.stringify({ id: `evt_${Math.random()}`, object: "event", type, data: { object: { id, object: "checkout.session", payment_status, amount_total: 500, metadata: { app } } } });
 const send = (body: string, sig = stripe().webhooks.generateTestHeaderString({ payload: body, secret: "whsec_unit" })) =>
   POST(new Request("http://x/api/stripe/webhook", { method: "POST", body, headers: { "stripe-signature": sig } }));
 const today = async () => (await dashboard(1)).daily[0];
@@ -22,6 +22,7 @@ test("stripe webhook: signed, paid, counted once", async () => {
   assert.equal((await send(event("checkout.session.completed", "cs_3", "paid"))).status, 200);
   assert.equal((await send(event("checkout.session.completed", "cs_3", "paid"))).status, 200); // Stripe retry
   assert.equal((await send(event("checkout.session.async_payment_succeeded", "cs_2", "paid"))).status, 200); // settled later
+  assert.equal((await send(event("checkout.session.completed", "cs_4", "paid", "zettelispiil"))).status, 200); // same Stripe account, other app
   const after = await today();
   assert.equal(after.coffees - before.coffees, 2);
   assert.equal(after.coffeeRappen - before.coffeeRappen, 1000);
