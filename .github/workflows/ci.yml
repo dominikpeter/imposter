@@ -69,12 +69,19 @@ jobs:
 
   deploy:
     needs: release
-    if: needs.release.outputs.new == 'true' && vars.VERCEL_CI_READY == 'true'
+    if: needs.release.outputs.new == 'true'
     runs-on: ubuntu-latest
     environment: production
     permissions:
       contents: write # the tag and the GitHub release
+      pull-requests: read # the release notes come from the merged release pull request
     steps:
+      # a merged version bump that can't be deployed must turn red, not finish green with no tag and no release
+      - name: Deploy credentials are set up
+        if: vars.VERCEL_CI_READY != 'true'
+        run: |
+          echo "::error::v${{ needs.release.outputs.version }} was merged but can't be deployed: run 'just vercel-ci-setup', then re-run this job."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
@@ -98,13 +105,16 @@ jobs:
           notes=$(gh pr list --state merged --base main --search "$GITHUB_SHA" --json body -q '.[0].body // ""')
           gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --notes "$notes" --generate-notes
 
-  ios:
+  store-builds:
     needs: deploy
     runs-on: ubuntu-latest
     permissions:
       actions: write
     steps:
-      # ios-release.yml builds on its own macOS runner (signed + TestFlight once IOS_SIGNING_READY is set, an unsigned
-      # build that proves the native project before that); this only starts it after a successful deploy.
+      # the app store builds run as their own workflows: iOS on a macOS runner (signed + TestFlight once
+      # IOS_SIGNING_READY is set), Android on Ubuntu (signed + Play internal track once ANDROID_SIGNING_READY and
+      # PLAY_PUBLISHING_READY are set). Before that each builds unsigned, proving the native project on every release.
       - env: { GH_TOKEN: "${{ github.token }}" }
-        run: gh workflow run ios-release.yml --repo "$GITHUB_REPOSITORY" --ref main
+        run: |
+          gh workflow run ios-release.yml --repo "$GITHUB_REPOSITORY" --ref main
+          gh workflow run android-release.yml --repo "$GITHUB_REPOSITORY" --ref main
