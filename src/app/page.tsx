@@ -483,7 +483,7 @@ export default function Home() {
               <label className={`flex min-h-11 items-center justify-between gap-3 ${hint ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}>
                 <span>
                   <span className="flex items-start gap-1.5 font-medium">
-                    <Spade className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("joker")}
+                    <Spade className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> <span>{t("joker")}</span>
                   </span>
                   <span className="block text-sm text-muted">{t(hint ? "jokerNeedsNoHint" : "jokerHelp")}</span>
                 </span>
@@ -493,7 +493,7 @@ export default function Home() {
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
                 <span>
                   <span className="flex items-start gap-1.5 font-medium">
-                    <VenetianMask className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("guessOption")}
+                    <VenetianMask className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> <span>{t("guessOption")}</span>
                   </span>
                   <span className="block text-sm text-muted">{t("guessOptionHelp")}</span>
                 </span>
@@ -505,7 +505,7 @@ export default function Home() {
                 <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
                   <span>
                     <span className="flex items-start gap-1.5 font-medium">
-                      <ChartColumnStacked className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> {t("earlyVote")}
+                      <ChartColumnStacked className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> <span>{t("earlyVote")}</span>
                     </span>
                     <span className="block text-sm text-muted">{t("earlyVoteHelp")}</span>
                   </span>

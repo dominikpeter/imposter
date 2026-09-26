@@ -86,7 +86,7 @@ test("guided turns: Done hands over in order, then another round of words", asyn
 
 test("imposter guess: a caught imposter who names the word still wins", async ({ page }) => {
   await threePlayers(page);
-  await page.getByText("Imposter may guess the word").click();
+  await page.getByText("Imposter can guess").click();
   await page.getByRole("button", { name: "Start game" }).click();
   const seen = await revealAll(page, 3);
   const imp = seen.indexOf(null);
@@ -106,7 +106,7 @@ test("imposter guess: a caught imposter who names the word still wins", async ({
 
 test("imposter guess: a wrong guess means the crew wins", async ({ page }) => {
   await threePlayers(page);
-  await page.getByText("Imposter may guess the word").click();
+  await page.getByText("Imposter can guess").click();
   await page.getByRole("button", { name: "Start game" }).click();
   const seen = await revealAll(page, 3);
   const imp = seen.indexOf(null);

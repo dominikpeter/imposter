@@ -197,7 +197,7 @@ export const UI = {
   winGameTie: { en: "{name} win the game!", fr: "{name} remportent la partie !", de: "{name} gewinnen das Spiel!" },
   winsGame: { en: "{name} wins the game!", fr: "{name} remporte la partie !", de: "{name} gewinnt das Spiel!" },
   newGame: { en: "New game", fr: "Nouvelle partie", de: "Neues Spiel" },
-  guessOption: { en: "Imposter may guess the word", fr: "L'imposteur peut deviner le mot", de: "Hochstapler darf das Wort raten" },
+  guessOption: { en: "Imposter can guess", fr: "L'imposteur devine", de: "Hochstapler darf raten" },
   guessOptionHelp: {
     en: "A caught imposter can still win by naming the word.",
     fr: "Un imposteur démasqué peut encore gagner en trouvant le mot.",

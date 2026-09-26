@@ -109,7 +109,7 @@ The card shows who the imposter was and what the word was. Tap **Play again** fo
 | **Joker mode** | See [section 6](#6-joker-mode). Only available when the clue is off. |
 | **Words** | **Word packs** (1,080 ready-made words) or **Our own words** ([section 5](#5-your-own-words-and-ai-help)). |
 | **Rounds** | 1–30 rounds per game. After the last round the game shows the winner and offers **New game**. |
-| **Imposter may guess the word** | A caught imposter gets one guess at the secret word. Right guess = the imposters win anyway. |
+| **Imposter can guess** | A caught imposter gets one guess at the secret word. Right guess = the imposters win anyway. |
 | **Word language** | Language of the secret words: **Auto** (same as the app), **EN**, **FR** or **DE**. The app itself stays in each player's language, so a German-speaking group can play with English words. |
 | **Topics** | 27 topics, from Food, Animals and Switzerland to Space, including **Nerd** (tech, gaming, sci-fi). All are on by default. The first 8 show right away (A–Z); **More topics** opens the rest. Pick any mix, or **All topics**. |
 
