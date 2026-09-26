@@ -77,6 +77,10 @@ auth-setup:
 email-setup:
     bash scripts/setup-email.sh
 
+# any secret, typed hidden → .env.local + Vercel production, e.g. `just secret OPENAI_API_KEY`
+secret NAME:
+    bash scripts/set-secret.sh {{NAME}}
+
 # "Buy me a coffee" keys (Stripe restricted key + webhook secret) → .env.local + Vercel
 stripe-setup:
     bash scripts/setup-stripe.sh
