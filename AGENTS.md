@@ -24,6 +24,7 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | Run all git hooks | `just hooks` |
 | Sign-in keys (Google/GitHub/Microsoft) → .env.local + Vercel | `just auth-setup`, then `just redeploy` |
 | Email sign-in key (Resend) → .env.local + Vercel | `just email-setup`, then `just redeploy` |
+| "Buy me a coffee" (Stripe key + webhook secret) → .env.local + Vercel | `just stripe-setup`, then `just redeploy` |
 | Deploy | push to `main` (auto) · `just redeploy` after env changes |
 
 ## Standards

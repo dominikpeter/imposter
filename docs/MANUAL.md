@@ -242,6 +242,7 @@ The **sun/moon** button at the top right switches between light and dark mode. T
 - **Appearance:** Auto (follows your phone), Light or Dark.
 - **AI help:** sign in with Google, GitHub or Microsoft, or with your email (type it in, tap **Email me a code**, enter the 6-digit code from the mail, which comes in the app's language; it works for 5 minutes) to use it; once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
 - **Colors:** Night, Classic, Forest, Berry, Arosa (blue and sun yellow) or Aarau (red and black).
+- **Buy me a coffee:** a small thank-you to the maker, if you like the game: CHF 1 (small coffee), CHF 5 (big coffee), CHF 10 (deluxe coffee), or any whole amount up to CHF 200. You pay on Stripe's secure page (card, TWINT, Apple Pay or Google Pay, whatever it offers you) and come straight back to the game, where Settings says thank you. Not shown in the App Store / Play Store apps.
 
 Your choices are remembered on your phone.
 

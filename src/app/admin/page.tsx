@@ -19,6 +19,8 @@ const TILES: { label: string; sum: (d: Record<Metric, number>) => number }[] = [
   { label: "Sign-ins", sum: (d) => d.logins },
   { label: "AI calls", sum: (d) => d.aiCalls },
   { label: "AI tokens", sum: (d) => d.tokensIn + d.tokensOut },
+  { label: "Coffees", sum: (d) => d.coffees },
+  { label: "Coffee CHF", sum: (d) => d.coffeeRappen / 100 },
 ];
 
 // the global AI switch; a server action, so it re-checks the caller itself (anyone can POST to it)

@@ -1,10 +1,11 @@
 "use client";
 
 import { BookOpen, Heart, Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
-import { useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { SignIn } from "@/components/SignIn";
 import { InstallApp } from "@/components/Pwa";
+import { Coffee } from "@/components/Coffee";
 import { useMe } from "@/lib/authClient";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
@@ -46,6 +47,16 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
   const sheet = useRef<HTMLDialogElement>(null);
   const ai = useAi();
   const me = useMe();
+  // back from Stripe (?coffee=thanks): open Settings on the thank-you, and drop the flag from the address
+  const [thanks, setThanks] = useState(false);
+  useEffect(() => {
+    const url = new URL(location.href);
+    if (url.searchParams.get("coffee") !== "thanks") return;
+    url.searchParams.delete("coffee");
+    history.replaceState(history.state, "", url);
+    setThanks(true); // eslint-disable-line react-hooks/set-state-in-effect -- reads the address once after hydration
+    sheet.current?.showModal();
+  }, []);
 
   return (
     <div className="pointer-events-none sticky top-pt-safe z-30 order-first flex h-0 justify-end">
@@ -153,6 +164,8 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
                 ))}
               </div>
             </section>
+            {(me?.coffee || thanks) && <Coffee lang={lang} thanks={thanks} />}
+
             <a
               href="https://github.com/dominikpeter/imposter/blob/main/docs/MANUAL.md"
               target="_blank"

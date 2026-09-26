@@ -8,13 +8,13 @@ const client = () =>
   Promise.all([import("better-auth/react"), import("better-auth/client/plugins")]).then(([m, p]) => m.createAuthClient({ plugins: [p.emailOTPClient()] }));
 
 // ai: false when the admin switched AI off for everyone
-// email: sign-in with a mailed code is available
-export type Me = { user: AiUser | null; providers: ("google" | "github" | "microsoft")[]; email: boolean; ai: boolean };
+// email: sign-in with a mailed code is available; coffee: the "buy me a coffee" tip (Stripe) is set up
+export type Me = { user: AiUser | null; providers: ("google" | "github" | "microsoft")[]; email: boolean; coffee: boolean; ai: boolean };
 let cache: Promise<Me> | null = null;
 const load = () =>
   (cache ??= fetch("/api/me", { cache: "no-store" })
     .then((r) => r.json())
-    .catch(() => ({ user: null, providers: [], email: false, ai: false })));
+    .catch(() => ({ user: null, providers: [], email: false, coffee: false, ai: false })));
 
 /** Who is signed in (null while loading). */
 export function useMe() {

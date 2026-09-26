@@ -20,7 +20,7 @@ export function later(task: () => Promise<unknown>) {
   }
 }
 
-export const METRICS = ["logins", "rooms", "roomRounds", "localRounds", "aiCalls", "tokensIn", "tokensOut"] as const;
+export const METRICS = ["logins", "rooms", "roomRounds", "localRounds", "aiCalls", "tokensIn", "tokensOut", "coffees", "coffeeRappen"] as const;
 export type Metric = (typeof METRICS)[number];
 export type UserRow = {
   id: string; name: string; email: string; provider: string;

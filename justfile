@@ -77,6 +77,10 @@ auth-setup:
 email-setup:
     bash scripts/setup-email.sh
 
+# "Buy me a coffee" keys (Stripe restricted key + webhook secret) → .env.local + Vercel
+stripe-setup:
+    bash scripts/setup-stripe.sh
+
 # rebuild the newest working production deployment, e.g. after changing env vars (pushes to main deploy on their own)
 redeploy:
     vercel redeploy "$(vercel ls imposter --environment production --status READY 2>/dev/null | head -1)" --target production
