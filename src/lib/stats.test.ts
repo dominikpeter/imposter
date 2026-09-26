@@ -57,3 +57,13 @@ test("drill-down: per-round log, who voted whom, points per round", () => {
   assert.equal(p.Lisa.crewVotes, 2); // round 3 had no vote
   assert.deepEqual(most(p.Nora.votedFor), ["Lisa", 1]);
 });
+
+test("a player who didn't vote (room went on without them) isn't counted as a crew vote", () => {
+  // JSON turns the missing ballot into null
+  const s = stats([{ names, imposters: [1], accused: 1, votes: [1, 0, null as unknown as number], word: "a" }]);
+  const p = Object.fromEntries(s.players.map((x) => [x.name, x]));
+  assert.equal(p.Lisa.crewVotes, 1);
+  assert.equal(p.Tim.crewVotes, 0);
+  assert.deepEqual(p.Tim.votedFor, {});
+  assert.deepEqual(s.log[0].votes, [["Lisa", "Nora"], ["Nora", "Lisa"]]);
+});

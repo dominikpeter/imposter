@@ -22,7 +22,7 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | E2E (Playwright) | `just e2e` · one spec: `just e2e layout` |
 | Everything before a release | `just check` (CI runs the same on every push and PR: `.github/workflows/ci.yml`) |
 | Pull request `dev` → `main` (CI + Copilot code review run on it) | `just pr` (optional title: `just pr "title"`) |
-| Release: version bump on `dev` + PR "Release vX"; merging it makes CI deploy to Vercel, tag, write the GitHub release, start the iOS build | `just release 1.13.0 "notes"` |
+| Release: version bump on `dev` + PR "Release vX"; merging it makes CI deploy to Vercel, tag, write the GitHub release, start the iOS and Android builds | `just release 1.13.0 "notes"` |
 | Settings version = GitHub release | `just version-check` (also a pre-push hook and in CI) |
 | Run all git hooks | `just hooks` |
 | Sign-in keys (Google/GitHub/Microsoft) → .env.local + Vercel | `just auth-setup`, then `just redeploy` |

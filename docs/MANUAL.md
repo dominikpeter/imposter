@@ -135,7 +135,7 @@ After every round, **Game stats** shows the whole session so far:
   - **Tap a player** to open their details: how often they voted right as crew, how often they got away as imposter, who they suspected most, who suspected them most, and their points in each round.
 - **Points per round:** one bar per player, built from the rounds that scored (lighter = earlier rounds), so you see how each total came together.
 - **Times imposter:** how often each player got the imposter card.
-- **Rounds & words:** every round with its word and how it ended (caught, got away, guessed the word, or no vote). Tap a round to see the imposter, who got accused and every vote (right votes are outlined).
+- **Rounds & words:** every round with its word (as it was played, in the word language) and how it ended (caught, got away, guessed the word, or no vote). Tap a round to see the imposter, who got accused and every vote (right votes are outlined).
 - **All numbers:** the full table below the charts, shaded like a heatmap: the stronger the colour, the higher the value in that column. The top value of each column is a solid cell, and a legend under the table explains the icons.
 
 **Reset stats** starts a fresh session: scores and jokers go back to zero.

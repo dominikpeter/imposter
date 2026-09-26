@@ -47,7 +47,7 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
   const colMax = Object.fromEntries(HEAT.map((k) => [k, Math.max(0, ...s.players.map((p) => p[k]))])) as Record<(typeof HEAT)[number], number>;
   const suspects = [...s.players].filter((p) => p.votesTaken > 0).sort((a, b) => b.votesTaken - a.votesTaken);
   const maxVotes = Math.max(1, ...suspects.map((p) => p.votesTaken));
-  const word = (w: Text) => (typeof w === "string" ? w : w[lang]);
+  const word = (w: Text) => (typeof w === "string" ? w : w[lang]); // new rounds log the word as played; older ones fall back
   const rival = (counts: Record<string, number>) => ((m) => (m ? `${m[0]} (${m[1]}×)` : "–"))(most(counts));
 
   return (

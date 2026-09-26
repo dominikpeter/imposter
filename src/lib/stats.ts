@@ -42,9 +42,9 @@ export function stats(history: RoundLog[]) {
           p.escaped++;
           p.points += 2;
         }
-      } else if (r.votes) {
+      } else if (Number.isInteger(r.votes?.[i])) { // null = didn't vote (a room that went on without them)
         p.crewVotes++;
-        if (r.imposters.includes(r.votes[i])) {
+        if (r.imposters.includes(r.votes![i])) {
           p.correctVotes++;
           p.points++;
         }
