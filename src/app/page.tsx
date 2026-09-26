@@ -8,7 +8,7 @@ import { CATEGORIES, DEFAULT_CATS, LANGS, UI, type Lang } from "@/lib/i18n";
 import { ScanCode } from "@/components/ScanCode";
 import { Hero } from "@/components/Hero";
 import { Splash } from "@/components/Splash";
-import { TopControls } from "@/components/TopControls";
+import { TopControls, TopControlsSpace } from "@/components/TopControls";
 import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, uniqueNames, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { TurnGuide } from "@/components/TurnGuide";
@@ -350,8 +350,9 @@ export default function Home() {
             <span className="max-[359px]:hidden">{t("quit")}</span>
           </button>
         )}
-        <TopControls lang={lang} setLang={setLang} />
+        <TopControlsSpace />
       </header>
+      <TopControls lang={lang} setLang={setLang} />
 
       {phase === "setup" && (
         <div key="setup" className="enter flex flex-1 flex-col gap-4">

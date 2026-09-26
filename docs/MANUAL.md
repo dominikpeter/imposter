@@ -236,7 +236,7 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 
 <img src="manual/10-settings.png" width="260" align="right" alt="Settings" />
 
-The **sun/moon** button at the top switches between light and dark mode. The **gear** opens Settings:
+The **sun/moon** button at the top right switches between light and dark mode. The **gear** opens Settings. Both stay in the top right corner while you scroll, on every screen:
 
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.

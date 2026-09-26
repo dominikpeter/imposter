@@ -41,6 +41,9 @@ for (const size of SIZES) {
 
     await page.goto("/");
     await check(page, "01-setup", true);
+    // the settings pill sticks to the top right: still on screen and tappable after scrolling to the bottom
+    await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await expect(page.getByRole("button", { name: "Settings" })).toBeInViewport();
     await page.getByRole("button", { name: "Settings" }).click();
     await check(page, "02-settings");
     await page.getByRole("button", { name: "Close" }).click();

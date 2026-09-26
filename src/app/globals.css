@@ -478,6 +478,8 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
 /* design-system utilities (instead of arbitrary values in markup) */
 @utility pt-safe { padding-top: max(1.25rem, env(safe-area-inset-top)); }
 @utility pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+/* sticky offset matching pt-safe: the header pill stays exactly where it rests */
+@utility top-pt-safe { top: max(1.25rem, env(safe-area-inset-top)); }
 @utility top-safe { top: max(1rem, env(safe-area-inset-top)); }
 /* staggered entrances: anim-delay-200 = 200ms */
 /* sets --delay, read by .enter/.pop/.flip/.bar-grow (their shorthand would otherwise reset animation-delay) */

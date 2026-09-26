@@ -4,7 +4,7 @@ import { Check, CircleCheck, Crown, Eye, Lock, MessagesSquare, Rocket, Scale, Sh
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
-import { TopControls } from "@/components/TopControls";
+import { TopControls, TopControlsSpace } from "@/components/TopControls";
 import { reviewNotes, speakerAt, type Draft, type Note, type Review, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { ExplainWord } from "@/components/ExplainWord";
@@ -244,8 +244,9 @@ export default function Room() {
           <span className="text-2xl leading-none">×</span>
           <span className="font-mono font-bold tracking-widest text-ink">{code}</span>
         </button>
-        <TopControls lang={L} setLang={setLang} />
+        <TopControlsSpace />
       </header>
+      <TopControls lang={L} setLang={setLang} />
 
       {errMsg && (
         <p role="alert" className="enter mb-4 rounded-2xl bg-tint px-4 py-3 text-center font-medium text-primary-ink">
