@@ -1,27 +1,64 @@
 import { createHash } from "node:crypto";
 import { createOpenAI, type OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
-import { generateText, Output } from "ai";
+import { generateText, Output, type LanguageModel } from "ai";
+import type { ProviderOptions } from "@ai-sdk/provider-utils";
 import { z } from "zod";
 import { exactReview, wordKey, type Draft, type Review } from "./game.ts";
 import { later, recordAi } from "./metrics.ts";
 import { db } from "./store.ts";
 import { aiEnabled, allowAi } from "./rateLimit.ts";
 
-// OpenRouter (DeepSeek V4.1 Flash: ~0.5 s, a fraction of a cent per call) when OPENROUTER_API_KEY is set, else OpenAI.
+// OpenRouter (OPENROUTER_API_KEY) runs gpt-oss-120b, routed to the lowest-latency host (Groq/Cerebras): measured on our
+// word check + explanations (Sep 2026) ~1.2 s / ~0.4 s, no per-account requests-per-minute cap, ~$0.14 per 1000 calls.
+// It always reasons, so we ask for the least. OpenAI (OPENAI_API_KEY) runs gpt-6-luna without reasoning: the fallback
+// when OpenRouter fails, or the only route without an OpenRouter key. Same setup as Zettelispiil.
 // Both speak the OpenAI API, so one SDK; explicit base URLs: never inherit a machine-wide OPENAI_BASE_URL (dev proxy).
-const viaOpenRouter = !!process.env.OPENROUTER_API_KEY;
-const MODEL = process.env.AI_MODEL ?? process.env.OPENAI_MODEL ?? (viaOpenRouter ? "openai/gpt-6-luna" : "gpt-6-luna");
-const provider = viaOpenRouter
-  ? createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY })
-  : createOpenAI({ baseURL: "https://api.openai.com/v1" });
-const model = () => (viaOpenRouter ? provider.chat(MODEL) : provider(MODEL)); // OpenRouter: Chat Completions API
-export const aiConfigured = viaOpenRouter || !!process.env.OPENAI_API_KEY;
-// no thinking (it only adds seconds for these tiny tasks); OpenAI extras: no stored logs, optional priority tier
-const options = (fast = false) => ({
-  openai: viaOpenRouter
-    ? { reasoningEffort: "none" as const }
-    : ({ reasoningEffort: "none", store: false, ...(fast ? { serviceTier: "priority" } : {}) } satisfies OpenAILanguageModelResponsesOptions),
-});
+const LANGUAGE: Record<string, string> = { en: "English", fr: "French", de: "German" };
+const ROUTER_MODEL = process.env.OPENROUTER_MODEL ?? "openai/gpt-oss-120b";
+const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
+// OpenRouter routing isn't an AI SDK option: add it to the request body. Fastest host that supports every parameter we send.
+const lowestLatency: typeof fetch = (url, init) => {
+  if (typeof init?.body !== "string") return fetch(url, init);
+  const body = JSON.parse(init.body);
+  return fetch(url, { ...init, body: JSON.stringify({ ...body, provider: { sort: "latency", require_parameters: true } }) });
+};
+// maxTokens: room for the answer; a reasoning model spends part of it thinking before it writes anything
+type Route = { name: string; model: () => LanguageModel; options: (fast: boolean) => ProviderOptions; maxTokens: number };
+const routes: Route[] = [];
+if (process.env.OPENROUTER_API_KEY) {
+  const router = createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY, fetch: lowestLatency });
+  routes.push({
+    name: "openrouter",
+    model: () => router.chat(ROUTER_MODEL), // Chat Completions API
+    options: () => ({ openai: { reasoningEffort: "low" } }), // gpt-oss can't switch reasoning off; low keeps it to a few tokens
+    maxTokens: 600,
+  });
+}
+if (process.env.OPENAI_API_KEY) {
+  const openai = createOpenAI({ baseURL: "https://api.openai.com/v1" });
+  routes.push({
+    name: "openai",
+    model: () => openai(OPENAI_MODEL),
+    // no thinking, no stored logs; priority tier when a player waits (measured ~0.8 s instead of 1.6–2.7 s, tiny premium)
+    options: (fast) => ({ openai: { reasoningEffort: "none", store: false, ...(fast ? { serviceTier: "priority" } : {}) } satisfies OpenAILanguageModelResponsesOptions }),
+    maxTokens: 80,
+  });
+}
+export const aiConfigured = routes.length > 0;
+
+/** Runs one AI call on the first route that answers; throws only if every route failed. */
+async function firstAnswer<T>(run: (r: Route) => Promise<T>): Promise<T> {
+  let last: unknown;
+  for (const r of routes) {
+    try {
+      return await run(r);
+    } catch (e) {
+      last = e;
+      if (r !== routes.at(-1)) console.warn(`AI via ${r.name} failed, trying the next route:`, (e as Error).message);
+    }
+  }
+  throw last;
+}
 
 // kept short on purpose: every token here is sent (and paid for) on every word check
 const schema = z.object({
@@ -63,20 +100,24 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
   const key = reviewKey(draft, taken, lang);
   void db.set(`${key}:pending`, true, { ex: 10 }).catch(() => {});
   try {
-    const { output, usage } = await generateText({
-      model: model(),
-      output: Output.object({ schema }),
-      providerOptions: options(),
-      instructions,
-      prompt: JSON.stringify({ uiLanguage: lang, TAKEN: taken, words: draft }),
-    });
+    const { output, usage } = await firstAnswer((r) =>
+      generateText({
+        model: r.model(),
+        output: Output.object({ schema }),
+        providerOptions: r.options(true), // a player is waiting on "Done"
+        instructions,
+        prompt: JSON.stringify({ uiLanguage: lang, TAKEN: taken, words: draft }),
+      }),
+    );
     later(() => recordAi(who, usage));
     // Swiss spelling for sure, in code: louder prompt wording for it made the model put spelling fixes in the hint
     // instead of the word ("Guitarr" came back unchanged with hint "Guitar"); ß never appears in Swiss German
     const swiss = (s: string) => s.replace(/ß/g, "ss").replace(/ẞ/g, "SS");
     const fixed: Draft[] = draft.map((d, i) => ({
       word: swiss(output.results[i]?.word || d.word).trim().slice(0, 40),
-      clue: swiss(output.results[i]?.hint || d.clue).trim().slice(0, 40), // an empty AI hint never erases the writer's
+      // the AI only corrects a hint the writer typed, never invents one: models tend to echo the word back as its
+      // "fixed hint", and the imposter would see that as their clue. An empty AI hint never erases the writer's.
+      clue: d.clue ? swiss(output.results[i]?.hint || d.clue).trim().slice(0, 40) : "",
     }));
     // exact checks again on the corrected words (a fix can turn into a duplicate)
     const result: Review[] = exactReview(fixed, taken).map((r, i) => {
@@ -111,16 +152,18 @@ export async function warmExplanation(word: string, lang: string) {
 export async function explainWord(word: string, lang: string, who?: string, fast = true): Promise<string | null> {
   if (!aiConfigured) return null;
   try {
-    const { text, usage } = await generateText({
-      model: model(),
-      // OpenAI priority processing: measured ~0.8 s instead of 1.6–2.7 s; a call is ~100 tokens, so the premium is tiny
-      providerOptions: options(fast),
-      maxOutputTokens: 80,
-      instructions:
-        "Explain the given word in 1-2 short, simple sentences (at most 30 words) for a party game player who doesn't know it. " +
-        'Answer in the language with this code: "' + lang + '" (German: Swiss spelling, "ss" not "ß"). No lists, no markdown.',
-      prompt: word,
-    });
+    const { text, usage } = await firstAnswer((r) =>
+      generateText({
+        model: r.model(),
+        providerOptions: r.options(fast), // priority when a player waits; batch warming takes the cheaper standard tier
+        maxOutputTokens: r.maxTokens,
+        // the language by name: given just the code next to the German spelling note, gpt-oss answered "fr" in German
+        instructions:
+          "Explain the given word in 1-2 short, simple sentences (at most 30 words) for a party game player who doesn't know it. " +
+          `Answer in ${LANGUAGE[lang] ?? "English"} only.` + (lang === "de" ? ' Swiss spelling: "ss", never "ß".' : "") + " No lists, no markdown.",
+        prompt: word,
+      }),
+    );
     later(() => recordAi(who, usage));
     const clean = text.trim();
     if (clean) later(() => db.set(explainKey(word, lang), clean, { ex: 90 * 86_400 }));

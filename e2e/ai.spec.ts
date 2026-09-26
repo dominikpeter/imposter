@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Real OpenAI (gpt-6-luna) calls through the dev server: runs only when .env.local has a key.
+// Real AI calls through the dev server (gpt-oss-120b via OpenRouter, or gpt-6-luna at OpenAI): only when .env.local has a key.
 const hasKey = existsSync(".env.local") && /^(OPENAI|OPENROUTER)_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
 test.skip(!hasKey, "no AI key (OPENROUTER_API_KEY or OPENAI_API_KEY) in .env.local");
 test.setTimeout(120_000);
@@ -26,6 +26,8 @@ test("own words: autocorrect, too hard, duplicate cancels both, then AI explains
   await write(page, "Bananna");
   await expect(page.getByRole("status").filter({ hasText: "Autocorrected" })).toBeVisible(AI);
   await expect(page.getByPlaceholder(/^Word/)).toHaveValue("Banana");
+  // the AI never invents a clue: models like to echo the fixed word as its "hint", which the imposter would see
+  await expect(page.getByPlaceholder("Clue (optional)")).toHaveValue("");
   await page.getByRole("button", { name: "Done" }).click();
 
   // Nora: same word as Lisa → both cancelled, Nora writes another
