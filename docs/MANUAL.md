@@ -236,6 +236,8 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 
 <img src="manual/10-settings.png" width="260" align="right" alt="Settings" />
 
+On a phone, a banner offers to **add Imposter to your home screen** so it opens full-screen and works offline, like a native app. Tap **Add** (Android) or use Share → Add to Home Screen (iPhone), or **Not now** to dismiss it.
+
 The **sun/moon** button at the top right switches between light and dark mode. The **gear** opens Settings. Both stay in the top right corner while you scroll, on every screen:
 
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).

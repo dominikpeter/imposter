@@ -9,6 +9,7 @@ import { ScanCode } from "@/components/ScanCode";
 import { Hero } from "@/components/Hero";
 import { Splash } from "@/components/Splash";
 import { TopControls, TopControlsSpace } from "@/components/TopControls";
+import { InstallBanner } from "@/components/Pwa";
 import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, uniqueNames, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { TurnGuide } from "@/components/TurnGuide";
@@ -785,6 +786,7 @@ export default function Home() {
           <Stats history={history} lang={lang} onReset={() => { setHistory([]); setJokers([]); }} /* a fresh start: jokers belong to the old session too */ />
         </div>
       )}
+      <InstallBanner lang={lang} />
     </main>
   );
 }
