@@ -4,6 +4,7 @@ import { Coffee as CoffeeIcon, Heart, LoaderCircle } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { field, press } from "@/lib/ui";
+import { MAX_CHF } from "@/lib/coffee-config";
 
 const SIZES = [
   { size: "small", chf: 1, label: "coffeeSmall" },
@@ -30,13 +31,13 @@ export function Coffee({ lang, thanks }: { lang: Lang; thanks: boolean }) {
     return () => removeEventListener("pageshow", unlock);
   }, []);
   const chf = Number(custom);
-  const customOk = Number.isInteger(chf) && chf >= 1 && chf <= 200; // MAX_CHF in lib/coffee.ts (not imported: it pulls in the Stripe SDK)
+  const customOk = Number.isInteger(chf) && chf >= 1 && chf <= MAX_CHF;
 
   const pay = async (key: string, body: object) => {
     setBusy(key);
     setFailed(false);
     try {
-      const res = await fetch("/api/coffee", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, lang }) });
+      const res = await fetch("/api/coffee", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...body, lang, path: location.pathname }) });
       const { url } = await res.json();
       if (!res.ok || !url) throw new Error();
       location.assign(url); // Stripe's page, then back to the app
@@ -89,7 +90,7 @@ export function Coffee({ lang, thanks }: { lang: Lang; thanks: boolean }) {
           type="number"
           inputMode="numeric"
           min={1}
-          max={200}
+          max={MAX_CHF}
           step={1}
           aria-label={t("coffeeOther")}
           placeholder={t("coffeeOther")}

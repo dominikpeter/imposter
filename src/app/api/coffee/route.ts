@@ -12,8 +12,13 @@ export async function POST(req: Request) {
   const chf = coffeeAmount(body ?? {});
   if (!chf) return Response.json({ error: "amount" }, { status: 400 });
   const lang: Lang = body.lang === "fr" || body.lang === "de" ? body.lang : "en";
-  const back = new URL("/", req.url).toString();
-  if (coffeeE2e) return Response.json({ url: `${back}?coffee=thanks` });
+  // return to the page the coffee was started from (e.g. a room), same-origin only
+  const rel = typeof body.path === "string" && body.path.startsWith("/") && !body.path.startsWith("//") ? body.path : "/";
+  const home = new URL(rel, req.url);
+  const cancel = home.toString();
+  home.searchParams.set("coffee", "thanks");
+  const thanks = home.toString();
+  if (coffeeE2e) return Response.json({ url: thanks });
 
   const name = UI[NAME[chf as keyof typeof NAME] ?? "coffeeCustom"][lang];
   const session = await stripe().checkout.sessions.create({
@@ -22,8 +27,8 @@ export async function POST(req: Request) {
     // no payment_method_types: Stripe shows what's enabled in the Dashboard (cards, TWINT, Apple/Google Pay…)
     line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: chf * 100, product_data: { name: `Imposter – ${name}` } } }],
     locale: lang,
-    success_url: `${back}?coffee=thanks`,
-    cancel_url: back,
+    success_url: thanks,
+    cancel_url: cancel,
     integration_identifier: "imposter_coffee_qxbrtmwk",
     metadata: { app: "imposter" }, // the Stripe account is shared with Zettelispiil: the webhook counts only these
   });

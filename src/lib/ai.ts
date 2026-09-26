@@ -10,7 +10,7 @@ import { aiEnabled, allowAi } from "./rateLimit.ts";
 // OpenRouter (DeepSeek V4.1 Flash: ~0.5 s, a fraction of a cent per call) when OPENROUTER_API_KEY is set, else OpenAI.
 // Both speak the OpenAI API, so one SDK; explicit base URLs: never inherit a machine-wide OPENAI_BASE_URL (dev proxy).
 const viaOpenRouter = !!process.env.OPENROUTER_API_KEY;
-const MODEL = process.env.AI_MODEL ?? (viaOpenRouter ? "openai/gpt-6-luna" : "gpt-6-luna");
+const MODEL = process.env.AI_MODEL ?? process.env.OPENAI_MODEL ?? (viaOpenRouter ? "openai/gpt-6-luna" : "gpt-6-luna");
 const provider = viaOpenRouter
   ? createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY })
   : createOpenAI({ baseURL: "https://api.openai.com/v1" });
