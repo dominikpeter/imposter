@@ -199,7 +199,7 @@ test("room: 3 rounds played through the API, the host's phone follows to game ov
   const stats = page.getByRole("region", { name: "Game stats" });
   const board = stats.getByRole("heading", { name: "Leaderboard" }).locator("..").getByRole("listitem");
   for (const [i, name] of names.entries()) {
-    await expect(board.filter({ hasText: name })).toHaveAttribute("title", `${name}: ${points[i]} pts`);
+    await expect(board.filter({ has: page.locator("summary", { hasText: name }) })).toHaveAttribute("title", `${name}: ${points[i]} pts`);
     await expect(stats.getByRole("img", { name: `${name}: ${points[i]}`, exact: true })).toBeVisible();
   }
   const refused = await request.post(`/api/rooms/${code}`, { data: { pid: host.pid, token: host.token, type: "start" } });

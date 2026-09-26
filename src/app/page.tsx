@@ -1,6 +1,6 @@
 "use client";
 
-import { ChartColumnStacked, CirclePlus, Eye, Languages, Spade, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
+import { ChartColumnStacked, ChevronDown, CircleHelp, CirclePlus, Eye, Languages, Spade, LogIn, MessagesSquare, PenLine, Scale, Smartphone, Users, VenetianMask, Vote } from "lucide-react";
 import { TopicGrid } from "@/components/TopicGrid";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
@@ -363,6 +363,23 @@ export default function Home() {
             <h1 className="mt-3 text-5xl font-bold tracking-tight text-primary-ink">Imposter</h1>
             <p className="mt-1 text-lg text-muted">{t("tagline")}</p>
           </div>
+          {/* the rules in three lines: open on the very first visit, one tap away after that */}
+          <details open={!saved.players} className={`${card} group py-3`}>
+            <summary className="summary-plain flex min-h-11 items-center justify-between gap-2 font-semibold">
+              <span className="flex items-center gap-2">
+                <CircleHelp className="size-5 text-primary-ink" aria-hidden /> {t("howItWorks")}
+              </span>
+              <ChevronDown className="size-5 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />
+            </summary>
+            <ol className="mt-2 flex flex-col gap-3 pb-1">
+              {(["step1", "step2", "step3"] as const).map((k, i) => (
+                <li key={k} className="flex gap-3">
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-dark text-sm font-bold text-on-primary">{i + 1}</span>
+                  <span>{t(k)}</span>
+                </li>
+              ))}
+            </ol>
+          </details>
           {segmented(
             [
               { id: "pass" as Play, label: <><Smartphone className="size-5 shrink-0" aria-hidden />{t("onePhone")}</> },
@@ -371,6 +388,7 @@ export default function Home() {
             play,
             setPlay,
           )}
+          {play === "pass" && <p className="-mt-2 px-2 text-center text-sm text-muted">{t("passHelp")}</p> /* rooms explain themselves in their card */}
 
           {play === "pass" ? (
             <section className={card}>
@@ -380,6 +398,7 @@ export default function Home() {
                   {players.length}
                 </span>
               </div>
+              <p className="text-sm text-muted">{t("editNames")}</p>
               <ul className="flex flex-col">
                 {players.map((p, i) => (
                   <li key={i} className="enter flex items-center gap-3 border-b border-divider/30 last:border-0">
@@ -470,7 +489,10 @@ export default function Home() {
                 {stepper(rounds, setRounds, 1, 30)}
               </div>
               <label className="flex min-h-11 cursor-pointer items-center justify-between gap-3">
-                <span>{t("hint")}</span>
+                <span>
+                  <span className="block font-medium">{t("hint")}</span>
+                  <span className="block text-sm text-muted">{t("hintHelp")}</span>
+                </span>
                 <input
                   type="checkbox"
                   checked={hint}
@@ -487,7 +509,7 @@ export default function Home() {
                   <span className="flex items-start gap-1.5 font-medium">
                     <Spade className="mt-1 size-4 shrink-0 text-primary-ink" aria-hidden /> <span>{t("joker")}</span>
                   </span>
-                  <span className="block text-sm text-muted">{t(hint ? "jokerNeedsNoHint" : "jokerHelp")}</span>
+                  <span className="block text-sm text-muted">{t("jokerHelp")}{hint && ` ${t("jokerNeedsNoHint")}`}</span>
                 </span>
                 <input type="checkbox" checked={joker} disabled={hint} onChange={(e) => setJoker(e.target.checked)} className="peer sr-only" />
                 <span className="switch shrink-0 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary" />

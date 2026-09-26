@@ -11,17 +11,20 @@ const client = () =>
 // email: sign-in with a mailed code is available; coffee: the "buy me a coffee" tip (Stripe) is set up
 export type Me = { user: AiUser | null; providers: ("google" | "github" | "microsoft")[]; email: boolean; coffee: boolean; ai: boolean };
 let cache: Promise<Me> | null = null;
-const load = () =>
+// the answer once it's in: components mounted later (Settings' sign-in block) start with it instead of a blank frame
+let known: Me | null = null;
+export const loadMe = () =>
   (cache ??= fetch("/api/me", { cache: "no-store" })
     .then((r) => r.json())
-    .catch(() => ({ user: null, providers: [], email: false, coffee: false, ai: false })));
+    .catch(() => ({ user: null, providers: [], email: false, coffee: false, ai: false }))
+    .then((m: Me) => (known = m)));
 
 /** Who is signed in (null while loading). */
 export function useMe() {
-  const [me, setMe] = useState<Me | null>(null);
+  const [me, setMe] = useState<Me | null>(known);
   useEffect(() => {
     let live = true;
-    load().then((m) => live && setMe(m));
+    loadMe().then((m) => live && setMe(m));
     return () => {
       live = false;
     };

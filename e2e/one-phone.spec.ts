@@ -124,8 +124,7 @@ test("settings: color theme and dark mode stick after reload", async ({ page }) 
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-palette", "forest");
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.getByRole("button", { name: "Light / dark" }).click(); // quick toggle in the header
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.getByRole("button", { name: "Light / dark" })).toHaveCount(0); // light/dark lives in Settings only
 });
 
 test("languages switch everywhere", async ({ page }) => {

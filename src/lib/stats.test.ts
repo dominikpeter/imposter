@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { stats, winners, type RoundLog } from "./stats.ts";
+import { most, stats, winners, type RoundLog } from "./stats.ts";
 
 const names = ["Lisa", "Nora", "Tim"];
 
@@ -40,4 +40,20 @@ test("a caught imposter who guesses the word escapes; timeline is cumulative", (
 test("a draw names every leader", () => {
   const r = (accused: number) => ({ names: ["A", "B", "C"], imposters: [0], accused, votes: [1, 0, 0], word: "x" });
   assert.deepEqual(winners([r(0)]), ["B", "C"]); // both caught the imposter: 1 point each
+});
+
+test("drill-down: per-round log, who voted whom, points per round", () => {
+  const s = stats([
+    { names, imposters: [1], accused: 1, votes: [1, 0, 1], word: "a" }, // Nora caught
+    { names, imposters: [2], accused: 2, votes: [2, 2, 0], word: "b", guessed: true }, // Tim caught but guessed
+    { names, imposters: [0], accused: null, votes: null, word: "c" }, // skipped
+  ]);
+  assert.deepEqual(s.log.map((r) => r.result), ["caught", "guessed", "skipped"]);
+  assert.deepEqual(s.log[0], { word: "a", imposters: ["Nora"], accused: "Nora", result: "caught", votes: [["Lisa", "Nora"], ["Nora", "Lisa"], ["Tim", "Nora"]] });
+  const p = Object.fromEntries(s.players.map((x) => [x.name, x]));
+  assert.deepEqual(p.Lisa.votedFor, { Nora: 1, Tim: 1 });
+  assert.deepEqual(p.Lisa.votedBy, { Nora: 1, Tim: 1 });
+  assert.deepEqual(p.Tim.gains, [1, 2, 0]);
+  assert.equal(p.Lisa.crewVotes, 2); // round 3 had no vote
+  assert.deepEqual(most(p.Nora.votedFor), ["Lisa", 1]);
 });

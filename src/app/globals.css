@@ -540,3 +540,10 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
 @utility anim-delay-* { --delay: calc(--value(integer) * 1ms); }
 /* topic tiles: as many ~83px columns as fit (2 at 320px, 3 on most phones, 4 on large ones) */
 @utility grid-cols-tiles { grid-template-columns: repeat(auto-fill, minmax(4.6rem, 1fr)); }
+
+/* <details> drill-downs (stats): our own chevron instead of the browser's disclosure triangle */
+@utility summary-plain {
+  list-style: none;
+  cursor: pointer;
+  &::-webkit-details-marker { display: none; }
+}
