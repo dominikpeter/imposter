@@ -86,7 +86,8 @@ release version notes:
     set -euo pipefail
     [ "$(git branch --show-current)" = dev ] || { echo "releases start on dev: git switch dev"; exit 1; }
     npm version {{version}} --no-git-tag-version --allow-same-version
-    git add package.json package-lock.json && git commit -m "release: v{{version}} [skip-manual]" || true
+    git add package.json package-lock.json
+    git diff --cached --quiet || git commit -m "release: v{{version}} [skip-manual]" # nothing to commit: already at {{version}}
     just version-check
     just pr {{quote("Release v" + version)}}
     gh pr edit dev --body {{quote(notes)}}

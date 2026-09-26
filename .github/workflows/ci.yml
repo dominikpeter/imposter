@@ -9,7 +9,7 @@ name: CI
 # One-time: `just vercel-ci-setup` (Vercel token + ids as secrets, sets VERCEL_CI_READY); until then the deploy skips.
 on:
   push:
-    branches: [main, dev]
+    branches: [main] # dev is covered by its pull request into main (`just pr`): one CI run per change, not two
   pull_request:
 
 permissions:
@@ -88,11 +88,15 @@ jobs:
           npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
           npx vercel build --prod --token="$VERCEL_TOKEN"
           npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
-      - name: Tag and publish the GitHub release (notes from the merged pull requests)
+      - name: Tag and publish the GitHub release
+        # the notes written for `just release` (the release pull request's description) on top, then GitHub's list of
+        # the pull requests merged since the last release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.release.outputs.version }}
-        run: gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
+        run: |
+          notes=$(gh pr list --state merged --base main --search "$GITHUB_SHA" --json body -q '.[0].body // ""')
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --notes "$notes" --generate-notes
 
   ios:
     needs: deploy

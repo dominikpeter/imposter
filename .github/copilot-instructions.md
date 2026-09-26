@@ -22,5 +22,6 @@ Report only real problems, each with a concrete failure scenario; no style nits,
 ## Writing code (coding agent)
 
 - Use the `justfile` for everything: `just lint`, `just typecheck`, `just test`, `just e2e <spec>`.
-- Branch from and open pull requests against `dev`, never `main`.
+- Branch from and open pull requests against `dev` (the default branch), never `main`: `main` only moves through the
+  release pull request from `dev`.
 - Keep changes small and match the surrounding code: comment density, naming, idiom.
