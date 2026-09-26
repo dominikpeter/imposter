@@ -142,7 +142,7 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
             ) : (
               me?.user ? (
                 <SignIn lang={lang} /> // AI paused for everyone: just the account and sign-out
-              ) : !!me?.ai && !!me.providers.length && (
+              ) : !!me?.ai && (!!me.providers.length || me.email) && ( // any way in: a provider or the emailed code
                 <section className="flex flex-col gap-2">
                   <h3 className="flex items-center gap-1.5 font-semibold">
                     <Sparkles className="size-4 text-primary-ink" aria-hidden /> {t("aiHelp")}

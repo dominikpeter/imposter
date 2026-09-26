@@ -113,12 +113,14 @@ test.describe("signed out", () => {
 
   // the e2e dev server mails nothing and always issues the code 123456 (E2E_AUTH_BYPASS)
   test("email sign-in: code by mail, wrong code refused, right code signs in, sign out", async ({ page }) => {
+    test.setTimeout(90_000); // a fresh dev server (CI) compiles the sign-in route on first use
     const email = `mail${Date.now()}@e2e.test`;
     await page.goto("/");
     await openSettings(page);
     await page.getByRole("textbox", { name: "Your email" }).fill(email);
     await page.getByRole("button", { name: "Email me a code" }).click();
-    await expect(page.getByText(`We sent a 6-digit code to ${email}.`)).toBeVisible();
+    // generous: on a fresh dev server (CI) this first call compiles the whole sign-in route, ~15 s
+    await expect(page.getByText(`We sent a 6-digit code to ${email}.`)).toBeVisible({ timeout: 45_000 });
 
     const code = page.getByRole("textbox", { name: "6-digit code" });
     await code.fill("000000");

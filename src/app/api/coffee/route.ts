@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   const session = await stripe().checkout.sessions.create({
     mode: "payment",
     submit_type: "donate",
-    // no payment_method_types: Stripe shows what's enabled in the Dashboard (cards, TWINT, Apple/Google Pay…)
+    // no payment_method_types: Stripe shows what's enabled in the Dashboard (cards, Apple/Google Pay…; TWINT was refused for this business)
     line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: chf * 100, product_data: { name: `Imposter – ${name}` } } }],
     locale: lang,
     success_url: thanks,
