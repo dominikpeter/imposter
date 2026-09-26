@@ -1,7 +1,7 @@
 "use client";
 
 import { Coffee as CoffeeIcon, Heart, LoaderCircle } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { field, press } from "@/lib/ui";
 
@@ -22,6 +22,13 @@ export function Coffee({ lang, thanks }: { lang: Lang; thanks: boolean }) {
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  // Back from Stripe without paying: the browser restores this page from its back/forward cache with the
+  // spinner still on and every button disabled. Unlock on every show, so you can always buy (another) coffee.
+  useEffect(() => {
+    const unlock = (e: PageTransitionEvent) => e.persisted && setBusy(null);
+    addEventListener("pageshow", unlock);
+    return () => removeEventListener("pageshow", unlock);
+  }, []);
   const chf = Number(custom);
   const customOk = Number.isInteger(chf) && chf >= 1 && chf <= 200; // MAX_CHF in lib/coffee.ts (not imported: it pulls in the Stripe SDK)
 
