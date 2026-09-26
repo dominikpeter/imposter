@@ -1,0 +1,102 @@
+name: Android release (Play Store)
+
+# Builds a signed .aab and uploads it to the Play Console on a GitHub-hosted runner — nothing to install
+# locally. Manual trigger only: it publishes a release track and needs signing secrets.
+#
+# One-time setup:
+#   1. Create a release keystore, once, and never lose it (Google can't re-issue it):
+#        keytool -genkey -v -keystore imposter-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias imposter
+#      Keep the .jks file itself somewhere safe outside git (e.g. your password manager); only its base64 goes
+#      into GitHub. Then: base64 -i imposter-release.jks | pbcopy
+#   2. In this repo: Settings → Secrets and variables → Actions, add:
+#        ANDROID_KEYSTORE_BASE64     output of the base64 command above
+#        ANDROID_KEYSTORE_PASSWORD   the keystore password you chose
+#        ANDROID_KEY_ALIAS           the -alias you chose (e.g. imposter)
+#        ANDROID_KEY_PASSWORD        the key password you chose (often the same as the keystore password)
+#        PLAY_SERVICE_ACCOUNT_JSON   see step 3
+#   3. Play Console → Setup → API access → create a service account (links to Google Cloud), grant it
+#      "Release manager" access to this app, and download its JSON key — paste the whole file as the secret.
+#   4. Create the app in Play Console by hand once, and upload one build through the console UI (Play
+#      requires the very first release to go through the UI). After that this workflow can publish every build.
+#
+# Until the secrets above exist, "Run workflow" fails fast with a clear message instead of a cryptic build error.
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: "Play Console track to publish to"
+        type: choice
+        options: [internal, alpha, beta, production]
+        default: internal
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check required secrets are set
+        run: |
+          missing=()
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD PLAY_SERVICE_ACCOUNT_JSON; do
+            [ -z "${!name}" ] && missing+=("$name")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing secrets: ${missing[*]}. See the setup steps at the top of .github/workflows/android-release.yml."
+            exit 1
+          fi
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Sync the native Android project (Capacitor)
+        run: npx cap sync android
+
+      - name: Decode the release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/imposter-release.jks"
+
+      - name: Set the version from package.json, bump the version code
+        # Play rejects a re-used versionCode: the run number always goes up. versionName mirrors the web
+        # app's own version (package.json), which release-web.md/justfile already bump together.
+        run: |
+          version=$(node -p "require('./package.json').version")
+          sed -i "s/versionCode 1/versionCode ${GITHUB_RUN_NUMBER}/" android/app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"${version}\"/" android/app/build.gradle
+
+      - name: Build the signed app bundle
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ format('{0}/imposter-release.jks', runner.temp) }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew bundleRelease --no-daemon
+
+      - name: Upload to Play Console
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ch.whoislying.imposter
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track }}
+          status: completed

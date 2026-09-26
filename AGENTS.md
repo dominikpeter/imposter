@@ -27,6 +27,8 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | "Buy me a coffee" (Stripe key + webhook secret) → .env.local + Vercel | `just stripe-setup`, then `just redeploy` |
 | Any other secret (typed hidden) → .env.local + Vercel | `just secret NAME`, then `just redeploy` |
 | Deploy | push to `main` (auto) · `just redeploy` after env changes |
+| Store apps: local debug build | `just app-android` (APK) · `just app-ios` (opens Xcode) |
+| Store apps: signed release, built and uploaded by CI | GitHub → Actions → "iOS release" / "Android release" → Run workflow (needs one-time secrets, see each workflow file) |
 
 ## Standards
 
