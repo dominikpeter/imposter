@@ -45,7 +45,7 @@
 |---|---|
 | App | [Next.js 16](https://nextjs.org) (App Router) · React 19 · TypeScript · Tailwind CSS 4 |
 | Online rooms | Route handlers + [Upstash Redis](https://upstash.com). Roles are computed on the server, and phones check for updates every 1.5 s |
-| AI | [AI SDK](https://ai-sdk.dev): gpt-oss-120b via OpenRouter (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`), lowest-latency host; falls back to gpt-6-luna at OpenAI (`OPENAI_API_KEY`, `OPENAI_MODEL`). Server only, rate-limited per client |
+| AI | [AI SDK](https://ai-sdk.dev): gpt-6-luna via OpenRouter (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`), OpenAI's priority tier; falls back to gpt-6-luna at OpenAI (`OPENAI_API_KEY`, `OPENAI_MODEL`). Server only, rate-limited per client |
 | Icons / QR | [lucide-react](https://lucide.dev) · `qrcode` · `jsqr` (only loaded when you scan) |
 | Tests | `node:test` unit tests · [Playwright](https://playwright.dev) end-to-end tests on a phone viewport, including a fake camera for the QR scanner |
 | Hosting | [Vercel](https://vercel.com) |

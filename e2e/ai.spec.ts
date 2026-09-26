@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 
-// Real AI calls through the dev server (gpt-oss-120b via OpenRouter, or gpt-6-luna at OpenAI): only when .env.local has a key.
+// Real AI calls through the dev server (gpt-6-luna via OpenRouter or OpenAI): only when .env.local has a key.
 const hasKey = existsSync(".env.local") && /^(OPENAI|OPENROUTER)_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
 test.skip(!hasKey, "no AI key (OPENROUTER_API_KEY or OPENAI_API_KEY) in .env.local");
 test.setTimeout(120_000);

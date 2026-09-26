@@ -8,30 +8,32 @@ import { later, recordAi } from "./metrics.ts";
 import { db } from "./store.ts";
 import { aiEnabled, allowAi } from "./rateLimit.ts";
 
-// OpenRouter (OPENROUTER_API_KEY) runs gpt-oss-120b, routed to the lowest-latency host (Groq/Cerebras): measured on our
-// word check + explanations (Sep 2026) ~1.2 s / ~0.4 s, no per-account requests-per-minute cap, ~$0.14 per 1000 calls.
-// It always reasons, so we ask for the least. OpenAI (OPENAI_API_KEY) runs gpt-6-luna without reasoning: the fallback
-// when OpenRouter fails, or the only route without an OpenRouter key. Same setup as Zettelispiil.
+// gpt-6-luna without reasoning: through OpenRouter (OPENROUTER_API_KEY) on OpenAI's priority tier ("openai/fast"), and
+// straight at OpenAI (OPENAI_API_KEY) as the fallback when OpenRouter fails (e.g. its requests-per-minute cap for new
+// accounts). Benchmarked Sep 2026 against DeepSeek, GLM, MiMo, Hy3 and gpt-oss-120b: most accurate, word check ~0.9 s.
+// OPENROUTER_MODEL=openai/gpt-oss-120b switches to the model Zettelispiil uses (always reasons: low effort, fastest host).
 // Both speak the OpenAI API, so one SDK; explicit base URLs: never inherit a machine-wide OPENAI_BASE_URL (dev proxy).
 const LANGUAGE: Record<string, string> = { en: "English", fr: "French", de: "German" };
-const ROUTER_MODEL = process.env.OPENROUTER_MODEL ?? "openai/gpt-oss-120b";
+const ROUTER_MODEL = process.env.OPENROUTER_MODEL ?? "openai/gpt-6-luna";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
-// OpenRouter routing isn't an AI SDK option: add it to the request body. Fastest host that supports every parameter we send.
-const lowestLatency: typeof fetch = (url, init) => {
+const reasons = /gpt-oss/.test(ROUTER_MODEL); // can't switch reasoning off
+// OpenRouter routing isn't an AI SDK option: add it to the request body. `order` + fallbacks, not `only`: when the
+// preferred host is busy, another one answers instead of an error.
+const routing = reasons ? { sort: "latency", require_parameters: true } : { order: ["openai/fast"], allow_fallbacks: true };
+const withRouting: typeof fetch = (url, init) => {
   if (typeof init?.body !== "string") return fetch(url, init);
-  const body = JSON.parse(init.body);
-  return fetch(url, { ...init, body: JSON.stringify({ ...body, provider: { sort: "latency", require_parameters: true } }) });
+  return fetch(url, { ...init, body: JSON.stringify({ ...JSON.parse(init.body), provider: routing }) });
 };
 // maxTokens: room for the answer; a reasoning model spends part of it thinking before it writes anything
 type Route = { name: string; model: () => LanguageModel; options: (fast: boolean) => ProviderOptions; maxTokens: number };
 const routes: Route[] = [];
 if (process.env.OPENROUTER_API_KEY) {
-  const router = createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY, fetch: lowestLatency });
+  const router = createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY, fetch: withRouting });
   routes.push({
     name: "openrouter",
     model: () => router.chat(ROUTER_MODEL), // Chat Completions API
-    options: () => ({ openai: { reasoningEffort: "low" } }), // gpt-oss can't switch reasoning off; low keeps it to a few tokens
-    maxTokens: 600,
+    options: () => ({ openai: { reasoningEffort: reasons ? "low" : "none" } }), // thinking only adds seconds here
+    maxTokens: reasons ? 600 : 80,
   });
 }
 if (process.env.OPENAI_API_KEY) {
