@@ -8,7 +8,7 @@ test.setTimeout(180_000);
 
 const DIR = "docs/manual";
 const NAMES = ["Lisa", "Nora", "Tim", "Beni"];
-const hasAiKey = existsSync(".env.local") && /^OPENAI_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
+const hasAiKey = existsSync(".env.local") && /^(OPENAI|OPENROUTER)_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
 const settle = (p: Page) => p.waitForTimeout(1600); // entrance animations and the card fan
 const shot = async (p: Page, name: string) => {
   await settle(p);
@@ -97,7 +97,7 @@ test("every phone: create, join, lobby, card", async ({ page, browser }) => {
 });
 
 test("AI: autocorrect and explain (signed in, real OpenAI)", async ({ browser }) => {
-  test.skip(!hasAiKey, "no OPENAI_API_KEY in .env.local");
+  test.skip(!hasAiKey, "no AI key (OPENROUTER_API_KEY or OPENAI_API_KEY) in .env.local");
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1.5, extraHTTPHeaders: { "x-e2e-user": "Tester" } });
   const page = await ctx.newPage();
   await page.goto("/");

@@ -2,8 +2,8 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 
 // Real OpenAI (gpt-6-luna) calls through the dev server: runs only when .env.local has a key.
-const hasKey = existsSync(".env.local") && /^OPENAI_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
-test.skip(!hasKey, "no OPENAI_API_KEY in .env.local");
+const hasKey = existsSync(".env.local") && /^(OPENAI|OPENROUTER)_API_KEY=.+/m.test(readFileSync(".env.local", "utf8"));
+test.skip(!hasKey, "no AI key (OPENROUTER_API_KEY or OPENAI_API_KEY) in .env.local");
 test.setTimeout(120_000);
 // signed-in test user (dev-server-only bypass, see aiUser in src/lib/auth.ts); AI features need an account
 test.use({ extraHTTPHeaders: { "x-e2e-user": "Tester" } });

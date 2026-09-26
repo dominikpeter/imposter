@@ -7,9 +7,21 @@ import { later, recordAi } from "./metrics.ts";
 import { db } from "./store.ts";
 import { aiEnabled, allowAi } from "./rateLimit.ts";
 
-const MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
-// explicit base URL: don't inherit a machine-wide OPENAI_BASE_URL (e.g. a local dev proxy)
-const openai = createOpenAI({ baseURL: "https://api.openai.com/v1" });
+// OpenRouter (DeepSeek V4.1 Flash: ~0.5 s, a fraction of a cent per call) when OPENROUTER_API_KEY is set, else OpenAI.
+// Both speak the OpenAI API, so one SDK; explicit base URLs: never inherit a machine-wide OPENAI_BASE_URL (dev proxy).
+const viaOpenRouter = !!process.env.OPENROUTER_API_KEY;
+const MODEL = process.env.AI_MODEL ?? (viaOpenRouter ? "openai/gpt-6-luna" : "gpt-6-luna");
+const provider = viaOpenRouter
+  ? createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY })
+  : createOpenAI({ baseURL: "https://api.openai.com/v1" });
+const model = () => (viaOpenRouter ? provider.chat(MODEL) : provider(MODEL)); // OpenRouter: Chat Completions API
+export const aiConfigured = viaOpenRouter || !!process.env.OPENAI_API_KEY;
+// no thinking (it only adds seconds for these tiny tasks); OpenAI extras: no stored logs, optional priority tier
+const options = (fast = false) => ({
+  openai: viaOpenRouter
+    ? { reasoningEffort: "none" as const }
+    : ({ reasoningEffort: "none", store: false, ...(fast ? { serviceTier: "priority" } : {}) } satisfies OpenAILanguageModelResponsesOptions),
+});
 
 // kept short on purpose: every token here is sent (and paid for) on every word check
 const schema = z.object({
@@ -25,7 +37,7 @@ sameAs: the TAKEN entry meaning the same thing (synonym, translation, plural, va
 /**
  * Autocorrect + "too hard" + duplicate check for players' own words.
  * Exact duplicates are always caught; the AI adds spelling fixes, difficulty and same-meaning duplicates.
- * Without OPENAI_API_KEY (or if the call fails) it falls back to the exact checks only.
+ * Without an AI key (or if the call fails) it falls back to the exact checks only.
  */
 // A check started while the player was still typing (prefetch) lands here; "Done" with the same input then gets it
 // instantly instead of waiting ~1 s for the model again. Keyed by the exact input, short-lived.
@@ -47,14 +59,14 @@ export async function cachedReview(draft: Draft[], taken: string[], lang: string
 // `who`: the account the call runs on (a user id, or the room host's), for the admin usage stats
 export async function reviewWords(draft: Draft[], taken: string[], lang: string, useAi = true, who?: string): Promise<Review[]> {
   const exact = exactReview(draft, taken);
-  if (!useAi || !process.env.OPENAI_API_KEY || !draft.length) return exact;
+  if (!useAi || !aiConfigured || !draft.length) return exact;
   const key = reviewKey(draft, taken, lang);
   void db.set(`${key}:pending`, true, { ex: 10 }).catch(() => {});
   try {
     const { output, usage } = await generateText({
-      model: openai(MODEL),
+      model: model(),
       output: Output.object({ schema }),
-      providerOptions: { openai: { reasoningEffort: "none", store: false } satisfies OpenAILanguageModelResponsesOptions },
+      providerOptions: options(),
       instructions,
       prompt: JSON.stringify({ uiLanguage: lang, TAKEN: taken, words: draft }),
     });
@@ -94,12 +106,12 @@ export async function warmExplanation(word: string, lang: string) {
 
 /** A short, kid-friendly explanation of a secret word for crew members who don't know it (never shown to imposters). */
 export async function explainWord(word: string, lang: string, who?: string, fast = true): Promise<string | null> {
-  if (!process.env.OPENAI_API_KEY) return null;
+  if (!aiConfigured) return null;
   try {
     const { text, usage } = await generateText({
-      model: openai(MODEL),
-      // priority processing: measured ~0.8 s instead of 1.6–2.7 s; a call is ~100 tokens, so the premium is tiny
-      providerOptions: { openai: { reasoningEffort: "none", store: false, ...(fast ? { serviceTier: "priority" } : {}) } satisfies OpenAILanguageModelResponsesOptions },
+      model: model(),
+      // OpenAI priority processing: measured ~0.8 s instead of 1.6–2.7 s; a call is ~100 tokens, so the premium is tiny
+      providerOptions: options(fast),
       maxOutputTokens: 80,
       instructions:
         "Explain the given word in 1-2 short, simple sentences (at most 30 words) for a party game player who doesn't know it. " +
