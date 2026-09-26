@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     mode: "payment",
     submit_type: "donate",
     // no payment_method_types: Stripe shows what's enabled in the Dashboard (cards, TWINT, Apple/Google Pay…)
-    line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: chf * 100, product_data: { name } } }],
+    line_items: [{ quantity: 1, price_data: { currency: "chf", unit_amount: chf * 100, product_data: { name: `Imposter – ${name}` } } }],
     locale: lang,
     success_url: `${back}?coffee=thanks`,
     cancel_url: back,

@@ -195,6 +195,13 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
                 </svg>
                 {t("sourceOnGithub")}
               </a>
+              <p>
+                {t("byMaker").split("{brand}")[0]}
+                <a href="https://zettelispiil.ch" target="_blank" rel="noreferrer" className="font-medium text-primary-ink hover:underline">
+                  Zettelispiil
+                </a>
+                {t("byMaker").split("{brand}")[1]}
+              </p>
               <span className="tabular-nums">v{process.env.NEXT_PUBLIC_VERSION}</span>
             </footer>
           </div>

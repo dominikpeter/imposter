@@ -63,7 +63,7 @@ async function mailCode(email: string, otp: string, lang: Lang) {
     ]);
     if (mine > PER_EMAIL_HOUR || all > DAILY_MAILS) throw new Error("code mail cap reached"); // not mailed; Better Auth still answers "sent" (no account probing)
   }
-  if (!env.RESEND_API_KEY) return; // e2e: counted, not mailed
+  if (!env.RESEND_API_KEY || e2e) return; // e2e: counted, never mailed (fake addresses would bounce and hurt the domain)
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },

@@ -6,8 +6,8 @@ export const COFFEES = { small: 1, big: 5, deluxe: 10 } as const; // CHF
 export type Coffee = keyof typeof COFFEES;
 export const MAX_CHF = 200; // custom amount cap: a typo shouldn't become a 5000 CHF charge
 
-// the e2e dev server (no key) skips Stripe and "pays" at once, so the flow can be tested
-export const coffeeE2e = process.env.NODE_ENV === "development" && process.env.E2E_AUTH_BYPASS === "1" && !process.env.STRIPE_SECRET_KEY;
+// the e2e dev server never calls Stripe (even with the live key in .env.local): it "pays" at once, so the flow can be tested
+export const coffeeE2e = process.env.NODE_ENV === "development" && process.env.E2E_AUTH_BYPASS === "1";
 export const coffeeOn = !!process.env.STRIPE_SECRET_KEY || coffeeE2e;
 
 let client: Stripe | null = null;
