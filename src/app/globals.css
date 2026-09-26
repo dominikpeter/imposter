@@ -210,12 +210,12 @@
   --c-primary: #2449e0;
   --c-primary-light: #fff3a3;
   --c-on-primary: #ffffff;
-  --c-accent: #ffd60a;
-  --c-accent-deep: #1a3ac4;
-  --c-glow: #ffd60a;
+  --c-accent: #1a3ac4; /* imposter card: deep blue sky… */
+  --c-accent-deep: #0a1a5c;
+  --c-glow: #ffd60a; /* …with the sun around it */
   --c-primary-ink: #1a3ac4;
-  --c-tint: #e8edfd;
-  --c-line: #d3dcfb;
+  --c-tint: #fff1a8; /* sun yellow chips, pills and selected tiles (blue text 7.5:1) */
+  --c-line: #f2dc7c; /* golden borders */
   --c-canvas: #f3f6ff;
 }
 @media (prefers-color-scheme: dark) {
@@ -229,7 +229,7 @@
     --c-glow: #ffd60a;
     --c-primary-ink: #ffe066;
     --c-tint: #16235e;
-    --c-line: #243275;
+    --c-line: #6b5a1a; /* golden borders */
     --c-canvas: #070f35;
     --c-surface: #0e1a4a;
   }
@@ -244,7 +244,7 @@
   --c-glow: #ffd60a;
   --c-primary-ink: #ffe066;
   --c-tint: #16235e;
-  --c-line: #243275;
+  --c-line: #6b5a1a; /* golden borders */
   --c-canvas: #070f35;
   --c-surface: #0e1a4a;
 }
