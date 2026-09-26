@@ -74,6 +74,7 @@ jobs:
     environment: production
     permissions:
       contents: write # the tag and the GitHub release
+      pull-requests: read # the release notes come from the merged release pull request
     steps:
       # a merged version bump that can't be deployed must turn red, not finish green with no tag and no release
       - name: Deploy credentials are set up
