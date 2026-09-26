@@ -49,11 +49,13 @@ if (process.env.OPENAI_API_KEY) {
 export const aiConfigured = routes.length > 0;
 
 /** Runs one AI call on the first route that answers; throws only if every route failed. */
-async function firstAnswer<T>(run: (r: Route) => Promise<T>): Promise<T> {
+// `retries` goes to the AI SDK: none while another route is left (it would wait 2 s, then 4 s, before the fallback,
+// e.g. on OpenRouter's per-minute cap), the SDK's usual 2 with backoff on the last route, which has nowhere else to go
+async function firstAnswer<T>(run: (r: Route, retries: number) => Promise<T>): Promise<T> {
   let last: unknown;
   for (const r of routes) {
     try {
-      return await run(r);
+      return await run(r, r === routes.at(-1) ? 2 : 0);
     } catch (e) {
       last = e;
       if (r !== routes.at(-1)) console.warn(`AI via ${r.name} failed, trying the next route:`, (e as Error).message);
@@ -102,8 +104,9 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
   const key = reviewKey(draft, taken, lang);
   void db.set(`${key}:pending`, true, { ex: 10 }).catch(() => {});
   try {
-    const { output, usage } = await firstAnswer((r) =>
+    const { output, usage } = await firstAnswer((r, retries) =>
       generateText({
+        maxRetries: retries,
         model: r.model(),
         output: Output.object({ schema }),
         providerOptions: r.options(true), // a player is waiting on "Done"
@@ -154,8 +157,9 @@ export async function warmExplanation(word: string, lang: string) {
 export async function explainWord(word: string, lang: string, who?: string, fast = true): Promise<string | null> {
   if (!aiConfigured) return null;
   try {
-    const { text, usage } = await firstAnswer((r) =>
+    const { text, usage } = await firstAnswer((r, retries) =>
       generateText({
+        maxRetries: retries,
         model: r.model(),
         providerOptions: r.options(fast), // priority when a player waits; batch warming takes the cheaper standard tier
         maxOutputTokens: r.maxTokens,
