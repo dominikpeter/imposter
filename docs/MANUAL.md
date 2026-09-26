@@ -250,6 +250,8 @@ Your choices are remembered on your phone.
 
 <br clear="right"/>
 
+When the crew catches the imposter, confetti flies; when an imposter gets away, their mask sneaks off with a wink.
+
 ---
 
 ## 9. Tips, house rules and FAQ

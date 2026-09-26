@@ -464,8 +464,62 @@ dialog.sheet[open]::backdrop { animation: fade-in 0.3s ease-out both; }
   88% { transform: none; }
 }
 
+/* ---- playful moments (all off under prefers-reduced-motion, below) ---- */
+/* crew wins: confetti in the theme's colors bursts up from the verdict, then drifts down and fades.
+   Each piece gets --x/--up/--down/--r/--d and --c (a theme token) from Confetti.tsx */
+.confetti { position: absolute; inset-inline: 0; top: 0; height: 0; overflow: visible; pointer-events: none; }
+.confetti > i {
+  position: absolute; left: 50%; top: 1.5rem; width: 0.5rem; height: 0.8rem; border-radius: 2px;
+  background: var(--c); opacity: 0;
+  animation: confetti 1.8s cubic-bezier(0.15, 0.7, 0.3, 1) var(--d) both;
+}
+.confetti > i:nth-child(3n) { width: 0.45rem; height: 0.45rem; border-radius: 9999px; }
+@keyframes confetti {
+  0% { opacity: 1; transform: translate(-50%, 0) rotate(0deg) scale(0.4); }
+  30% { opacity: 1; transform: translate(calc(-50% + var(--x)), var(--up)) rotate(calc(var(--r) * 0.4)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--x) * 1.5), var(--down)) rotate(var(--r)) scale(0.9); }
+}
+/* the party popper goes off */
+.tada { display: inline-block; animation: tada 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.15s both; }
+@keyframes tada {
+  0% { transform: scale(0.3) rotate(-30deg); opacity: 0; }
+  50% { transform: scale(1.25) rotate(12deg); opacity: 1; }
+  70% { transform: scale(0.95) rotate(-6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+/* imposter gets away: the mask sneaks in from the side, then winks */
+.sneak { display: inline-block; animation: sneak 1.3s ease-out 0.15s both; }
+@keyframes sneak {
+  0% { transform: translateX(-2rem) rotate(-14deg); opacity: 0; }
+  35% { transform: translateX(0.35rem) rotate(8deg); opacity: 1; }
+  50% { transform: translateX(0) rotate(0); }
+  70% { transform: scaleY(1); }
+  76% { transform: scaleY(0.15); } /* the wink */
+  84% { transform: scaleY(1); }
+  100% { transform: none; }
+}
+/* the face-down card asks to be tapped: a small wiggle every few seconds */
+.nudge { animation: nudge 3.4s ease-in-out 1.4s infinite; }
+@keyframes nudge {
+  0%, 80%, 100% { transform: none; }
+  84% { transform: rotate(-4deg) scale(1.04); }
+  88% { transform: rotate(4deg) scale(1.04); }
+  92% { transform: rotate(-2deg); }
+  96% { transform: rotate(1deg); }
+}
+/* whoever speaks: the mic's ring pulses like it's live */
+.live { position: relative; }
+.live::after {
+  content: ""; position: absolute; inset: 0; border-radius: 9999px; border: 3px solid var(--color-glow);
+  animation: live 1.6s ease-out 0.4s infinite;
+}
+@keyframes live { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.55); opacity: 0; } }
+/* a heart that beats (coffee thank-you) */
+.beat { animation: beat 1.2s ease-in-out 0.3s 3 both; }
+@keyframes beat { 0%, 100% { transform: scale(1); } 15% { transform: scale(1.3); } 30% { transform: scale(1); } 45% { transform: scale(1.18); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .enter, .pop, .flip, .shake, .bar-grow, .hero-card, .hero-mask, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
+  .enter, .pop, .confetti > i, .tada, .sneak, .nudge, .live::after, .beat, .flip, .shake, .bar-grow, .hero-card, .hero-mask, .glow::before, dialog.sheet[open], dialog.sheet[open]::backdrop { animation: none; }
   .glow::before { display: none; }
   * { transition-duration: 0.01ms !important; }
 }

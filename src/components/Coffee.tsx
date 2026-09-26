@@ -55,7 +55,7 @@ export function Coffee({ lang, thanks }: { lang: Lang; thanks: boolean }) {
       </h3>
       {thanks ? (
         <p role="status" className="flex items-center gap-2 rounded-2xl bg-tint px-4 py-3 font-semibold text-primary-ink">
-          <Heart className="size-5 shrink-0 fill-danger text-danger" aria-hidden /> {t("coffeeThanks")}
+          <Heart className="beat size-5 shrink-0 fill-danger text-danger" aria-hidden /> {t("coffeeThanks")}
         </p>
       ) : (
         <p className="text-sm text-muted">{t("coffeeNote")}</p>

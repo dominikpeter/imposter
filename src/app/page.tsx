@@ -308,7 +308,7 @@ export default function Home() {
         aria-label={action}
         className={`card-back enter mt-2 grid aspect-card w-full max-w-64 short:aspect-square place-items-center rounded-3xl border border-line p-4 text-primary-ink hover:border-primary anim-delay-80 ${press}`}
       >
-        <span className="rounded-2xl bg-surface/95 px-6 py-5">
+        <span className="nudge rounded-2xl bg-surface/95 px-6 py-5">
           {(() => { const Icon = phase === "write" ? PenLine : phase === "vote" ? Vote : Eye; return <Icon className="mx-auto size-12" strokeWidth={1.75} aria-hidden />; })()}
           <span className="mt-3 block font-semibold">{action}</span>
         </span>
@@ -702,8 +702,8 @@ export default function Home() {
                     <button
                       key={i}
                       onClick={() => castVote(i)}
-                      style={{ animationDelay: `${i * 40}ms` }}
-                      className={`enter min-h-16 rounded-2xl border border-line bg-surface px-3 text-lg font-semibold break-words hover:border-primary ${press}`}
+                      style={{ animationDelay: `${i * 60}ms` }}
+                      className={`pop min-h-16 rounded-2xl border border-line bg-surface px-3 text-lg font-semibold break-words hover:border-primary ${press}`}
                     >
                       {n}
                     </button>

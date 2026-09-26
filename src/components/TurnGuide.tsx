@@ -28,7 +28,7 @@ export function TurnGuide(p: {
       <p className="text-sm font-medium tracking-wide text-muted uppercase">{fill(t("wordRound"), String(p.wordRound))}</p>
       {p.spoken < n ? (
         <div key={`${p.wordRound}-${p.spoken}`} className="pop flex flex-col items-center gap-2">
-          <span className="grid size-20 place-items-center rounded-full bg-tint text-primary-ink">
+          <span className="live grid size-20 place-items-center rounded-full bg-tint text-primary-ink">
             <Mic className="size-9" strokeWidth={1.75} aria-hidden />
           </span>
           <h2 className="text-4xl font-bold tracking-tight">{mine ? t("yourTurn") : fill(t("turnOf"), p.names[speaker])}</h2>
