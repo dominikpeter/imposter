@@ -27,6 +27,7 @@ export function SecretCard({ card, lang, onClick }: { card: ShownCard; lang: Lan
       <p data-testid="word" className="mt-2 text-5xl font-bold tracking-tight break-words text-primary-ink short:text-4xl tiny:text-3xl">
         {card.word}
       </p>
+      <p className="mt-4 text-muted tiny:hidden">{t("crewNote")}</p>
     </Box>
   );
 }

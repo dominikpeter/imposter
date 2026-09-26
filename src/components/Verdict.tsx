@@ -17,6 +17,7 @@ export function Verdict(p: { names: string[]; imposters: number[]; accused: numb
   const { survivors } = outcome(imposters, accused, guessed);
   const caught = accused !== null && imposters.includes(accused); // "Caught!" even when they then guess the word
   const icon = "inline size-9 -translate-y-1 text-primary-ink";
+  const impWin = t(imposters.length > 1 ? "impsWin" : "impWins");
   return (
     <>
       {accused !== null && (
@@ -33,10 +34,10 @@ export function Verdict(p: { names: string[]; imposters: number[]; accused: numb
           </p>
           <p className="mt-1 text-lg text-balance text-muted">
             {guessed ? (
-              fill(t("guessedRightHelp"), { name: names[accused] })
+              `${fill(t("guessedRightHelp"), { name: names[accused] })} ${impWin}`
             ) : (
               <>
-                <span className="font-semibold text-ink">{names[accused]}</span> {t(caught ? "caughtHelp" : "wrongHelp")}
+                <span className="font-semibold text-ink">{names[accused]}</span> {caught ? t("caughtHelp") : `${t("wrongHelp")} ${impWin}`}
               </>
             )}
           </p>

@@ -20,7 +20,7 @@
 - Everyone gets the **same secret word**, except the **imposter**, who doesn't.
 - Taking turns, every player says **one word** that fits the secret. Too vague and you look suspicious. Too obvious and the imposter learns the word.
 - The imposter has to bluff along and work out the word from what the others say.
-- Then everybody **votes**. If you catch the imposter, the crew wins. If you pick an innocent player, the imposters win.
+- Then everybody **votes**. If you catch the imposter, the crew wins. If you pick an innocent player, the imposter wins.
 
 You need **3 or more players**. There are two ways to play:
 
@@ -37,7 +37,9 @@ Here's a full round with 4 friends: Lisa, Nora, Tim and Beni (the app's default 
 ### Step 1: Setup
 <img src="manual/01-setup.png" width="260" align="right" alt="Setup screen" />
 
-Open the app. The player list is already filled in: type over the names, remove players with **×**, or add more with **+ Add player**.
+Open the app. On your first visit, **How it works** explains the game in three lines right under the title (tap it to fold it away; later visits start with it folded). Under **One phone / Every phone** a line says what the mode means.
+
+The player list is already filled in: tap a name to change it, remove players with **×**, or add more with **+ Add player**. Every option (clue, joker, imposter guess) has a line under it saying what it does.
 
 Leave **Imposters** at 1 and keep **Imposter gets a clue** on for a first game.
 
@@ -58,7 +60,7 @@ The dots at the top show how many players have seen their card.
 <img src="manual/04-word.png" width="200" align="right" alt="Word card" />
 <img src="manual/05-imposter.png" width="200" align="right" alt="Imposter card" />
 
-The **crew** see the secret word, with its topic above it.
+The **crew** see the secret word, with its topic above it and a reminder below: *hint at it, but don't give it away*.
 
 The **imposter** sees **"You are the IMPOSTER"**, plus the topic as a clue when that setting is on.
 
@@ -130,8 +132,10 @@ After every round, **Game stats** shows the whole session so far:
 - **Leaderboard** with points:
   - **+1** for voting for an actual imposter
   - **+2** for surviving a vote as the imposter
+  - **Tap a player** to open their details: how often they voted right as crew, how often they got away as imposter, who they suspected most, who suspected them most, and their points in each round.
 - **Points per round:** one bar per player, built from the rounds that scored (lighter = earlier rounds), so you see how each total came together.
 - **Times imposter:** how often each player got the imposter card.
+- **Rounds & words:** every round with its word and how it ended (caught, got away, guessed the word, or no vote). Tap a round to see the imposter, who got accused and every vote (right votes are outlined).
 - **All numbers:** the full table below the charts, shaded like a heatmap: the stronger the colour, the higher the value in that column. The top value of each column is a solid cell, and a legend under the table explains the icons.
 
 **Reset stats** starts a fresh session: scores and jokers go back to zero.
@@ -238,13 +242,14 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 
 On a phone, the start screen shows a banner once that offers to **add Imposter to your home screen** so it opens full-screen and works offline, like a native app. Tap **Add** (Android) or use Share → Add to Home Screen (iPhone), or **Not now** to dismiss it. It never appears during a round.
 
-The **sun/moon** button at the top right switches between light and dark mode. The **gear** opens Settings. Both stay in the top right corner while you scroll, on every screen:
+The **gear** at the top right opens Settings. It stays in the top right corner while you scroll, on every screen:
 
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.
 - **AI help:** sign in with Google, GitHub or Microsoft, or with your email (type it in, tap **Email me a code**, enter the 6-digit code from the mail, which comes in the app's language; it works for 5 minutes) to use it; Settings stays open after you sign in, so you see right away that it worked. Once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
 - **Colors:** Arosa (blue and sun yellow, the default), Night, Classic, Forest, Berry or Aarau (red and black).
-- **Buy me a coffee:** a small thank-you to the maker, if you like the game: CHF 1 (small coffee), CHF 5 (big coffee), CHF 10 (deluxe coffee), or any whole amount up to CHF 200. The money goes to Zettelispiil, the maker of Imposter (the footer of Settings says *Imposter by Zettelispiil*). You pay on Stripe's secure page (card, Apple Pay or Google Pay, whatever it offers you) and come straight back to the game, where Settings says thank you. Not shown in the App Store / Play Store apps.
+- **Buy me a coffee:** a small thank-you to the maker, if you like the game: CHF 1 (small coffee), CHF 5 (big coffee), CHF 10 (deluxe coffee), or any whole amount up to CHF 200. The money goes to Zettelispiil, the maker of Imposter (the footer of Settings says *Imposter by zettelispiil.ch*). You pay on Stripe's secure page (card, Apple Pay or Google Pay, whatever it offers you) and come straight back to the game, where Settings says thank you. Not shown in the App Store / Play Store apps.
+- **Problem with the app? Tell us:** opens the project's GitHub issues page, where you can report a bug or suggest an idea.
 
 Your choices are remembered on your phone.
 

@@ -100,7 +100,7 @@ test("imposter guess: a caught imposter who names the word still wins", async ({
   await page.getByRole("button", { name: "Guess", exact: true }).click();
 
   await expect(page.getByText("Guessed it!")).toBeVisible();
-  await expect(page.getByText(`${names[imp]} named the word. The imposters win!`)).toBeVisible();
+  await expect(page.getByText(`${names[imp]} named the word. The imposter wins!`)).toBeVisible();
   await expect(page.getByRole("region", { name: "Game stats" }).getByText("Imposters · 100%")).toBeVisible();
 });
 

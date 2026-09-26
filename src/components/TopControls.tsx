@@ -1,23 +1,16 @@
 "use client";
 
-import { BookOpen, Heart, Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { BookOpen, Bug, Heart, Moon, Settings, Sparkles, Sun, SunMoon, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { SignIn } from "@/components/SignIn";
 import { InstallApp } from "@/components/Pwa";
 import { Coffee } from "@/components/Coffee";
-import { consumeReopenSettings, useMe } from "@/lib/authClient";
+import { consumeReopenSettings, loadMe, useMe } from "@/lib/authClient";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
-const dark = "(prefers-color-scheme: dark)";
-const onSystemChange = (cb: () => void) => {
-  const m = matchMedia(dark);
-  m.addEventListener("change", cb);
-  return () => m.removeEventListener("change", cb);
-};
-
 const round = `grid size-11 place-items-center rounded-full border border-line bg-surface text-xl ${press}`;
-// header pair: one soft pill holding both icon buttons
+// header: one soft pill holding the settings button (light/dark lives in Settings)
 const pillBtn = `grid size-10 place-items-center rounded-full text-ink/80 hover:bg-tint hover:text-ink ${press}`;
 const pill = "flex items-center gap-0.5 rounded-full border p-0.5";
 
@@ -26,14 +19,12 @@ export function TopControlsSpace() {
   return (
     <span className={`${pill} invisible border-transparent`} aria-hidden>
       <span className="size-10" />
-      <span className="h-5 w-px" />
-      <span className="size-10" />
     </span>
   );
 }
 
 /**
- * Quick light/dark toggle + settings sheet (language, appearance, colors). Sticks to the top right while the screen
+ * Settings button + sheet (language, appearance, colors). Sticks to the top right while the screen
  * scrolls: render it as a direct child of <main> right after the header (order-first lifts it above the header, while
  * keyboard focus still reaches it after the header's back button) and put <TopControlsSpace /> in the
  * header where it sits at rest. The zero-height band lets taps through; only the pill itself is clickable.
@@ -42,8 +33,6 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
   const t = (k: keyof typeof UI) => UI[k][lang];
   const theme = useTheme();
   const palette = usePalette();
-  const systemDark = useSyncExternalStore(onSystemChange, () => matchMedia(dark).matches, () => false);
-  const isDark = theme === "dark" || (theme === "auto" && systemDark);
   const sheet = useRef<HTMLDialogElement>(null);
   const ai = useAi();
   const me = useMe();
@@ -60,7 +49,8 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
     // back from signing in (OAuth redirect or the emailed-code reload): keep Settings open so the player sees
     // they're signed in, instead of it just vanishing along with the full page reload/redirect that just happened
     const backFromSignIn = consumeReopenSettings(); // always consumed: never left over for a later page load
-    if (backFromCoffee || backFromSignIn) sheet.current?.showModal();
+    // once /api/me answered: opened before, the sheet jumps as the signed-in block pops in
+    if (backFromCoffee || backFromSignIn) void loadMe().then(() => sheet.current?.showModal());
     // Back from the provider without signing in restores this page from the back/forward cache (no remount):
     // drop the flag there, the sign-in didn't happen
     const onShow = (e: PageTransitionEvent) => e.persisted && consumeReopenSettings();
@@ -71,12 +61,6 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
   return (
     <div className="pointer-events-none sticky top-pt-safe z-30 order-first flex h-0 justify-end">
       <div className={`${pill} pointer-events-auto self-start border-line/70 bg-surface/60 shadow-sm backdrop-blur`}>
-        <button onClick={() => themeStore.set(isDark ? "light" : "dark")} aria-label={t("toggleTheme")} className={pillBtn}>
-          <span key={String(isDark)} className="pop">
-            {isDark ? <Moon className="size-5" aria-hidden /> : <Sun className="size-5" aria-hidden />}
-          </span>
-        </button>
-        <span className="h-5 w-px bg-line" aria-hidden />
         <button onClick={() => sheet.current?.showModal()} aria-label={t("settings")} className={pillBtn}>
           <Settings className="size-5" aria-hidden />
         </button>
@@ -185,6 +169,15 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
               <BookOpen className="size-5" aria-hidden /> {t("howToPlay")}
             </a>
 
+            <a
+              href="https://github.com/dominikpeter/imposter/issues"
+              target="_blank"
+              rel="noreferrer"
+              className={`flex min-h-12 items-center justify-center gap-2 rounded-full border border-line font-semibold text-primary-ink ${press}`}
+            >
+              <Bug className="size-5" aria-hidden /> {t("reportProblem")}
+            </a>
+
             <InstallApp lang={lang} />
 
             <footer className="flex flex-col items-center gap-1 pt-1 text-sm text-muted">
@@ -205,13 +198,7 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
                 </svg>
                 {t("sourceOnGithub")}
               </a>
-              <p>
-                {t("byMaker").split("{brand}")[0]}
-                <a href="https://zettelispiil.ch" target="_blank" rel="noreferrer" className="font-medium text-primary-ink hover:underline">
-                  Zettelispiil
-                </a>
-                {t("byMaker").split("{brand}")[1]}
-              </p>
+              <p>{t("byMaker")}</p>
               <span className="tabular-nums">v{process.env.NEXT_PUBLIC_VERSION}</span>
             </footer>
           </div>

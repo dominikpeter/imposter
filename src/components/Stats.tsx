@@ -1,8 +1,9 @@
 "use client";
 
-import { ChartColumn, CircleCheck, Footprints, Medal, RotateCcw, Search, Siren, Trophy, VenetianMask, type LucideIcon } from "lucide-react";
+import { ChartColumn, ChevronDown, CircleCheck, Footprints, Medal, RotateCcw, Search, Siren, Trophy, VenetianMask, type LucideIcon } from "lucide-react";
 import { UI, type Lang } from "@/lib/i18n";
-import { stats, type PlayerStats, type RoundLog } from "@/lib/stats";
+import { most, stats, type PlayerStats, type RoundLog, type RoundResult } from "@/lib/stats";
+import type { Text } from "@/lib/game";
 import { card, ghost } from "@/lib/ui";
 import { Timeline } from "@/components/Timeline";
 
@@ -16,6 +17,15 @@ const heat = (v: number, max: number) =>
     : v === max
       ? { backgroundColor: "var(--c-primary-dark)", color: "var(--c-on-primary)" }
       : { backgroundColor: `color-mix(in oklab, var(--c-primary-dark) ${Math.round(12 + (v / max) * 33)}%, var(--c-surface))` };
+
+const RESULT: Record<RoundResult, { dot: string; label: keyof typeof UI }> = {
+  caught: { dot: "bg-crew", label: "resultCaught" },
+  escaped: { dot: "bg-imp", label: "resultEscaped" },
+  guessed: { dot: "bg-imp", label: "resultGuessed" },
+  skipped: { dot: "bg-line", label: "resultSkipped" },
+};
+const pct = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : "–");
+const chevron = <ChevronDown className="size-4 shrink-0 text-muted transition-transform group-open:rotate-180" aria-hidden />;
 
 /** End-of-round session stats: tiles, crew-vs-imposter split, awards, two bar charts, table view. */
 export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: Lang; onReset?: () => void }) {
@@ -37,6 +47,8 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
   const colMax = Object.fromEntries(HEAT.map((k) => [k, Math.max(0, ...s.players.map((p) => p[k]))])) as Record<(typeof HEAT)[number], number>;
   const suspects = [...s.players].filter((p) => p.votesTaken > 0).sort((a, b) => b.votesTaken - a.votesTaken);
   const maxVotes = Math.max(1, ...suspects.map((p) => p.votesTaken));
+  const word = (w: Text) => (typeof w === "string" ? w : w[lang]);
+  const rival = (counts: Record<string, number>) => ((m) => (m ? `${m[0]} (${m[1]}×)` : "–"))(most(counts));
 
   return (
     <section aria-label={t("stats")} className={`${card} enter mt-4 flex flex-col gap-6 text-left anim-delay-450`}>
@@ -100,25 +112,64 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
       {/* leaderboard: one series, value labels at the bar end */}
       <div>
         <h3 className="font-semibold">{t("leaderboard")}</h3>
-        <p className="mb-3 text-sm text-muted">{t("pointsHelp")}</p>
-        <ol className="flex flex-col gap-2">
+        <p className="text-sm text-muted">{t("pointsHelp")}</p>
+        <p className="mb-3 text-sm text-muted">{t("tapForDetails")}</p>
+        <ol className="flex flex-col gap-1">
           {s.players.map((p, i) => (
-            <li key={p.name} className="flex items-center gap-2" title={`${p.name}: ${p.points} ${t("pts")}`}>
-              <span className="grid w-7 shrink-0 place-items-center">
-                {MEDALS[i] ? <Medal className={`size-5 ${MEDALS[i]}`} aria-label={`#${i + 1}`} /> : <span className="text-sm text-muted">{i + 1}</span>}
-              </span>
-              <span className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="truncate font-medium">{p.name}</span>
-                <span className="h-2.5 rounded-full bg-tint">
-                  <span
-                    className="bar-grow block h-full rounded-full bg-crew"
-                    style={{ width: `${(p.points / maxPts) * 100}%`, animationDelay: `${700 + i * 70}ms` }}
-                  />
-                </span>
-              </span>
-              <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums">
-                {p.points} <span className="font-normal text-muted">{t(p.points === 1 ? "pt" : "pts")}</span>
-              </span>
+            <li key={p.name} title={`${p.name}: ${p.points} ${t("pts")}`}>
+              <details className="group rounded-2xl open:bg-tint">
+                <summary className="summary-plain flex min-h-11 items-center gap-2 rounded-2xl px-1 py-1">
+                  <span className="grid w-7 shrink-0 place-items-center">
+                    {MEDALS[i] ? <Medal className={`size-5 ${MEDALS[i]}`} aria-label={`#${i + 1}`} /> : <span className="text-sm text-muted">{i + 1}</span>}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate font-medium">{p.name}</span>
+                    <span className="h-2.5 rounded-full bg-tint group-open:bg-surface">
+                      <span
+                        className="bar-grow block h-full rounded-full bg-crew"
+                        style={{ width: `${(p.points / maxPts) * 100}%`, animationDelay: `${700 + i * 70}ms` }}
+                      />
+                    </span>
+                  </span>
+                  <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums">
+                    {p.points} <span className="font-normal text-muted">{t(p.points === 1 ? "pt" : "pts")}</span>
+                  </span>
+                  {chevron}
+                </summary>
+                {/* drill-down: rates, rivals, what each round brought */}
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-2 px-3 pt-1 pb-3 text-sm">
+                  <div>
+                    <dt className="text-muted">{t("hitRate")}</dt>
+                    <dd className="font-semibold tabular-nums">{pct(p.correctVotes, p.crewVotes)} <span className="font-normal text-muted">({p.correctVotes}/{p.crewVotes})</span></dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">{t("escapeRate")}</dt>
+                    <dd className="font-semibold tabular-nums">{pct(p.escaped, p.imposter)} <span className="font-normal text-muted">({p.escaped}/{p.imposter})</span></dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-muted">{t("suspectsMost")}</dt>
+                    <dd className="truncate font-semibold">{rival(p.votedFor)}</dd>
+                  </div>
+                  <div className="min-w-0">
+                    <dt className="text-muted">{t("suspectedBy")}</dt>
+                    <dd className="truncate font-semibold">{rival(p.votedBy)}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="text-muted">{t("perRound")}</dt>
+                    <dd className="mt-1 flex flex-wrap gap-1">
+                      {p.gains.map((g, r) => (
+                        <span
+                          key={r}
+                          title={`${t("round")} ${r + 1}`}
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${g ? "bg-primary-dark text-on-primary" : "bg-surface text-muted"}`}
+                        >
+                          {r + 1}: +{g}
+                        </span>
+                      ))}
+                    </dd>
+                  </div>
+                </dl>
+              </details>
             </li>
           ))}
         </ol>
@@ -171,6 +222,49 @@ export function Stats({ history, lang, onReset }: { history: RoundLog[]; lang: L
           </ol>
         </div>
       )}
+
+      {/* rounds & words: one row per round, open it for the imposters and every vote */}
+      <div>
+        <h3 className="mb-2 font-semibold">{t("roundsWords")}</h3>
+        <ol className="flex flex-col gap-1">
+          {s.log.map((r, i) => (
+            <li key={i}>
+              <details className="group rounded-2xl border border-line open:bg-tint">
+                <summary className="summary-plain flex min-h-11 items-center gap-2 px-3 py-2">
+                  <span className="w-5 shrink-0 text-sm text-muted tabular-nums">{i + 1}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold">{word(r.word)}</span>
+                  <span className="flex shrink-0 items-center gap-1.5 text-sm text-muted">
+                    <span className={`size-2.5 rounded-full ${RESULT[r.result].dot}`} /> {t(RESULT[r.result].label)}
+                  </span>
+                  {chevron}
+                </summary>
+                <div className="flex flex-col gap-2 px-3 pb-3 text-sm">
+                  <p className="flex items-center gap-1.5">
+                    <VenetianMask className="size-4 shrink-0 text-imp" aria-hidden />
+                    <span className="text-muted">{t("asImposter")}</span> <span className="min-w-0 truncate font-semibold">{r.imposters.join(", ")}</span>
+                  </p>
+                  <p className="flex items-center gap-1.5">
+                    <Siren className="size-4 shrink-0 text-muted" aria-hidden />
+                    <span className="text-muted">{t("accusedLabel")}</span> <span className="min-w-0 truncate font-semibold">{r.accused ?? t("nobody")}</span>
+                  </p>
+                  {r.votes.length > 0 && (
+                    <ul className="flex flex-wrap gap-1" aria-label={t("votes")}>
+                      {r.votes.map(([from, to]) => (
+                        <li
+                          key={from}
+                          className={`max-w-full truncate rounded-full px-2 py-0.5 text-xs border bg-surface ${r.imposters.includes(to) ? "border-crew font-semibold" : "border-line"}`}
+                        >
+                          {from} → {to}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </details>
+            </li>
+          ))}
+        </ol>
+      </div>
 
       {/* table view: every number, for screen readers and the curious */}
       <div className="rounded-2xl border border-line">
