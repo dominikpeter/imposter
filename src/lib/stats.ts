@@ -1,8 +1,9 @@
 import { outcome, type Text } from "./game.ts";
 
-// one finished round; votes[i] = who player i accused (null when the vote was skipped);
+// one finished round; votes[i] = who player i accused (votes null when the vote was skipped; votes[i] null when
+// player i didn't vote because the room went on without them);
 // guessed = the caught imposter named the word (imposter-guess option), which turns the round into an imposter win
-export type RoundLog = { names: string[]; imposters: number[]; accused: number | null; votes: number[] | null; word: Text; guessed?: boolean };
+export type RoundLog = { names: string[]; imposters: number[]; accused: number | null; votes: (number | null)[] | null; word: Text; guessed?: boolean };
 
 export type PlayerStats = {
   name: string;
@@ -21,6 +22,9 @@ export type PlayerStats = {
 // one round for the drill-down: who was imposter, who got accused, every vote by name
 export type RoundResult = "caught" | "escaped" | "guessed" | "skipped";
 export type RoundDetail = { word: Text; imposters: string[]; accused: string | null; result: RoundResult; votes: [string, string][] };
+
+// a vote actually cast: a seat index (JSON turns a missing ballot's NaN into null; the in-memory store keeps NaN)
+const isBallot = (v: number | null | undefined): v is number => v != null && Number.isInteger(v);
 
 export function stats(history: RoundLog[]) {
   const by = new Map<string, PlayerStats>();
@@ -42,14 +46,15 @@ export function stats(history: RoundLog[]) {
           p.escaped++;
           p.points += 2;
         }
-      } else if (Number.isInteger(r.votes?.[i])) { // null = didn't vote (a room that went on without them)
+      } else if (isBallot(r.votes?.[i])) {
         p.crewVotes++;
-        if (r.imposters.includes(r.votes![i])) {
+        if (r.imposters.includes(r.votes[i])) {
           p.correctVotes++;
           p.points++;
         }
       }
       r.votes?.forEach((v, j) => {
+        if (!isBallot(v)) return;
         if (j === i && r.names[v]) p.votedFor[r.names[v]] = (p.votedFor[r.names[v]] ?? 0) + 1;
         if (v === i && j !== i) p.votedBy[r.names[j]] = (p.votedBy[r.names[j]] ?? 0) + 1;
       });
@@ -62,7 +67,7 @@ export function stats(history: RoundLog[]) {
       imposters: r.imposters.map((i) => r.names[i]),
       accused: r.accused === null ? null : r.names[r.accused],
       result: !decided ? "skipped" : caught ? "caught" : r.guessed ? "guessed" : "escaped",
-      votes: (r.votes ?? []).flatMap((v, j) => (r.names[v] ? [[r.names[j], r.names[v]] as [string, string]] : [])),
+      votes: (r.votes ?? []).flatMap((v, j) => (isBallot(v) && r.names[v] ? [[r.names[j], r.names[v]] as [string, string]] : [])),
     });
     timeline.push(Object.fromEntries([...by.values()].map((p) => [p.name, p.points])));
   }

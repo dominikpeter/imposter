@@ -60,10 +60,12 @@ test("drill-down: per-round log, who voted whom, points per round", () => {
 
 test("a player who didn't vote (room went on without them) isn't counted as a crew vote", () => {
   // JSON turns the missing ballot into null
-  const s = stats([{ names, imposters: [1], accused: 1, votes: [1, 0, null as unknown as number], word: "a" }]);
+  const s = stats([{ names, imposters: [1], accused: 1, votes: [1, 0, null], word: "a" }]);
   const p = Object.fromEntries(s.players.map((x) => [x.name, x]));
   assert.equal(p.Lisa.crewVotes, 1);
   assert.equal(p.Tim.crewVotes, 0);
   assert.deepEqual(p.Tim.votedFor, {});
   assert.deepEqual(s.log[0].votes, [["Lisa", "Nora"], ["Nora", "Lisa"]]);
+  // the in-memory store keeps the NaN that Number(undefined) gives; same meaning
+  assert.equal(stats([{ names, imposters: [1], accused: 1, votes: [1, 0, NaN], word: "a" }]).players.find((x) => x.name === "Tim")!.crewVotes, 0);
 });
