@@ -22,6 +22,7 @@ Report only real problems, each with a concrete failure scenario; no style nits,
 ## Writing code (coding agent)
 
 - Use the `justfile` for everything: `just lint`, `just typecheck`, `just test`, `just e2e <spec>`.
-- Branch from and open pull requests against `dev` (the default branch), never `main`: `main` only moves through the
-  release pull request from `dev`.
+- The flow has two steps: your work goes into `dev` (branch from `dev`, open your pull request with base `dev`, the
+  default branch); later the owner moves `dev` into the protected `main` with one pull request `dev` → `main`
+  (`just pr` / `just release`). Never open a pull request against `main` yourself.
 - Keep changes small and match the surrounding code: comment density, naming, idiom.

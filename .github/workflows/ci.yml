@@ -69,12 +69,18 @@ jobs:
 
   deploy:
     needs: release
-    if: needs.release.outputs.new == 'true' && vars.VERCEL_CI_READY == 'true'
+    if: needs.release.outputs.new == 'true'
     runs-on: ubuntu-latest
     environment: production
     permissions:
       contents: write # the tag and the GitHub release
     steps:
+      # a merged version bump that can't be deployed must turn red, not finish green with no tag and no release
+      - name: Deploy credentials are set up
+        if: vars.VERCEL_CI_READY != 'true'
+        run: |
+          echo "::error::v${{ needs.release.outputs.version }} was merged but can't be deployed: run 'just vercel-ci-setup', then re-run this job."
+          exit 1
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
