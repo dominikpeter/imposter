@@ -1,13 +1,15 @@
 name: CI
 
-# Lint, typecheck, unit tests, e2e on every push and PR. A version tag (v*, pushed by `just release`) then deploys to
-# Vercel and starts the iOS build: the one path to production, so every release is tested exactly as it ships.
+# Git flow: work on `dev` → pull request into `main` (CI below + GitHub Copilot's code review, requested automatically) → merge.
+# `main` is protected: it only moves through a pull request whose checks are green.
+# A merge that bumps package.json's version is a release: this workflow then deploys it to Vercel, tags it and writes the
+# GitHub release (notes from the merged pull requests), and starts the iOS build. Merges without a bump wait for the
+# next release, so production (and the version shown in Settings) only ever changes with a release.
 # Mirrors `just check` / `just e2e`, so CI runs the same thing a laptop does.
 # One-time: `just vercel-ci-setup` (Vercel token + ids as secrets, sets VERCEL_CI_READY); until then the deploy skips.
 on:
   push:
-    branches: [main]
-    tags: ["v*"]
+    branches: [main] # dev is covered by its pull request into main (`just pr`): one CI run per change, not two
   pull_request:
 
 permissions:
@@ -15,7 +17,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }} # never cancel a release half way
 
 jobs:
   check:
@@ -49,11 +51,29 @@ jobs:
         if: failure()
         with: { name: playwright-report, path: test-results/, retention-days: 7 }
 
-  deploy:
+  # a push to main whose package.json version has no tag yet is a release
+  release:
     needs: e2e
-    if: startsWith(github.ref, 'refs/tags/v') && vars.VERCEL_CI_READY == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      new: ${{ steps.v.outputs.new }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then echo "new=false" >> "$GITHUB_OUTPUT"; else echo "new=true" >> "$GITHUB_OUTPUT"; fi
+
+  deploy:
+    needs: release
+    if: needs.release.outputs.new == 'true' && vars.VERCEL_CI_READY == 'true'
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: write # the tag and the GitHub release
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -68,6 +88,15 @@ jobs:
           npx vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
           npx vercel build --prod --token="$VERCEL_TOKEN"
           npx vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Tag and publish the GitHub release
+        # the notes written for `just release` (the release pull request's description) on top, then GitHub's list of
+        # the pull requests merged since the last release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.release.outputs.version }}
+        run: |
+          notes=$(gh pr list --state merged --base main --search "$GITHUB_SHA" --json body -q '.[0].body // ""')
+          gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --notes "$notes" --generate-notes
 
   ios:
     needs: deploy

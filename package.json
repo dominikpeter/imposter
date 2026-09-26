@@ -16,6 +16,7 @@
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@capacitor/ios": "^8.5.2",
+    "@openrouter/ai-sdk-provider": "^3.1.0",
     "@upstash/redis": "^1.39.0",
     "ai": "^7.0.113",
     "better-auth": "^1.7.6",
