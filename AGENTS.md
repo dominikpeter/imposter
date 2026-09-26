@@ -33,7 +33,7 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | One-time: let CI deploy to Vercel (token + ids as GitHub secrets) | `just vercel-ci-setup` |
 | Deploy | merge a release PR (see above); `just redeploy` after env changes |
 | Store apps: local debug build | `just app-android` (APK) · `just app-ios` (opens Xcode) |
-| Store apps: signed release, built and uploaded by CI | GitHub → Actions → "iOS release" / "Android release" → Run workflow (needs one-time secrets, see each workflow file) |
+| Store apps: built by CI after every release (unsigned until signing is set up; then TestFlight / Play internal) | automatic; by hand: GitHub → Actions → "iOS release" / "Android release" → Run workflow. One-time setup: see each workflow file |
 
 ## Standards
 
