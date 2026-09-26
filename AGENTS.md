@@ -21,7 +21,8 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | Unit tests | `just test` |
 | E2E (Playwright) | `just e2e` · one spec: `just e2e layout` |
 | Everything before a release | `just check` (CI runs the same on every push and PR: `.github/workflows/ci.yml`) |
-| Release (bump, tag, GitHub release; CI then deploys it to Vercel and starts the iOS build) | `just release 1.13.0 "notes"` |
+| Pull request `dev` → `main` (CI + Copilot code review run on it) | `just pr` (optional title: `just pr "title"`) |
+| Release: version bump on `dev` + PR "Release vX"; merging it makes CI deploy to Vercel, tag, write the GitHub release, start the iOS build | `just release 1.13.0 "notes"` |
 | Settings version = GitHub release | `just version-check` (also a pre-push hook and in CI) |
 | Run all git hooks | `just hooks` |
 | Sign-in keys (Google/GitHub/Microsoft) → .env.local + Vercel | `just auth-setup`, then `just redeploy` |
@@ -30,11 +31,13 @@ Use the `justfile` for everything (`just` lists recipes). Don't invent ad-hoc co
 | Any other secret (typed hidden) → .env.local + Vercel | `just secret NAME`, then `just redeploy` |
 | A GitHub Actions secret (store builds, CI) (typed hidden) | `just secret-gh NAME` |
 | One-time: let CI deploy to Vercel (token + ids as GitHub secrets) | `just vercel-ci-setup` |
-| Deploy | push to `main` (auto) · `just redeploy` after env changes |
+| Deploy | merge a release PR (see above); `just redeploy` after env changes |
 | Store apps: local debug build | `just app-android` (APK) · `just app-ios` (opens Xcode) |
 | Store apps: signed release, built and uploaded by CI | GitHub → Actions → "iOS release" / "Android release" → Run workflow (needs one-time secrets, see each workflow file) |
 
 ## Standards
+
+- **Git flow:** work on `dev`, never commit to `main`. `main` is protected: it only moves through a pull request from `dev` with green CI (`check`, `e2e`); GitHub Copilot reviews every one (`.github/copilot-instructions.md`). Only a merged version bump reaches production.
 
 - Git hooks run through [prek](https://github.com/j178/prek) (`.pre-commit-config.yaml`): lint + typecheck on commit, the manual check on the commit message, unit tests on push.
 - **User manual:** any commit that touches `src/app`, `src/components`, or `src/lib/{i18n,topics,vocab}.ts` must also update `docs/MANUAL.md`. `scripts/check-manual.sh` enforces this in the git hook and in a Claude Code `PreToolUse` hook (`.claude/settings.json`). If nothing players see changed, put `[skip-manual]` in the commit message.

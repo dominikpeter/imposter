@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { createOpenAI, type OpenAILanguageModelResponsesOptions } from "@ai-sdk/openai";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { generateText, Output, type LanguageModel } from "ai";
 import type { ProviderOptions } from "@ai-sdk/provider-utils";
 import { z } from "zod";
@@ -8,35 +9,28 @@ import { later, recordAi } from "./metrics.ts";
 import { db } from "./store.ts";
 import { aiEnabled, allowAi } from "./rateLimit.ts";
 
-// gpt-6-luna without reasoning: through OpenRouter (OPENROUTER_API_KEY) on OpenAI's priority tier ("openai/fast"), and
-// straight at OpenAI (OPENAI_API_KEY) as the fallback when OpenRouter fails (e.g. its requests-per-minute cap for new
-// accounts). Benchmarked Sep 2026 against DeepSeek, GLM, MiMo, Hy3 and gpt-oss-120b: most accurate, word check ~0.9 s.
+// gpt-6-luna without reasoning: through OpenRouter (OPENROUTER_API_KEY, via OpenRouter's own AI SDK provider) on OpenAI's
+// priority tier ("openai/fast"), and straight at OpenAI (OPENAI_API_KEY) as the fallback when OpenRouter fails (e.g. its
+// requests-per-minute cap for new accounts). Benchmarked Sep 2026 against DeepSeek, GLM, MiMo, Hy3 and gpt-oss-120b:
+// most accurate, word check ~0.9 s.
 // OPENROUTER_MODEL=openai/gpt-oss-120b switches to the model Zettelispiil uses (always reasons: low effort, fastest host).
-// Both speak the OpenAI API, so one SDK; explicit base URLs: never inherit a machine-wide OPENAI_BASE_URL (dev proxy).
 const LANGUAGE: Record<string, string> = { en: "English", fr: "French", de: "German" };
 const ROUTER_MODEL = process.env.OPENROUTER_MODEL ?? "openai/gpt-6-luna";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-6-luna";
 const reasons = /gpt-oss/.test(ROUTER_MODEL); // can't switch reasoning off
-// OpenRouter routing isn't an AI SDK option: add it to the request body. `order` + fallbacks, not `only`: when the
-// preferred host is busy, another one answers instead of an error.
-const routing = reasons ? { sort: "latency", require_parameters: true } : { order: ["openai/fast"], allow_fallbacks: true };
-const withRouting: typeof fetch = (url, init) => {
-  if (typeof init?.body !== "string") return fetch(url, init);
-  return fetch(url, { ...init, body: JSON.stringify({ ...JSON.parse(init.body), provider: routing }) });
-};
 // maxTokens: room for the answer; a reasoning model spends part of it thinking before it writes anything
 type Route = { name: string; model: () => LanguageModel; options: (fast: boolean) => ProviderOptions; maxTokens: number };
 const routes: Route[] = [];
 if (process.env.OPENROUTER_API_KEY) {
-  const router = createOpenAI({ baseURL: "https://openrouter.ai/api/v1", apiKey: process.env.OPENROUTER_API_KEY, fetch: withRouting });
-  routes.push({
-    name: "openrouter",
-    model: () => router.chat(ROUTER_MODEL), // Chat Completions API
-    options: () => ({ openai: { reasoningEffort: reasons ? "low" : "none" } }), // thinking only adds seconds here
-    maxTokens: reasons ? 600 : 80,
+  const model = createOpenRouter({ apiKey: process.env.OPENROUTER_API_KEY }).chat(ROUTER_MODEL, {
+    reasoning: { effort: reasons ? "low" : "none" }, // thinking only adds seconds for these tiny tasks
+    // preferred host, never a hard requirement: `order` + fallbacks, so a busy fast tier means another host, not an error
+    provider: reasons ? { sort: "latency", require_parameters: true } : { order: ["openai/fast"], allow_fallbacks: true },
   });
+  routes.push({ name: "openrouter", model: () => model, options: () => ({}), maxTokens: reasons ? 600 : 80 });
 }
 if (process.env.OPENAI_API_KEY) {
+  // explicit base URL: never inherit a machine-wide OPENAI_BASE_URL (e.g. a local dev proxy)
   const openai = createOpenAI({ baseURL: "https://api.openai.com/v1" });
   routes.push({
     name: "openai",

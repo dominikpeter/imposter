@@ -65,16 +65,32 @@ check: lint typecheck test e2e
 version-check:
     bash scripts/check-version.sh
 
-# The pushed v-tag makes .github/workflows/ci.yml check again, deploy to Vercel and start the iOS build, so a release
-# deploys exactly once, from CI (not from here, not from Vercel's own git hook).
-# full release: checks, bump, tag, push, GitHub release. `just release 1.13.0 "notes"`
-release version notes: check
+# open (or update) the pull request dev → main: CI and Copilot's code review run on it; merge it on GitHub
+pr title="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ "$(git branch --show-current)" = dev ] || { echo "work on dev: git switch dev"; exit 1; }
+    git push -u origin dev
+    if gh pr view dev --json state -q .state 2>/dev/null | grep -q OPEN; then
+      {{ if title == "" { "true" } else { "gh pr edit dev --title " + quote(title) } }}
+      gh pr view dev --json url -q .url
+    else
+      gh pr create --base main --head dev {{ if title == "" { "--fill" } else { "--title " + quote(title) + " --body ''" } }}
+    fi
+
+# Release = a pull request that bumps the version. Merging it makes CI (.github/workflows/ci.yml) deploy to Vercel,
+# tag it, write the GitHub release from the merged pull requests and start the iOS build: nothing is deployed from here.
+# release: version bump on dev, pull request "Release vX" into main (CI checks it there). `just release 1.13.0 "notes"`
+release version notes:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ "$(git branch --show-current)" = dev ] || { echo "releases start on dev: git switch dev"; exit 1; }
     npm version {{version}} --no-git-tag-version --allow-same-version
-    git add package.json package-lock.json && git commit -m "chore: release v{{version}} [skip-manual]" || true
-    git tag v{{version}}
+    git add package.json package-lock.json
+    git diff --cached --quiet || git commit -m "release: v{{version}} [skip-manual]" # nothing to commit: already at {{version}}
     just version-check
-    git push && git push --tags
-    gh release create v{{version}} --title "v{{version}}" --notes {{quote(notes)}}
+    just pr {{quote("Release v" + version)}}
+    gh pr edit dev --body {{quote(notes)}}
 
 # production build
 build:

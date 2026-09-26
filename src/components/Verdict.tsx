@@ -1,4 +1,5 @@
 import { PartyPopper, VenetianMask } from "lucide-react";
+import { Confetti } from "@/components/Confetti";
 import { JokerEarned } from "@/components/Joker";
 import { outcome, type Text } from "@/lib/game";
 import { UI, type Lang } from "@/lib/i18n";
@@ -19,9 +20,15 @@ export function Verdict(p: { names: string[]; imposters: number[]; accused: numb
   return (
     <>
       {accused !== null && (
-        <div className="pop mb-2">
+        <div className="pop relative mb-2 overflow-x-clip">
+          {caught && !guessed && <Confetti />}
           <p className="text-4xl font-bold tracking-tight">
-            {caught && !guessed ? <PartyPopper className={icon} aria-hidden /> : <VenetianMask className={icon} aria-hidden />}{" "}
+            {/* crew wins: the popper goes off; imposter gets away (or guessed the word): the mask sneaks off with a wink */}
+            {caught && !guessed ? (
+              <span className="tada"><PartyPopper className={icon} aria-hidden /></span>
+            ) : (
+              <span className="sneak"><VenetianMask className={icon} aria-hidden /></span>
+            )}{" "}
             {t(guessed ? "guessedRight" : caught ? "caught" : "wrong")}
           </p>
           <p className="mt-1 text-lg text-balance text-muted">
