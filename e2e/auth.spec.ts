@@ -126,7 +126,7 @@ test.describe("signed out", () => {
 
     await code.fill("123456");
     await page.getByRole("button", { name: "Sign in" }).click(); // reloads the page signed in
-    await openSettings(page);
+    // Settings stays open across that reload (src/lib/authClient.ts keepSettingsOpen) — no re-click needed
     await expect(page.getByText(`Signed in as ${email}`)).toBeVisible();
     await expect(aiSwitch(page)).toBeVisible();
     const { user } = (await (await page.request.get("/api/me")).json()) as { user: { id: string; email: string } };

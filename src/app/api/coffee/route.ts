@@ -13,8 +13,10 @@ export async function POST(req: Request) {
   if (!chf) return Response.json({ error: "amount" }, { status: 400 });
   const lang: Lang = body.lang === "fr" || body.lang === "de" ? body.lang : "en";
   // return to the page the coffee was started from (e.g. a room), same-origin only
-  const rel = typeof body.path === "string" && body.path.startsWith("/") && !body.path.startsWith("//") ? body.path : "/";
-  const home = new URL(rel, req.url);
+  // checked after parsing: a path like /\evil.com passes a prefix test but URL() reads the backslash as "//"
+  const origin = new URL(req.url).origin;
+  const asked = typeof body.path === "string" && body.path.startsWith("/") ? URL.parse(body.path, origin) : null;
+  const home = asked?.origin === origin ? asked : new URL("/", origin);
   const cancel = home.toString();
   home.searchParams.set("coffee", "thanks");
   const thanks = home.toString();

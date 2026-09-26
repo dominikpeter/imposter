@@ -16,15 +16,16 @@ export function ServiceWorker() {
 }
 
 type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+/** Already running as the installed app (home-screen icon), on Android/desktop or on iPhone. */
+const isStandalone = () =>
+  typeof window !== "undefined" && (matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true);
 
 /** Settings: "Install app" where the browser offers it (Chrome/Edge/Android), Share → Add to Home Screen on iPhone. */
 export function InstallApp({ lang }: { lang: Lang }) {
   const t = (k: keyof typeof UI) => UI[k][lang];
   const [prompt, setPrompt] = useState<InstallEvent | null>(null);
   // read once on first render: settings only ever render in the browser (the pages wait for hydration)
-  const [installed, setInstalled] = useState(
-    () => typeof window !== "undefined" && (matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true),
-  );
+  const [installed, setInstalled] = useState(isStandalone);
   const [ios] = useState(() => typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent));
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -59,11 +60,7 @@ export function InstallApp({ lang }: { lang: Lang }) {
 }
 
 const DISMISS_KEY = "imposter:install-dismissed:v1"; // versioned: a later redesign can re-offer by bumping v1
-const isPhone = () =>
-  typeof window !== "undefined" &&
-  matchMedia("(pointer: coarse)").matches &&
-  innerWidth <= 820 &&
-  !(matchMedia("(display-mode: standalone)").matches || (navigator as { standalone?: boolean }).standalone === true);
+const isPhone = () => typeof window !== "undefined" && matchMedia("(pointer: coarse)").matches && innerWidth <= 820 && !isStandalone();
 
 /**
  * Proactive "add to home screen" banner for phones that haven't installed the app. Shown once ever (per

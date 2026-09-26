@@ -236,7 +236,7 @@ Enter your name and the code (or scan it), then tap **Join**. Once a game has st
 
 <img src="manual/10-settings.png" width="260" align="right" alt="Settings" />
 
-On a phone, a banner offers to **add Imposter to your home screen** so it opens full-screen and works offline, like a native app. Tap **Add** (Android) or use Share → Add to Home Screen (iPhone), or **Not now** to dismiss it.
+On a phone, the start screen shows a banner once that offers to **add Imposter to your home screen** so it opens full-screen and works offline, like a native app. Tap **Add** (Android) or use Share → Add to Home Screen (iPhone), or **Not now** to dismiss it. It never appears during a round.
 
 The **sun/moon** button at the top right switches between light and dark mode. The **gear** opens Settings. Both stay in the top right corner while you scroll, on every screen:
 

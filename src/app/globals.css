@@ -2,25 +2,25 @@
 
 /* ---- palette (light) ---- */
 :root {
-  /* palette: prussian blue #0b132b · space indigo #1c2541 · dusk blue #3a506b · tropical teal #5bc0be · neon ice #6fffe9 */
-  --c-primary-dark: #1c2541; /* buttons, active controls */
-  --c-primary: #3a506b; /* hover */
-  --c-primary-light: #bde5e5;
+  /* palette (default: Arosa): imposter blue #1a3ac4 · sun yellow #ffd60a */
+  --c-primary-dark: #1a3ac4; /* buttons, active controls */
+  --c-primary: #2449e0; /* hover */
+  --c-primary-light: #fff3a3;
   --c-on-primary: #ffffff; /* text on primary-dark */
-  --c-accent: #1e3475; /* imposter moments */
-  --c-accent-deep: #0b132b;
-  --c-glow: #5bc0be;
+  --c-accent: #1a3ac4; /* imposter card: deep blue sky… */
+  --c-accent-deep: #0a1a5c;
+  --c-glow: #ffd60a; /* …with the sun around it */
   --c-danger: #d93036; /* errors, the heart */
   --c-crew: #00937d; /* chart series, validated (dataviz) on #fff */
   --c-imp: #3154bd;
   --c-ink: #0b132b;
   --c-muted: #4c6a8d; /* 4.8:1 on tint, 5.6:1 on white */
   --c-divider: #a5b8ce;
-  --c-canvas: #eef8f8;
+  --c-canvas: #f3f6ff;
   --c-surface: #ffffff;
-  --c-line: #cfe9e9;
-  --c-tint: #def2f2; /* chips, pills */
-  --c-primary-ink: #2c7271; /* teal as text: 4.8:1 on tint, 5.6:1 on white */
+  --c-line: #f2dc7c; /* golden borders */
+  --c-tint: #fff1a8; /* sun yellow chips, pills and selected tiles (blue text 7.5:1) */
+  --c-primary-ink: #1a3ac4;
   /* chart series, 8 validated categorical slots (dataviz reference palette), independent of color theme */
   --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
   color-scheme: light;
@@ -29,52 +29,52 @@
 /* dark values: system dark unless the user forced light, or forced dark */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --c-primary-dark: #5bc0be;
-    --c-primary: #6fffe9;
-    --c-primary-light: #1f5150;
-    --c-on-primary: #0b132b;
-    --c-accent: #1e3475;
-    --c-accent-deep: #070c1b;
-    --c-glow: #6fffe9;
+    --c-primary-dark: #ffd60a;
+    --c-primary: #ffe45c;
+    --c-primary-light: #1a2a6e;
+    --c-on-primary: #0a1a5c;
+    --c-accent: #1a3ac4;
+    --c-accent-deep: #0a1a5c;
+    --c-glow: #ffd60a;
     --c-danger: #ff6b6b;
     --c-crew: #00937d; /* validated on #1c2541 */
     --c-imp: #6f89da;
     --c-ink: #e2fffb;
     --c-muted: #a5b8ce;
     --c-divider: #3a506b;
-    --c-canvas: #0b132b;
-    --c-surface: #1c2541;
-    --c-line: #2e3f55;
-    --c-tint: #17343d;
-    --c-primary-ink: #6fffe9;
+    --c-canvas: #070f35;
+    --c-surface: #0e1a4a;
+    --c-line: #6b5a1a; /* golden borders */
+    --c-tint: #16235e;
+    --c-primary-ink: #ffe066;
     --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --c-primary-dark: #5bc0be;
-  --c-primary: #6fffe9;
-  --c-primary-light: #1f5150;
-  --c-on-primary: #0b132b;
-  --c-accent: #1e3475;
-  --c-accent-deep: #070c1b;
-  --c-glow: #6fffe9;
+  --c-primary-dark: #ffd60a;
+  --c-primary: #ffe45c;
+  --c-primary-light: #1a2a6e;
+  --c-on-primary: #0a1a5c;
+  --c-accent: #1a3ac4;
+  --c-accent-deep: #0a1a5c;
+  --c-glow: #ffd60a;
   --c-danger: #ff6b6b;
   --c-crew: #00937d;
   --c-imp: #6f89da;
   --c-ink: #e2fffb;
   --c-muted: #a5b8ce;
   --c-divider: #3a506b;
-  --c-canvas: #0b132b;
-  --c-surface: #1c2541;
-  --c-line: #2e3f55;
-  --c-tint: #17343d;
-  --c-primary-ink: #6fffe9;
+  --c-canvas: #070f35;
+  --c-surface: #0e1a4a;
+  --c-line: #6b5a1a; /* golden borders */
+  --c-tint: #16235e;
+  --c-primary-ink: #ffe066;
   --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
   color-scheme: dark;
 }
 
-/* color themes (settings → colors); "night" is the default above. Must stay after the base rules. */
+/* color themes (settings → colors); "arosa" is the default above. Must stay after the base rules. */
 :root[data-palette="classic"] {
   --c-primary-dark: #1976d2;
   --c-primary: #2196f3;
@@ -205,48 +205,49 @@
   --c-surface: #200a31;
 }
 /* Arosa: coat of arms blue, sun yellow, snow white */
-:root[data-palette="arosa"] {
-  --c-primary-dark: #1a3ac4;
-  --c-primary: #2449e0;
-  --c-primary-light: #fff3a3;
+/* Night: the previous default. Now an explicit choice like the others. */
+:root[data-palette="night"] {
+  --c-primary-dark: #1c2541;
+  --c-primary: #3a506b;
+  --c-primary-light: #bde5e5;
   --c-on-primary: #ffffff;
-  --c-accent: #1a3ac4; /* imposter card: deep blue sky… */
-  --c-accent-deep: #0a1a5c;
-  --c-glow: #ffd60a; /* …with the sun around it */
-  --c-primary-ink: #1a3ac4;
-  --c-tint: #fff1a8; /* sun yellow chips, pills and selected tiles (blue text 7.5:1) */
-  --c-line: #f2dc7c; /* golden borders */
-  --c-canvas: #f3f6ff;
+  --c-accent: #1e3475;
+  --c-accent-deep: #0b132b;
+  --c-glow: #5bc0be;
+  --c-primary-ink: #2c7271; /* teal as text: 4.8:1 on tint, 5.6:1 on white */
+  --c-tint: #def2f2; /* chips, pills */
+  --c-line: #cfe9e9;
+  --c-canvas: #eef8f8;
 }
 @media (prefers-color-scheme: dark) {
-  :root[data-palette="arosa"]:not([data-theme="light"]) {
-    --c-primary-dark: #ffd60a;
-    --c-primary: #ffe45c;
-    --c-primary-light: #1a2a6e;
-    --c-on-primary: #0a1a5c;
-    --c-accent: #1a3ac4;
-    --c-accent-deep: #0a1a5c;
-    --c-glow: #ffd60a;
-    --c-primary-ink: #ffe066;
-    --c-tint: #16235e;
-    --c-line: #6b5a1a; /* golden borders */
-    --c-canvas: #070f35;
-    --c-surface: #0e1a4a;
+  :root[data-palette="night"]:not([data-theme="light"]) {
+    --c-primary-dark: #5bc0be;
+    --c-primary: #6fffe9;
+    --c-primary-light: #1f5150;
+    --c-on-primary: #0b132b;
+    --c-accent: #1e3475;
+    --c-accent-deep: #070c1b;
+    --c-glow: #6fffe9;
+    --c-primary-ink: #6fffe9;
+    --c-tint: #17343d;
+    --c-line: #2e3f55;
+    --c-canvas: #0b132b;
+    --c-surface: #1c2541;
   }
 }
-:root[data-palette="arosa"][data-theme="dark"] {
-  --c-primary-dark: #ffd60a;
-  --c-primary: #ffe45c;
-  --c-primary-light: #1a2a6e;
-  --c-on-primary: #0a1a5c;
-  --c-accent: #1a3ac4;
-  --c-accent-deep: #0a1a5c;
-  --c-glow: #ffd60a;
-  --c-primary-ink: #ffe066;
-  --c-tint: #16235e;
-  --c-line: #6b5a1a; /* golden borders */
-  --c-canvas: #070f35;
-  --c-surface: #0e1a4a;
+:root[data-palette="night"][data-theme="dark"] {
+  --c-primary-dark: #5bc0be;
+  --c-primary: #6fffe9;
+  --c-primary-light: #1f5150;
+  --c-on-primary: #0b132b;
+  --c-accent: #1e3475;
+  --c-accent-deep: #070c1b;
+  --c-glow: #6fffe9;
+  --c-primary-ink: #6fffe9;
+  --c-tint: #17343d;
+  --c-line: #2e3f55;
+  --c-canvas: #0b132b;
+  --c-surface: #1c2541;
 }
 /* Aarau: coat of arms red, black eagle, white */
 :root[data-palette="aarau"] {

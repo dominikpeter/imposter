@@ -428,6 +428,16 @@ test("rate limits: 20 new rooms and 30 joins per minute per IP, then 429", async
   const { code } = await createRoom(request, ip(), {});
   for (let i = 0; i < 30; i++) expect((await joinRoom(request, joiner, "ZZZZZ", `P${i}`)).status()).toBe(404); // guessing codes counts too
   expect((await joinRoom(request, joiner, code, "Nora")).status()).toBe(429);
+
+  // probing codes by just looking (GET) counts the same, and once spent a live room answers like a dead one
+  const prober = ip();
+  const look = async (c: string) => (await request.get(`/api/rooms/${c}`, { headers: { "x-real-ip": prober } })).status();
+  expect(await look(code)).toBe(200); // outsiders may look at a lobby (the join screen polls it)
+  for (let i = 0; i < 30; i++) expect(await look("ZZZZZ")).toBe(404);
+  expect(await look("ZZZZZ")).toBe(429);
+  expect(await look(code)).toBe(429);
+  const member = (await (await joinRoom(request, ip(), code, "Tim")).json()) as Id;
+  expect((await viewAs(request, code, member)).me).toBeGreaterThanOrEqual(0); // players themselves are never limited
 });
 
 test("security headers on pages and API responses", async ({ request }) => {

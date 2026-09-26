@@ -6,7 +6,7 @@ import { LANGS, UI, type Lang } from "@/lib/i18n";
 import { SignIn } from "@/components/SignIn";
 import { InstallApp } from "@/components/Pwa";
 import { Coffee } from "@/components/Coffee";
-import { useMe } from "@/lib/authClient";
+import { consumeReopenSettings, useMe } from "@/lib/authClient";
 import { aiStore, paletteStore, PALETTES, press, segmented, themeStore, THEMES, useAi, usePalette, useTheme } from "@/lib/ui";
 
 const dark = "(prefers-color-scheme: dark)";
@@ -51,11 +51,15 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
   const [thanks, setThanks] = useState(false);
   useEffect(() => {
     const url = new URL(location.href);
-    if (url.searchParams.get("coffee") !== "thanks") return;
-    url.searchParams.delete("coffee");
-    history.replaceState(history.state, "", url);
-    setThanks(true); // eslint-disable-line react-hooks/set-state-in-effect -- reads the address once after hydration
-    sheet.current?.showModal();
+    const backFromCoffee = url.searchParams.get("coffee") === "thanks";
+    if (backFromCoffee) {
+      url.searchParams.delete("coffee");
+      history.replaceState(history.state, "", url);
+      setThanks(true); // eslint-disable-line react-hooks/set-state-in-effect -- reads the address once after hydration
+    }
+    // back from signing in (OAuth redirect or the emailed-code reload): keep Settings open so the player sees
+    // they're signed in, instead of it just vanishing along with the full page reload/redirect that just happened
+    if (backFromCoffee || consumeReopenSettings()) sheet.current?.showModal();
   }, []);
 
   return (

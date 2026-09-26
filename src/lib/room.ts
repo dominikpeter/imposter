@@ -1,4 +1,4 @@
-import { answers, earnJokers, mergeWritten, newRound, packSecret, pick, spendJokers, uniqueName, wordHint, type Round, type Secret, type Text } from "./game.ts";
+import { answers, earnJokers, MAX_CODE_LENGTH, mergeWritten, MIN_CODE_LENGTH, newRound, packSecret, pick, spendJokers, uniqueName, wordHint, type Round, type Secret, type Text } from "./game.ts";
 import { CATEGORIES, DEFAULT_CATS, LANGS, type Lang } from "./i18n.ts";
 import type { Store } from "./store.ts";
 import { checkWords, explain } from "./ai.ts";
@@ -9,7 +9,6 @@ import { tally } from "./vote.ts";
 
 const TTL = 60 * 60 * 24; // rooms vanish a day after the last write
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I lookalikes
-export const CODE_LENGTH = 5; // 32^5 ≈ 33 million codes; with the join limit, guessing a live room is hopeless
 export const MAX_PLAYERS = 20;
 
 export type Settings = {
@@ -92,7 +91,8 @@ export async function createRoom(db: Store, hostName: unknown, settings: Partial
   const name = cleanName(hostName);
   if (!name) throw new RoomError("bad_request");
   for (let attempt = 0; attempt < 10; attempt++) {
-    const code = Array.from({ length: CODE_LENGTH }, () => CODE_CHARS[pick(CODE_CHARS.length)]).join("");
+    const length = MIN_CODE_LENGTH + pick(MAX_CODE_LENGTH - MIN_CODE_LENGTH + 1); // 5 or 6, so codes aren't all the same shape
+    const code = Array.from({ length }, () => CODE_CHARS[pick(CODE_CHARS.length)]).join("");
     const room: Room = {
       code, hostId: "", settings: cleanSettings(settings), phase: "lobby", ids: [], round: null,
       pool: [], used: [], accused: null, writeNo: 0, voteNo: 0, roundNo: 0, aiUser,

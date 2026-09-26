@@ -65,6 +65,20 @@ test("own words: autocorrect, too hard, duplicate cancels both, then AI explains
   }
 });
 
+test("own words in German: autocorrect uses Swiss spelling (\u2018ss\u2019, never \u2018\u00df\u2019)", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Remove" }).last().click(); // Lisa, Nora, Tim
+  await page.getByRole("button", { name: "Our own words" }).click();
+  await page.getByRole("button", { name: "Deutsch" }).click(); // word language: German
+  await page.getByRole("button", { name: "\u2212" }).last().click(); // 1 word each
+  await page.getByRole("button", { name: "Start game" }).click();
+
+  await page.getByRole("button", { name: "Tap to write" }).click();
+  await write(page, "Stra\u00dfe"); // German spelling; Swiss German never uses \u00df
+  await expect(page.getByRole("status").filter({ hasText: "Autocorrected" })).toBeVisible(AI);
+  await expect(page.getByPlaceholder(/^Word/)).toHaveValue("Strasse");
+});
+
 async function phone(browser: Browser) {
   return (await browser.newContext({ ...test.info().project.use, extraHTTPHeaders: { "x-e2e-user": "Tester" } })).newPage();
 }

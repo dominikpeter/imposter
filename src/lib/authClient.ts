@@ -29,7 +29,28 @@ export function useMe() {
   return me;
 }
 
-export const signIn = async (provider: Me["providers"][number]) => (await client()).signIn.social({ provider, callbackURL: location.pathname });
+// Settings was open when sign-in started: keep it open after the redirect/reload comes back, so the player
+// sees they're signed in instead of the sheet just vanishing. TopControls reopens it once and clears this.
+const REOPEN_KEY = "imposter:reopen-settings";
+const keepSettingsOpen = () => {
+  try {
+    sessionStorage.setItem(REOPEN_KEY, "1");
+  } catch {}
+};
+/** True once, right after a sign-in that started with Settings open (clears itself so it never fires again). */
+export const consumeReopenSettings = () => {
+  try {
+    const set = sessionStorage.getItem(REOPEN_KEY) === "1";
+    if (set) sessionStorage.removeItem(REOPEN_KEY);
+    return set;
+  } catch {
+    return false;
+  }
+};
+export const signIn = async (provider: Me["providers"][number]) => {
+  keepSettingsOpen();
+  return (await client()).signIn.social({ provider, callbackURL: location.pathname });
+};
 /** Mail a sign-in code; true when sent. */
 export const sendCode = async (email: string, lang: string) =>
   !(await (await client()).emailOtp.sendVerificationOtp({ email, type: "sign-in" }, { headers: { "x-lang": lang } })).error; // mail in the app's language
@@ -37,6 +58,7 @@ export const sendCode = async (email: string, lang: string) =>
 export const signInWithCode = async (email: string, otp: string) => {
   if ((await (await client()).signIn.emailOtp({ email, otp })).error) return false;
   cache = null;
+  keepSettingsOpen();
   location.reload();
   return true;
 };

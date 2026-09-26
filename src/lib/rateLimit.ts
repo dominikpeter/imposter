@@ -7,14 +7,22 @@ const PER_DAY = 1000; // all AI calls together: this is what caps the OpenAI bil
 export const clientKey = (req: Request) =>
   req.headers.get("x-real-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "local";
 
+const minuteBucket = (key: string) => `rl:${key}:${Math.floor(Date.now() / 60_000)}`;
+
 /** Counts one hit for `key` in the current minute; false once `perMinute` is used up. Fails open without shared storage. */
 export async function allow(key: string, perMinute: number) {
   if (!persistent && process.env.VERCEL) return true; // nothing to count with; rooms need Redis anyway
-  const bucket = `rl:${key}:${Math.floor(Date.now() / 60_000)}`;
+  const bucket = minuteBucket(key);
   const used = (await db.get<number>(bucket)) ?? 0;
   if (used >= perMinute) return false;
   await db.set(bucket, used + 1, { ex: 60 });
   return true;
+}
+
+/** Whether `key` has used up this minute's `perMinute`, without counting a hit. */
+export async function spent(key: string, perMinute: number) {
+  if (!persistent && process.env.VERCEL) return false;
+  return ((await db.get<number>(minuteBucket(key))) ?? 0) >= perMinute;
 }
 
 // global AI switch, flipped on the admin page; every AI path goes through allowAi, so off means off everywhere

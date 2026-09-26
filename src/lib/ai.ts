@@ -29,8 +29,10 @@ const schema = z.object({
 });
 
 const instructions = `Party game word check. For each word, in order:
-word: "" if spelled right; else the word with spelling and capitals fixed (same language, never translate; German "ss", not "ß").
-hint: "" unless its spelling needs a fix; then the fixed hint.
+word: German words ALWAYS use "ss", never "ß" (Swiss spelling: replace every ß with ss, even in an otherwise
+correctly spelled word — "Straße"->"Strasse", "Fuß"->"Fuss", "groß"->"gross"). Also fix any misspelling and
+capitalization (same language, never translate). "" only if the word needs none of this, ß included.
+hint: "" unless its spelling needs a fix (Swiss ß->ss counts); then the fixed hint.
 tooHard: true if a typical teen wouldn't know it, it's technical/scientific jargon, or not a real word.
 sameAs: the TAKEN entry meaning the same thing (synonym, translation, plural, variant), copied exactly; else "".`;
 

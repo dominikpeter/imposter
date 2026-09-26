@@ -6,11 +6,11 @@ export const THEMES: Theme[] = ["auto", "light", "dark"];
 export type Palette = "night" | "classic" | "forest" | "berry" | "arosa" | "aarau";
 // swatch = [button, accent, glow] preview for the settings sheet
 export const PALETTES: { id: Palette; swatch: [string, string, string] }[] = [
+  { id: "arosa", swatch: ["#1a3ac4", "#ffd60a", "#ffffff"] }, // default
   { id: "night", swatch: ["#1c2541", "#5bc0be", "#6fffe9"] },
   { id: "classic", swatch: ["#1976d2", "#7c4dff", "#bbdefb"] },
   { id: "forest", swatch: ["#1b4332", "#40916c", "#b7e4c7"] },
   { id: "berry", swatch: ["#5a189a", "#e0569b", "#f7c6e0"] },
-  { id: "arosa", swatch: ["#1a3ac4", "#ffd60a", "#ffffff"] },
   { id: "aarau", swatch: ["#e30613", "#1a1a1a", "#ffffff"] },
 ];
 
@@ -43,7 +43,7 @@ function pref<T extends string>(key: "theme" | "palette" | "ai", fallback: T, al
   };
 }
 export const themeStore = pref<Theme>("theme", "auto", THEMES);
-export const paletteStore = pref<Palette>("palette", "night", PALETTES.map((p) => p.id));
+export const paletteStore = pref<Palette>("palette", "arosa", PALETTES.map((p) => p.id));
 export const aiStore = pref<"on" | "off">("ai", "on", ["on", "off"]); // AI word check + explain button
 
 // class strings live in styles.ts (hook-free, so server pages like /admin can use them too)
@@ -102,4 +102,4 @@ export const stepper = (value: number, set: (n: number) => void, min: number, ma
 
 export const useTheme = () => useSyncExternalStore(themeStore.subscribe, themeStore.get, () => "auto" as Theme);
 export const useAi = () => useSyncExternalStore(aiStore.subscribe, aiStore.get, () => "on" as const) === "on";
-export const usePalette = () => useSyncExternalStore(paletteStore.subscribe, paletteStore.get, () => "night" as Palette);
+export const usePalette = () => useSyncExternalStore(paletteStore.subscribe, paletteStore.get, () => "arosa" as Palette);

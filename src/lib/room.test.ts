@@ -172,9 +172,15 @@ test("ready check, guided turns, imposter guess, rounds and new game", async () 
   assert.equal(n.history.length, 0);
 });
 
-test("room codes have 5 characters without lookalikes", async () => {
+test("room codes have 5 or 6 characters without lookalikes, both lengths occur", async () => {
   const db = store();
-  for (let i = 0; i < 20; i++) assert.match((await createRoom(db, "Lisa", {})).code, /^[A-HJ-NP-Z2-9]{5}$/);
+  const lengths = new Set<number>();
+  for (let i = 0; i < 40; i++) {
+    const { code } = await createRoom(db, "Lisa", {});
+    assert.match(code, /^[A-HJ-NP-Z2-9]{5,6}$/);
+    lengths.add(code.length);
+  }
+  assert.deepEqual([...lengths].sort(), [5, 6]); // both lengths show up over enough rooms
 });
 
 test("host can continue when a phone drops out (vote, own words)", async () => {

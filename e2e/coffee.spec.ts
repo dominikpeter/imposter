@@ -56,3 +56,12 @@ test("stripe webhook refuses unsigned events", async ({ request }) => {
   const res = await request.post("/api/stripe/webhook", { data: { type: "checkout.session.completed" } });
   expect([400, 503]).toContain(res.status()); // 503 when no webhook secret is set (as on the e2e server)
 });
+
+test("coffee return path stays on this site, even for paths the URL parser reads as another host", async ({ request }) => {
+  for (const [path, expected] of [["/r/ABCDE", "/r/ABCDE"], ["/\\evil.example/x", "/"], ["//evil.example", "/"], ["/\t/evil.example", "/"], ["https://evil.example", "/"]]) {
+    const res = await request.post("/api/coffee", { data: { size: "small", path }, headers: { "x-real-ip": "10.9.9.8" } });
+    const url = new URL((await res.json()).url);
+    expect(url.hostname, path).toBe("localhost");
+    expect(url.pathname, path).toBe(expected);
+  }
+});

@@ -10,7 +10,7 @@ import { Hero } from "@/components/Hero";
 import { Splash } from "@/components/Splash";
 import { TopControls, TopControlsSpace } from "@/components/TopControls";
 import { InstallBanner } from "@/components/Pwa";
-import { answers, earnJokers, exactReview, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, uniqueNames, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
+import { answers, earnJokers, exactReview, MAX_CODE_LENGTH, mergeWritten, newRound, packSecret, pick, reviewNotes, spendJokers, uniqueNames, wordHint, type Note, type Review, type Round, type Secret, type Text } from "@/lib/game";
 import { WordForm } from "@/components/WordForm";
 import { TurnGuide } from "@/components/TurnGuide";
 import { GuessForm } from "@/components/GuessForm";
@@ -354,7 +354,7 @@ export default function Home() {
         <TopControlsSpace />
       </header>
       <TopControls lang={lang} setLang={setLang} />
-      <InstallBanner lang={lang} />
+      {phase === "setup" && <InstallBanner lang={lang} /> /* start screen only: never pushes a round's screens down */}
 
       {phase === "setup" && (
         <div key="setup" className="enter flex flex-1 flex-col gap-4">
@@ -433,7 +433,7 @@ export default function Home() {
                 <div key="join" className="enter flex items-center gap-2">
                   <input
                     value={code}
-                    maxLength={5}
+                    maxLength={MAX_CODE_LENGTH}
                     autoCapitalize="characters"
                     autoComplete="off"
                     inputMode="text"

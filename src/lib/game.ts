@@ -9,6 +9,10 @@ export type Round = Secret & { imposters: number[]; starter: number; jokered?: n
 // crypto RNG: who is imposter and room codes must not be predictable from earlier outputs (modulo bias ~n/2^32, negligible)
 export const pick = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
 
+// room codes: random length per room (not always the same shape), 4-char codes from an earlier switch still work
+export const MIN_CODE_LENGTH = 5;
+export const MAX_CODE_LENGTH = 6; // 32^5 ≈ 33M codes, 32^6 ≈ 1B; guessing a live one is hopeless either way
+
 // stats and jokers are keyed by name, so two "Tim"s become "Tim" and "Tim 2"
 export function uniqueName(name: string, taken: string[]) {
   const t = new Set(taken.map((x) => x.toLowerCase()));

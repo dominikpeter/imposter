@@ -4,8 +4,9 @@ name: iOS release (TestFlight)
 # nothing to install locally. Manual trigger only: this costs macOS build minutes and touches App Store Connect.
 #
 # One-time setup (Apple Developer Program membership required, https://developer.apple.com/programs/):
-#   1. App Store Connect → Users and Access → Integrations → App Store Connect API → generate a key with the
-#      "App Manager" role. Note the Key ID and Issuer ID, and download the .p8 file (shown only once).
+#   1. App Store Connect → Users and Access → Integrations → App Store Connect API → generate a team key with the
+#      "Admin" role (cloud-managed distribution signing needs it; an "App Manager" key can't create the
+#      distribution certificate). Note the Key ID and Issuer ID, and download the .p8 file (shown only once).
 #   2. Apple Developer → Membership → find your 10-character Team ID.
 #   3. In this repo: Settings → Secrets and variables → Actions, add:
 #        APP_STORE_CONNECT_KEY_ID       the Key ID from step 1
@@ -16,7 +17,10 @@ name: iOS release (TestFlight)
 #      app record can't be created by API. After that this workflow can upload every build.
 #   5. Xcode Cloud/manual signing isn't used: -allowProvisioningUpdates lets xcodebuild fetch or create the
 #      signing certificate and provisioning profile itself from the API key, the same as Xcode's "Automatically
-#      manage signing".
+#      manage signing". The team comes from APPLE_TEAM_ID (the Xcode project has none checked in).
+#
+# Versions: the build number is the run number, the marketing version is package.json's version (the same as
+# the Android workflow), both passed as build settings, so nothing in ios/ needs editing per release.
 #
 # Until the secrets above exist, "Run workflow" fails fast with a clear message instead of a cryptic build error.
 
@@ -28,6 +32,9 @@ on:
         type: choice
         options: [testflight]
         default: testflight
+
+permissions:
+  contents: read
 
 jobs:
   build-and-upload:
@@ -70,20 +77,18 @@ jobs:
           mkdir -p ~/private_keys
           echo "$APP_STORE_CONNECT_API_KEY_P8" > "$HOME/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
 
-      - name: Bump the build number
-        # App Store Connect rejects a re-used build number: the run number always goes up. The marketing
-        # version (1.0, 2.3, …) stays whatever Xcode project has; bump it by hand for a real version bump.
-        run: |
-          cd ios/App
-          xcrun agvtool new-version -all "$GITHUB_RUN_NUMBER"
-
       - name: Archive
+        # Capacitor's Swift Package Manager project: App.xcodeproj, no CocoaPods workspace.
+        # App Store Connect rejects a re-used build number (the run number always goes up) and closes a
+        # marketing version once it is released (package.json's version moves on with every web release).
         env:
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          version=$(node -p "require('./package.json').version")
           xcodebuild archive \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -archivePath build/App.xcarchive \
@@ -91,7 +96,10 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$HOME/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8" \
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
-            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" \
+            MARKETING_VERSION="$version"
 
       - name: Write the export options
         env:

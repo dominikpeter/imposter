@@ -102,7 +102,9 @@ export const auth = betterAuth({
     // with Redis: the cookie is re-checked daily, which also slides the 30 days while you keep playing
     cookieCache: { enabled: true, maxAge: secondaryStorage ? 60 * 60 * 24 : 60 * 60 * 24 * 30, strategy: "jwe", refreshCache: !secondaryStorage },
   },
-  databaseHooks: { user: { create: { before: async (user) => ({ data: { ...user, id: stableId(user.email) } }) } } },
+  // an unverified address (e.g. Microsoft's multi-tenant `email` claim, set by any tenant admin) must not
+  // land on the account id of whoever really owns that address: it gets an id of its own
+  databaseHooks: { user: { create: { before: async (user) => ({ data: { ...user, id: stableId(user.emailVerified ? user.email : `unverified:${user.email}`) } }) } } },
   // we only need who you are, not your provider tokens: keeps the cookie small
   account: { storeStateStrategy: "cookie", storeAccountCookie: false },
   plugins: [
