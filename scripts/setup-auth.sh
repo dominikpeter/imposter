@@ -8,16 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-put() { # put NAME VALUE: replace in .env.local, and set in Vercel production
-  [[ $2 == *"'"* ]] && { echo "  $1 contains a single quote: add it to .env.local by hand"; return 1; }
-  touch .env.local
-  grep -v "^$1=" .env.local > .env.local.tmp || true
-  printf "%s='%s'\n" "$1" "$2" >> .env.local.tmp # single quotes: Next doesn't expand $ inside them
-  mv .env.local.tmp .env.local
-  vercel env rm "$1" production --yes >/dev/null 2>&1 || true
-  printf '%s' "$2" | vercel env add "$1" production >/dev/null
-  echo "  $1 set"
-}
+source scripts/env.sh
 
 for p in GOOGLE GITHUB MICROSOFT; do
   read -rp "$p client ID, or the path to Google's downloaded client JSON (empty to skip): " id

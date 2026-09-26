@@ -73,6 +73,10 @@ hooks:
 auth-setup:
     bash scripts/setup-auth.sh
 
+# email sign-in keys (Resend) → .env.local + Vercel
+email-setup:
+    bash scripts/setup-email.sh
+
 # rebuild the newest working production deployment, e.g. after changing env vars (pushes to main deploy on their own)
 redeploy:
     vercel redeploy "$(vercel ls imposter --environment production --status READY 2>/dev/null | head -1)" --target production

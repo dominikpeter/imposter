@@ -68,7 +68,7 @@ async function mailCode(email: string, otp: string, lang: Lang) {
     method: "POST",
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: env.RESEND_FROM ?? "Imposter <onboarding@resend.dev>", // resend.dev only reaches the Resend account owner: set RESEND_FROM on a verified domain
+      from: env.RESEND_FROM ?? "Imposter <onboarding@resend.dev>", // set by `just email-setup`; resend.dev only reaches the Resend account owner
       to: email,
       subject: UI.mailSubject[lang].replace("{code}", otp),
       text: UI.mailBody[lang].replace("{code}", otp),
