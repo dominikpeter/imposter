@@ -59,7 +59,13 @@ export function TopControls({ lang, setLang }: { lang: Lang; setLang: (l: Lang) 
     }
     // back from signing in (OAuth redirect or the emailed-code reload): keep Settings open so the player sees
     // they're signed in, instead of it just vanishing along with the full page reload/redirect that just happened
-    if (backFromCoffee || consumeReopenSettings()) sheet.current?.showModal();
+    const backFromSignIn = consumeReopenSettings(); // always consumed: never left over for a later page load
+    if (backFromCoffee || backFromSignIn) sheet.current?.showModal();
+    // Back from the provider without signing in restores this page from the back/forward cache (no remount):
+    // drop the flag there, the sign-in didn't happen
+    const onShow = (e: PageTransitionEvent) => e.persisted && consumeReopenSettings();
+    addEventListener("pageshow", onShow);
+    return () => removeEventListener("pageshow", onShow);
   }, []);
 
   return (

@@ -1,10 +1,7 @@
 import { act, joinRoom, RoomError, view } from "@/lib/room";
-import { MAX_CODE_LENGTH } from "@/lib/game";
+import { cleanCode as clean } from "@/lib/game"; // 5 or 6 characters; 4-character codes from an earlier switch keep working
 import { allow, clientKey, spent } from "@/lib/rateLimit";
 import { handle } from "../handle";
-
-// 5 or 6 characters (random per room, see createRoom); 4-character codes from before an earlier switch keep working
-const clean = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, MAX_CODE_LENGTH);
 
 const JOINS_PER_MINUTE = 30;
 

@@ -2,7 +2,7 @@
 
 import { Check, CircleCheck, Crown, Eye, Lock, MessagesSquare, Rocket, Scale, Share2, VenetianMask, Vote } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { UI, type Lang } from "@/lib/i18n";
 import { TopControls, TopControlsSpace } from "@/components/TopControls";
 import { reviewNotes, speakerAt, type Draft, type Note, type Review, type Text } from "@/lib/game";
@@ -54,18 +54,23 @@ export default function Room() {
   };
   const url = typeof window === "undefined" ? "" : `${location.origin}/r/${code}`;
 
+  // a room that isn't there never comes back (codes are random): stop polling it, since every miss counts
+  // against this network's join limit (api/rooms/[code] GET) and would lock out everyone else on the same Wi-Fi
+  const gone = useRef(false);
   const refresh = useCallback(async () => {
     try {
       setV(await api<View>(`/${code}`, undefined, id));
       setErr("");
+      gone.current = false;
     } catch (e) {
       setErr((e as Error).message);
+      gone.current = (e as Error).message === "not_found";
     }
   }, [code, id]);
 
   // poll while visible; refresh right away when the phone wakes up
   useEffect(() => {
-    const tick = () => document.visibilityState === "visible" && refresh();
+    const tick = () => document.visibilityState === "visible" && !gone.current && refresh();
     const first = setTimeout(refresh, 0); // always load once, even if opened in a background tab
     const timer = setInterval(tick, POLL_MS);
     document.addEventListener("visibilitychange", tick);

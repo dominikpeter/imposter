@@ -3,10 +3,15 @@
 import { ScanLine } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { press } from "@/lib/ui";
+import { MAX_CODE_LENGTH } from "@/lib/game";
 
-/** Pulls a room code out of a scanned QR: our join link (…/r/AB3K7) or a bare code (5 chars; 4 for older rooms). */
+const CODE = `[A-Za-z0-9]{4,${MAX_CODE_LENGTH}}`; // 5 or 6 chars; 4 for older rooms
+const LINK = new RegExp(`/r/(${CODE})\\b`);
+const BARE = new RegExp(`^(${CODE})$`);
+
+/** Pulls a room code out of a scanned QR: our join link (…/r/AB3K7) or a bare code. */
 export function codeFromQr(text: string): string | null {
-  const m = text.match(/\/r\/([A-Za-z0-9]{4,5})\b/) ?? text.trim().match(/^([A-Za-z0-9]{4,5})$/);
+  const m = text.match(LINK) ?? text.trim().match(BARE);
   return m ? m[1].toUpperCase() : null;
 }
 

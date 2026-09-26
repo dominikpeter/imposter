@@ -29,10 +29,8 @@ const schema = z.object({
 });
 
 const instructions = `Party game word check. For each word, in order:
-word: German words ALWAYS use "ss", never "ß" (Swiss spelling: replace every ß with ss, even in an otherwise
-correctly spelled word — "Straße"->"Strasse", "Fuß"->"Fuss", "groß"->"gross"). Also fix any misspelling and
-capitalization (same language, never translate). "" only if the word needs none of this, ß included.
-hint: "" unless its spelling needs a fix (Swiss ß->ss counts); then the fixed hint.
+word: "" if spelled right; else the word with spelling and capitals fixed (same language, never translate; German "ss", not "ß").
+hint: "" unless its spelling needs a fix; then the fixed hint.
 tooHard: true if a typical teen wouldn't know it, it's technical/scientific jargon, or not a real word.
 sameAs: the TAKEN entry meaning the same thing (synonym, translation, plural, variant), copied exactly; else "".`;
 
@@ -73,9 +71,12 @@ export async function reviewWords(draft: Draft[], taken: string[], lang: string,
       prompt: JSON.stringify({ uiLanguage: lang, TAKEN: taken, words: draft }),
     });
     later(() => recordAi(who, usage));
+    // Swiss spelling for sure, in code: louder prompt wording for it made the model put spelling fixes in the hint
+    // instead of the word ("Guitarr" came back unchanged with hint "Guitar"); ß never appears in Swiss German
+    const swiss = (s: string) => s.replace(/ß/g, "ss").replace(/ẞ/g, "SS");
     const fixed: Draft[] = draft.map((d, i) => ({
-      word: (output.results[i]?.word || d.word).trim().slice(0, 40),
-      clue: (output.results[i]?.hint || d.clue).trim().slice(0, 40), // an empty AI hint never erases the writer's
+      word: swiss(output.results[i]?.word || d.word).trim().slice(0, 40),
+      clue: swiss(output.results[i]?.hint || d.clue).trim().slice(0, 40), // an empty AI hint never erases the writer's
     }));
     // exact checks again on the corrected words (a fix can turn into a duplicate)
     const result: Review[] = exactReview(fixed, taken).map((r, i) => {

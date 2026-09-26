@@ -2,7 +2,7 @@
 
 /* ---- palette (light) ---- */
 :root {
-  /* palette (default: Arosa): imposter blue #1a3ac4 · sun yellow #ffd60a */
+  /* palette (default: Arosa, coat of arms blue, sun yellow, snow white): imposter blue #1a3ac4 · sun yellow #ffd60a */
   --c-primary-dark: #1a3ac4; /* buttons, active controls */
   --c-primary: #2449e0; /* hover */
   --c-primary-light: #fff3a3;
@@ -204,7 +204,6 @@
   --c-canvas: #14061f;
   --c-surface: #200a31;
 }
-/* Arosa: coat of arms blue, sun yellow, snow white */
 /* Night: the previous default. Now an explicit choice like the others. */
 :root[data-palette="night"] {
   --c-primary-dark: #1c2541;

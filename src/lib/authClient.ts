@@ -32,17 +32,20 @@ export function useMe() {
 // Settings was open when sign-in started: keep it open after the redirect/reload comes back, so the player
 // sees they're signed in instead of the sheet just vanishing. TopControls reopens it once and clears this.
 const REOPEN_KEY = "imposter:reopen-settings";
+// a timestamp, not a flag: an abandoned sign-in (Back from the provider, a failed redirect) must not pop Settings
+// open on some unrelated page load much later in the same tab
+const REOPEN_WITHIN_MS = 10 * 60_000;
 const keepSettingsOpen = () => {
   try {
-    sessionStorage.setItem(REOPEN_KEY, "1");
+    sessionStorage.setItem(REOPEN_KEY, String(Date.now()));
   } catch {}
 };
 /** True once, right after a sign-in that started with Settings open (clears itself so it never fires again). */
 export const consumeReopenSettings = () => {
   try {
-    const set = sessionStorage.getItem(REOPEN_KEY) === "1";
-    if (set) sessionStorage.removeItem(REOPEN_KEY);
-    return set;
+    const at = Number(sessionStorage.getItem(REOPEN_KEY));
+    sessionStorage.removeItem(REOPEN_KEY);
+    return at > 0 && Date.now() - at < REOPEN_WITHIN_MS;
   } catch {
     return false;
   }

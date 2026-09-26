@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { MAX_CODE_LENGTH } from "@/lib/game";
+import { cleanCode } from "@/lib/game";
 
 // shared room links get their own preview text ("Join room AB12C"); the picture comes from app/opengraph-image
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }): Promise<Metadata> {
-  const code = (await params).code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, MAX_CODE_LENGTH);
+  const code = cleanCode((await params).code);
   const title = code ? `Join room ${code} · Imposter` : "Join a room · Imposter";
   const description = "You're invited to a round of Imposter: everyone gets the secret word, except the imposter. Tap to join.";
   // a segment's own openGraph replaces the parent's, image included: point back at the shared one

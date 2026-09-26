@@ -197,7 +197,7 @@ Turn off **Imposter gets a clue**, then turn on **Joker mode**.
 ### Invite the others
 <img src="manual/16-lobby.png" width="240" align="right" alt="Lobby with QR" />
 
-The lobby shows a **5-character code** and a **QR code**. Friends can:
+The lobby shows a **room code** (5 or 6 characters) and a **QR code**. Friends can:
 
 - scan the QR code with their phone camera, or
 - tap **WhatsApp** to send the invite straight into a chat, or **Share link** for any other app, or
@@ -242,8 +242,8 @@ The **sun/moon** button at the top right switches between light and dark mode. T
 
 - **Language:** English, Français, Deutsch, for buttons and texts. The language of the secret words is set separately in the game setup (*Word language*).
 - **Appearance:** Auto (follows your phone), Light or Dark.
-- **AI help:** sign in with Google, GitHub or Microsoft, or with your email (type it in, tap **Email me a code**, enter the 6-digit code from the mail, which comes in the app's language; it works for 5 minutes) to use it; once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
-- **Colors:** Night, Classic, Forest, Berry, Arosa (blue and sun yellow) or Aarau (red and black).
+- **AI help:** sign in with Google, GitHub or Microsoft, or with your email (type it in, tap **Email me a code**, enter the 6-digit code from the mail, which comes in the app's language; it works for 5 minutes) to use it; Settings stays open after you sign in, so you see right away that it worked. Once signed in, a switch turns it on or off, and **Sign out** is right below. Playing never needs an account; the sign-in only keeps the AI from being abused.
+- **Colors:** Arosa (blue and sun yellow, the default), Night, Classic, Forest, Berry or Aarau (red and black).
 - **Buy me a coffee:** a small thank-you to the maker, if you like the game: CHF 1 (small coffee), CHF 5 (big coffee), CHF 10 (deluxe coffee), or any whole amount up to CHF 200. The money goes to Zettelispiil, the maker of Imposter (the footer of Settings says *Imposter by Zettelispiil*). You pay on Stripe's secure page (card, TWINT, Apple Pay or Google Pay, whatever it offers you) and come straight back to the game, where Settings says thank you. Not shown in the App Store / Play Store apps.
 
 Your choices are remembered on your phone.
@@ -274,7 +274,7 @@ Your choices are remembered on your phone.
 | Someone refreshed the page or pressed Back. | On one phone the game resumes where you left off. In a room, just open the link again. |
 | We tapped the logo or want to stop. | Use **× Quit round**. It asks first, and a joker spent on the unfinished round is given back. |
 | "Online rooms aren't available yet" | The server has no room storage configured. Play on one phone meanwhile. |
-| The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the 5-character code. |
+| The QR scanner says there's no camera access | Allow camera access for the site in your browser, or just type the room code (5 or 6 characters). |
 | The AI didn't correct anything | AI help may be off, you may not be signed in, or a limit was reached (60 checks per minute and 200 per day per account, 1,000 per day overall). Exact duplicates are still caught. |
 | Can I put it on my home screen like an app? | Yes. Android and computers: **Settings → Install app**. iPhone: Safari → Share → **Add to Home Screen** (Settings shows the steps). It opens full-screen with the mask icon, and **the one-phone game then works offline**: handy at a party with bad reception. Rooms and AI help still need a connection. |
 | Is there an app in the stores? | Not yet. Installing from Settings gives you the same game as an app. Android and iPhone app builds exist (Capacitor) and load the same site, so they always have the latest version. |
