@@ -267,7 +267,7 @@ export default function Home() {
   // round over: jokers for imposters who got away (or guessed the word), history for the stats
   const finish = (acc: number | null, v: number[] | null, guessed: boolean) => {
     if (joker && acc !== null) setJokers(earnJokers(round!.imposters, acc, names, jokers, guessed));
-    setHistory([...history, { names, imposters: round!.imposters, accused: acc, votes: v, word: round!.word, guessed }]);
+    setHistory([...history, { names, imposters: round!.imposters, accused: acc, votes: v, word: tw(round!.word), guessed }]); // the word as played, in the word language
     setPhase("result");
     fetch("/api/metrics", { method: "POST", keepalive: true }).catch(() => {}); // anonymous "a round was played" for the admin stats
   };

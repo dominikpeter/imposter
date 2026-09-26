@@ -52,3 +52,10 @@ test("reduced motion: nothing moves, the confetti stays invisible", async ({ pag
   expect(await page.locator(".confetti > i").first().evaluate((el) => getComputedStyle(el).opacity)).toBe("0");
   expect(await animation(page, ".tada")).toBe("none");
 });
+
+test("reduced motion: the escaping mask stays still too", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await playRound(page, false);
+  await expect(page.getByText("Wrong one!")).toBeVisible();
+  expect(await animation(page, ".sneak")).toBe("none");
+});

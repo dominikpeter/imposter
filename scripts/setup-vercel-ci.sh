@@ -2,7 +2,8 @@
 # One-time: gives GitHub Actions (ci.yml's deploy job) what it needs to run `vercel deploy` on its own.
 # VERCEL_ORG_ID and VERCEL_PROJECT_ID aren't secret (every checkout's .vercel/project.json has them), so they're read from
 # there. VERCEL_TOKEN is the one real secret: asked for hidden, never shown, never saved to disk.
-# Last, it sets the repository variable VERCEL_CI_READY=true, which switches ci.yml's deploy job on.
+# Last, it sets the repository variable VERCEL_CI_READY=true. Without it, ci.yml's deploy job fails a merged version bump
+# (no tag, no release) rather than skipping, so run this before the first release.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/gh-secret.sh

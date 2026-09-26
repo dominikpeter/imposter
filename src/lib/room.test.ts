@@ -162,6 +162,7 @@ test("ready check, guided turns, imposter guess, rounds and new game", async () 
   assert.equal(r.phase, "result");
   assert.deepEqual(r.guess, { text: word.de.toLowerCase(), correct: true });
   assert.equal(r.history.at(-1)?.guessed, true);
+  assert.equal(r.history.at(-1)?.word, word.de); // the stats keep the word as played: the room's word language
 
   // 1 round per game → game over: "start" is refused, "newGame" resets the stats
   assert.equal(r.gameOver, true);

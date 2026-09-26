@@ -188,7 +188,7 @@ export async function act(db: Store, code: string, pid: unknown, token: unknown,
     const names = room.ids.map((id) => members.find((m) => m.id === id)?.name ?? "?");
     const r = room.round!;
     if (room.settings.joker && room.accused !== null) room.jokers = earnJokers(r.imposters, room.accused, room.ids, room.jokers ?? [], guessed);
-    room.history = [...(room.history ?? []), { names, imposters: r.imposters, accused: room.accused, votes, word: r.word, guessed }];
+    room.history = [...(room.history ?? []), { names, imposters: r.imposters, accused: room.accused, votes, word: typeof r.word === "string" ? r.word : r.word[room.settings.lang], guessed }]; // as played: the room's word language
     room.phase = "result";
     roundDone = true;
   };
